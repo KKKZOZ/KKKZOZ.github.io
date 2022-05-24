@@ -1,1 +1,0 @@
-import{_ as s,c as a,o as p,a as n}from"./app.b0eab04b.js";const l='{"title":"应用实例 API","description":"","frontmatter":{},"headers":[{"level":2,"title":"createApp()","slug":"create-app"}],"relativePath":"api/application.md"}',o={},e=[n("",4)];var t=s(o,[["render",function(s,n,l,o,t,r){return p(),a("div",null,e)}]]);export{l as __pageData,t as default};
