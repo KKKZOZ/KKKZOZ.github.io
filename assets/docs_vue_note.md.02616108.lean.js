@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as n,a as l}from"./app.0a988d3b.js";const p='{"title":"Note","description":"","frontmatter":{},"headers":[{"level":2,"title":"CSS","slug":"css"}],"relativePath":"docs/vue/note.md"}',o={},e=[l("",7)];var t=s(o,[["render",function(s,l,p,o,t,c){return n(),a("div",null,e)}]]);export{p as __pageData,t as default};

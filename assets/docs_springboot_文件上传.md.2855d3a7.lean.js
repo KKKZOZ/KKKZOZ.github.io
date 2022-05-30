@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as n,a as l}from"./app.0a988d3b.js";const o='{"title":"文件上传","description":"","frontmatter":{},"headers":[{"level":2,"title":"Example","slug":"example"}],"relativePath":"docs/springboot/文件上传.md"}',p={},e=[l("",14)];var t=s(p,[["render",function(s,l,o,p,t,D){return n(),a("div",null,e)}]]);export{o as __pageData,t as default};
