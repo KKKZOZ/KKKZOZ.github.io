@@ -1,0 +1,1 @@
+import{_ as s,c as a,o as n,a as l}from"./app.f0db6152.js";const p='{"title":"SSL","description":"","frontmatter":{},"headers":[{"level":2,"title":"下载证书","slug":"下载证书"},{"level":2,"title":"配置证书","slug":"配置证书"}],"relativePath":"docs/springboot/SSL.md"}',e={},o=[l("",7)];var r=s(e,[["render",function(s,l,p,e,r,c){return n(),a("div",null,o)}]]);export{p as __pageData,r as default};
