@@ -1,1 +1,0 @@
-import{_ as s,c as n,o as a,a as l}from"./app.f0db6152.js";const o='{"title":"tsconfig.json 配置说明","description":"","frontmatter":{},"headers":[],"relativePath":"docs/typescript/tsconfig.md"}',p={},t=[l("",2)];var e=s(p,[["render",function(s,l,o,p,e,c){return a(),n("div",null,t)}]]);export{o as __pageData,e as default};

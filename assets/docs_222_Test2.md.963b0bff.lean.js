@@ -1,0 +1,1 @@
+import{_ as e,c as a,o as t,a as r}from"./app.2dc46da8.js";const d='{"title":"Test2","description":"","frontmatter":{},"headers":[{"level":2,"title":"1","slug":"_1"},{"level":2,"title":"2","slug":"_2"}],"relativePath":"docs/222/Test2.md"}',s={},i=[r("",5)];var h=e(s,[["render",function(e,r,d,s,h,_){return t(),a("div",null,i)}]]);export{d as __pageData,h as default};
