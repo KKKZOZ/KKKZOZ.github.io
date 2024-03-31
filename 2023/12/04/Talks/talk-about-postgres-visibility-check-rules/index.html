@@ -1,0 +1,891 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Background 最近在看分布式事务相关的论文，很多论文设计的系统中都实现的是快照隔离这一层次的机制，其中 Epoxy 最为典型，直接把 Postgres 的快照隔离机制在中间层重新实现了一遍。 之前看关于 Postgres 快照隔离机制的文章，找到了这个：PostgreSQL并发控制，讲得非常好，逻辑非常清晰，理论和实际例子相结合。 这篇文章中关于 Visibility Check Rule">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Talk about Postgres Visibility Check Rules">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/12/04/Talks/talk-about-postgres-visibility-check-rules/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="Background 最近在看分布式事务相关的论文，很多论文设计的系统中都实现的是快照隔离这一层次的机制，其中 Epoxy 最为典型，直接把 Postgres 的快照隔离机制在中间层重新实现了一遍。 之前看关于 Postgres 快照隔离机制的文章，找到了这个：PostgreSQL并发控制，讲得非常好，逻辑非常清晰，理论和实际例子相结合。 这篇文章中关于 Visibility Check Rule">
+<meta property="og:locale" content="en_US">
+<meta property="article:published_time" content="2023-12-03T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="Talk">
+<meta name="twitter:card" content="summary_large_image">
+  
+  
+  
+  <title>Talk about Postgres Visibility Check Rules - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Talk about Postgres Visibility Check Rules"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-12-04 00:00" pubdate>
+          December 4, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          2.7k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          23 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Talk about Postgres Visibility Check Rules</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="Background">Background</h2>
+<p>最近在看分布式事务相关的论文，很多论文设计的系统中都实现的是快照隔离这一层次的机制，其中 Epoxy 最为典型，直接把 Postgres 的快照隔离机制在中间层重新实现了一遍。</p>
+<p>之前看关于 Postgres 快照隔离机制的文章，找到了这个：<a target="_blank" rel="noopener" href="https://www.interdb.jp/pg/pgsql05.html">PostgreSQL并发控制</a>，讲得非常好，逻辑非常清晰，理论和实际例子相结合。</p>
+<p>这篇文章中关于 Visibility Check Rules 的部分讲的非常详细，但是没啥规律，可归纳性不强，我时不时就会回来看看这一段，但每次看的时候好像都要从头再重新理解一遍，于是最近我整理了一下这十条规则，力求达到清晰有序。</p>
+<h2 id="Rules">Rules</h2>
+<p>我先把原文中提到的十条规则列出来，方便下文做参考。</p>
+<p>可以把这些规则简单地按照 <code>t_xmin</code> 的状态分为三部分：</p>
+<p>Status of <code>t_xmin</code> is ABORTED:</p>
+<ul>
+<li>Rule 1: <code>If Status (t_xmin) = ABORTED ⇒ Invisible</code></li>
+</ul>
+<p>Status of <code>t_xmin</code> is IN_PROGRESS:</p>
+<ul>
+<li>Rule 2: <code>If Status (t_xmin) = IN_PROGRESS ∧ t_xmin = current_txid ∧ t_xmax = INVAILD ⇒ Visible</code></li>
+<li>Rule 3: <code>If Status (t_xmin) = IN_PROGRESS ∧ t_xmin = current_txid ∧ t_xmax ≠ INVAILD ⇒ Invisible</code></li>
+<li>Rule 4: <code>If Status (t_xmin) = IN_PROGRESS ∧ t_xmin ≠ current_txid ⇒ Invisible</code></li>
+</ul>
+<p>Status of <code>t_xmin</code> is COMMITTED:</p>
+<ul>
+<li>Rule 5: <code>If Status (t_xmin) = COMMITTED ∧ Snapshot (t_xmin) = active ⇒ Invisible</code></li>
+<li>Rule 6: <code>If Status (t_xmin) = COMMITTED ∧ (t_xmax = INVALID ∨ Status (t_xmax) = ABORTED) ⇒ Visible</code></li>
+<li>Rule 7: <code>If Status (t_xmin) = COMMITTED ∧ Status (t_xmax) = IN_PROGRESS ∧ t_xmax = current_txid ⇒ Invisible</code></li>
+<li>Rule 8: <code>If Status (t_xmin) = COMMITTED ∧ Status (t_xmax) = IN_PROGRESS ∧ t_xmax ≠ current_txid ⇒ Visible</code></li>
+<li>Rule 9: <code>If Status (t_xmin) = COMMITTED ∧ Status (t_xmax) = COMMITTED ∧ Snapshot (t_xmax) = active ⇒ Visible</code></li>
+<li>Rule 10: <code>If Status (t_xmin) = COMMITTED ∧ Status (t_xmax) = COMMITTED ∧ Snapshot (t_xmax) ≠ active ⇒ Invisible</code></li>
+</ul>
+<h2 id="整理分析">整理分析</h2>
+<p>其实我们可以分情景来讨论。</p>
+<h3 id="未修改情况下的可见性">未修改情况下的可见性</h3>
+<ul>
+<li><code>pre_txid</code> 指的是上一个修改了该 record 的事务 id。</li>
+<li><code>some_txid</code> 指的是某个事务的 id。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>t_xmin</th>
+<th>t_xmax</th>
+<th>Visibility</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Record 7</td>
+<td>some_txid</td>
+<td>invalid</td>
+<td>invisible</td>
+<td>某个修改过此记录的事务已经中止（ABORTED）</td>
+</tr>
+<tr>
+<td>Record 8</td>
+<td>pre_txid</td>
+<td>invalid</td>
+<td><em><strong>visible</strong></em></td>
+<td>此记录还未被其他事务修改过</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Rule 1 对应 Record 7 的情况。</li>
+<li>Rule 6 对应 Record 8 的情况。</li>
+</ul>
+<h3 id="事务自行修改的可见性">事务自行修改的可见性</h3>
+<ul>
+<li><code>cur_txid</code> 指的是目前正在进行中的事务 id。</li>
+<li><code>pre_txid</code> 指的是上一个修改了该 record 的事务 id。</li>
+<li><code>very_old_txid</code> 可以代表上上个修改了该 record 的事务 id。</li>
+</ul>
+<p>注意，下表中的 Record 都指的是同一条数据，这些数据的元数据不同。</p>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>t_xmin</th>
+<th>t_xmax</th>
+<th>Visibility</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Record 1</td>
+<td>very_old_txid</td>
+<td>pre_txid</td>
+<td>invisible</td>
+<td>非常老的记录，等待被垃圾回收</td>
+</tr>
+<tr>
+<td>Record 2</td>
+<td>pre_txid</td>
+<td>cur_txid</td>
+<td>invisible</td>
+<td>本事务开始之前的记录(t_xmax 已经被修改)</td>
+</tr>
+<tr>
+<td>Record 3</td>
+<td>cur_txid</td>
+<td>cur_txid</td>
+<td>invisible</td>
+<td>本事务第一次修改</td>
+</tr>
+<tr>
+<td>Record 4</td>
+<td>cur_txid</td>
+<td>invalid</td>
+<td><em><strong>visible</strong></em></td>
+<td>本事务第二次修改</td>
+</tr>
+</tbody>
+</table>
+<p>很明显，这种情况下，我们只能看到最新的一条修改记录：</p>
+<ul>
+<li>Rule 10 对应 Record 1 的情况</li>
+<li>Rule 7 对应 Record 2 的情况</li>
+<li>Rule 3 对应 Record 3 的情况</li>
+<li>Rule 2 对应 Record 4 的情况</li>
+</ul>
+<h3 id="并发事务修改的可见性">并发事务修改的可见性</h3>
+<p>这里也要细分两种情况：</p>
+<ul>
+<li>在本事务读某个数据时，对应的并发事务已经修改了该数据但还未提交。</li>
+<li>在本事务读某个数据时，对应的并发事务已经修改了该数据并且已经提交。</li>
+</ul>
+<p>这两种情况在 Record 中的表现形式是一样的，我们的结论是：<strong>无论并发事务是否已经提交，我们都只能看到修改之前的旧数据。</strong></p>
+<ul>
+<li><code>pre_txid</code> 指的是上一个修改了该 record 的事务 id。</li>
+<li><code>concur_txid</code> 指的是并发事务的 id。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>Record</th>
+<th>t_xmin</th>
+<th>t_xmax</th>
+<th>Visibility</th>
+<th>Comment</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Record 5</td>
+<td>pre_txid</td>
+<td>concur_txid</td>
+<td><em><strong>visible</strong></em></td>
+<td>只能看到并发事务修改之前的记录</td>
+</tr>
+<tr>
+<td>Record 6</td>
+<td>concur_txid</td>
+<td>invalid</td>
+<td>invisible</td>
+<td>并发事务做出的修改都应该不可见</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>Rule 8（并发事务还未提交）和 Rule 9（并发事务已经提交）对应 Record 5 的情况。</li>
+<li>Rule 4（并发事务还未提交）和 Rule 5（并发事务已经提交）对应 Record 6 的情况。</li>
+</ul>
+<h2 id="总结">总结</h2>
+<p>从上文可以看出，我们根据情景来归纳整理，比单纯地根据 <code>t_xmin</code> 事务的状态来整理有逻辑得多。</p>
+<p>这里我们也可以根据 <code>t_xmin</code> 的事务状态反过来整理一下：</p>
+<ul>
+<li><code>Status (t_xmin) = ABORTED</code>
+<ul>
+<li>一定不可见
+<ul>
+<li>Rule 1：已经中止的事务写入的记录不可见</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>Status (t_xmin) = IN_PROGRESS</code>
+<ul>
+<li>只有自己更新的，最后一条记录可见
+<ul>
+<li>Rule 10：非常老的记录不可见</li>
+<li>Rule 7：修改前的记录不可见</li>
+<li>Rule 3：不是最新的修改记录不可见</li>
+<li>Rule 2：最新的修改记录可见</li>
+</ul>
+</li>
+<li>如果被还未提交的并发事务修改了，那么
+<ul>
+<li>Rule 8：修改前记录可见</li>
+<li>Rule 4：修改后记录不可见</li>
+</ul>
+</li>
+</ul>
+</li>
+<li><code>Status (t_xmin) = COMMITED</code>
+<ul>
+<li>上轮事务提交的，本轮中未被修改的记录可见
+<ul>
+<li>Rule 6：最新的，未被修改的记录可见</li>
+</ul>
+</li>
+<li>如果被已经提交的并发事务修改了，那么
+<ul>
+<li>Rule 9：修改前的记录可见</li>
+<li>Rule 5：修改后的记录不可见</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Database/" class="category-chain-item">Database</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Talk/" class="print-no-link">#Talk</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Talk about Postgres Visibility Check Rules</div>
+      <div>http://blog.kkkzoz.top/2023/12/04/Talks/talk-about-postgres-visibility-check-rules/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>December 4, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/12/05/Papers/how-to-read-a-paper/" title="Paper Note: How to Read a Paper">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Paper Note: How to Read a Paper</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/30/Papers/Distributed%20Transactions/ad-hoc-transactions-in-web-applications/" title="Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly">
+                        <span class="hidden-mobile">Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

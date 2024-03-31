@@ -1,0 +1,842 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="FAQ What is the difference between receive and deliver?  What does it mean by saying “Zab’s transaction log doubles as the database write-ahead transaction log” in page 3? ZooKeeper uses an in-memory">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Paper Note: Zab: High-performance broadcast for primary-backup systems">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/11/15/Papers/zab/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="FAQ What is the difference between receive and deliver?  What does it mean by saying “Zab’s transaction log doubles as the database write-ahead transaction log” in page 3? ZooKeeper uses an in-memory">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115165229785.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/v2-4a0c818d44d19ab6cd90564a498f00f1_b.jpg">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115212322951.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115212652799.png">
+<meta property="article:published_time" content="2023-11-14T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="PaperNote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115165229785.png">
+  
+  
+  
+  <title>Paper Note: Zab: High-performance broadcast for primary-backup systems - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Paper Note: Zab: High-performance broadcast for primary-backup systems"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-15 00:00" pubdate>
+          November 15, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          5.1k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          43 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Paper Note: Zab: High-performance broadcast for primary-backup systems</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="FAQ">FAQ</h2>
+<p><em>What is the difference between receive and deliver?</em></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115165229785.png" alt="image-20231115165229785"></p>
+<p><em>What does it mean by saying “Zab’s transaction log doubles as the database write-ahead transaction log” in page 3?</em></p>
+<p>ZooKeeper uses an in-memory database and stores transaction logs (Write-ahead log) and periodic snapshots on disk.</p>
+<blockquote>
+<p>Before a transaction is executed and its changes are applied to the in-memory database, it is first logged. This means that if the system crashes before the changes can be applied, the transaction can be replayed from the log to ensure data integrity.</p>
+</blockquote>
+<p>Because of the need of recovering failures in Zab, Zab also need to store transaction logs.</p>
+<p>Because the transaction log is used both for replicating data across the ZooKeeper ensemble (via Zab) and as the write-ahead transaction log, each transaction is written to disk only once. It’s not logged separately for replication and for the purpose of the in-memory database durability. <strong>The same log is used for both, which optimizes disk operations.</strong></p>
+<h2 id="Analyze">Analyze</h2>
+<h3 id="Requirements">Requirements</h3>
+<p>ZooKeeper 对于下层的广播协议做了如下要求：</p>
+<ul>
+<li><em>Reliable delivery</em>
+<ul>
+<li>If a message, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span>, is delivered by one server, then it will be eventually delivered by all correct servers.</li>
+</ul>
+</li>
+<li><em>Total order</em>
+<ul>
+<li>If message <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> is delivered before message <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> by one server, then every server that delivers <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> delivers <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> before <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span>.</li>
+</ul>
+</li>
+<li><em>Causal order</em>
+<ul>
+<li>If message <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> causally precedes message <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span> and <strong>both messages are delivered</strong>, then <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> must be ordered before <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span>.</li>
+</ul>
+</li>
+<li><em>Prefix property</em>
+<ul>
+<li>If <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span> is the last message delivered for a leader <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi></mrow><annotation encoding="application/x-tex">L</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal">L</span></span></span></span>, any message proposed before <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>m</mi></mrow><annotation encoding="application/x-tex">m</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">m</span></span></span></span> by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>L</mi></mrow><annotation encoding="application/x-tex">L</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6833em;"></span><span class="mord mathnormal">L</span></span></span></span> must also be delivered.</li>
+</ul>
+</li>
+</ul>
+<p>With these three guarantees we can maintain correct replicas of the ZooKeeper database:</p>
+<ul>
+<li>The reliability and total order guarantees <strong>ensure that all of the replicas have a consistent state</strong>;
+<ul>
+<li>Replicate State Machine 的思想，初始状态一致，操作一致，那么最后的状态肯定也是一致的。</li>
+</ul>
+</li>
+<li>The causal order ensures that the replicas have state correct from the perspective of the application using Zab;
+<ul>
+<li>Total order 只能保证所有副本的状态是一致的，由于不一定包含 causal order，<strong>对于上层应用来说</strong>，消息的递送可能是“乱序”的，即最基本的因果关系都没有遵循。</li>
+</ul>
+</li>
+<li>The leader proposes updates to the database based on requests received.</li>
+</ul>
+<p>It is important to observe that there are two types of causal relationships taken into account by Zab:</p>
+<ul>
+<li>If two messages, <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span>, are sent by the same server and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> is proposed before <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span>, we say that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi></mrow><annotation encoding="application/x-tex">a</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">a</span></span></span></span> causally precedes <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>b</mi></mrow><annotation encoding="application/x-tex">b</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6944em;"></span><span class="mord mathnormal">b</span></span></span></span>;
+<ul>
+<li>同一个进程内部的 “Happened Before” 关系。</li>
+</ul>
+</li>
+<li>Zab assumes a single leader server at a time that can commit proposals. If a leader changes, <strong>any previously proposed messages causally precede messages proposed by the new leader</strong>.
+<ul>
+<li>如果 Leader 发生改变，前任 Leader 可能还有刚接受但未 broadcast 的事件，如果该进程之后重新获得 Leadership，这样的事件不应该被提交。</li>
+</ul>
+</li>
+</ul>
+<p>We do not assume synchronized clocks, but we do assume that servers perceive time pass at approximately the same rate. (We use timeouts to detect failures.)</p>
+<h2 id="Protocol">Protocol</h2>
+<p>Zab’s protocol consists of two modes: recovery and broadcast.</p>
+<h3 id="Broadcast">Broadcast</h3>
+<p>广播的过程整体比较像 2PC, 但是由于没有 abort 这个选项，所以 Zab 可以在收到大多数节点的 ack 后就进行提交，而不需要等待所有节点进行响应。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/v2-4a0c818d44d19ab6cd90564a498f00f1_b.jpg" alt="img"></p>
+<p>消息广播的具体细节：</p>
+<ul>
+<li>Leader 服务器接收到请求后在进行广播事务 Proposal 之前会为这个事务分配一个 ZXID，再进行广播。</li>
+<li>Leader 服务器会为每个 Follower 服务器都各自分配一个单独的队列，然后将需要广播的事务 Proposal 依次放入这些队列中去，并根据 FIFO 策略进行消息的发送。
+<ul>
+<li>其实就是一个 TCP 会话。</li>
+</ul>
+</li>
+<li>每个 Follower 服务器在接收到后都会将其以事务日志的形式写入到本地磁盘中，并且在成功写入后返回 Leader 服务器一个 ACK 响应。</li>
+<li>当有超过半数的服务器 ACK 响应后，Leader 就会广播一个 Commit 消息给所有的 Follower 服务器，Follower 接收到后就完成对事务的提交操作。</li>
+</ul>
+<h3 id="Recovery">Recovery</h3>
+<p>To enable such a protocol to work despite failures of the leader there are two specific guarantees we need to make: we must never forget delivered messages and we need to let go of messages that are skipped.</p>
+<p><strong>A message that gets delivered on one machine must be delivered on all even if that machine fails.</strong></p>
+<p>This situation can easily occur if the leader commits a message and then fails before the COMMIT reaches any other server.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115212322951.png" alt="image-20231115212322951"></p>
+<blockquote>
+<p>Because the leader committed the message, a client could have seen the result of the transaction in the message, so the transaction must be delivered to all other servers eventually so that the client sees a consistent view of the service.</p>
+</blockquote>
+<p><strong>A skipped message must remain skipped.</strong></p>
+<p>This situation can easily occur if a proposal gets generated by a leader and the leader fails before anyone else sees the proposal.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231115212652799.png" alt="image-20231115212652799"></p>
+<p>针对以上两个条件，Zab 在选 Leader 时只需要选出拥有最大 ZXID 的进程就行：</p>
+<blockquote>
+<p>If the leader election protocol guarantees that the new leader has the highest proposal number in a quorum of servers, a newly elected leader will also have all committed messages.</p>
+<p>Before proposing any new messages a newly elected leader first makes sure that all messages that are in its transaction log have been proposed to and committed by a quorum of followers.</p>
+</blockquote>
+<p>奔溃恢复模式下 Leader 选举的过程细节如下：</p>
+<ul>
+<li>检测节点处于 LOOKING 阶段，开发选举 Leader</li>
+<li>发起投票时有两种情况：</li>
+<li>在服务启动的初始阶段，每个服务器都会投票给自己以（myid，zxid）的信息形式发送，那初始阶段没有 zxid 值，就会发送（myid，0）</li>
+<li>在服务器运行期间，每个服务器上的 zxid 都有值，且 zxid 都不相同，所以就正常发送（myid，zxid）</li>
+<li>各节点收到信息后将收到的（myid，zxid）和自己的比较，比较的过程前面已经说过，这里不再赘述</li>
+<li>然后判断是否有半数的机器投票选出 Leader，如果否，在进入新一轮投票，直到选出</li>
+<li>选出 Leader 后，其他节点就变成 Follower 角色，并向 Leader 发送自己服务器的最大 zxid ，Leader 服务器收到后会和自己本地的提议缓存队列进行比较，使用对应的策略进行同步。</li>
+<li>当同步完成，集群就可以正常的处理请求了，就进入消息广播模式了。</li>
+</ul>
+<h4 id="Examples">Examples</h4>
+<p>假设一开始 x 为 30，客户端发送请求：x+1</p>
+<p>有几种情况：</p>
+<ol>
+<li>Leader 自己确认了这个（31），而 follower 都没有收到 commit（30），leader 重启后两者不一致</li>
+<li>Leader 自己确认了这个（31），而 follower 都没有收到 commit（30），重新选举后会如何</li>
+<li>Leader 自己确认了这个（31），而部分 follower 没有（30），但部分收到了，重新选举后会如何</li>
+</ol>
+<p>在上述情况中，读请求可能拿到不一样的数据，但由于写操作被限制了所以他能保证最终一致性。</p>
+<p>我们把 Leader 的工作编号一下：</p>
+<ol>
+<li>发送 x=31 给所有 follower。</li>
+<li>确认大多数 follower 已经复制了这个操作。</li>
+<li>向所有 follower 发送 commit。</li>
+</ol>
+<p>这个过程的唯一变数其实出在第二步，所有的 Leader 启动时会加载本地日志，对他来说历史操作只有两种情况:</p>
+<ul>
+<li>已提交
+<ul>
+<li>对于已提交的操作自然是无需理会。</li>
+</ul>
+</li>
+<li>未提交
+<ul>
+<li>对于未提交的操作 Leader 会重新确认一下是不是大多数 follower 都复制好了。</li>
+</ul>
+</li>
+</ul>
+<p>所以现在我们来看看，如果 Leader 重启了（或者是新当选了），他会回放本地未提交的日志（比如上述的30+1，只要有节点收到了该操作，zxid 更大的会当选）：</p>
+<ul>
+<li>如果发现此操作是已经被大多数 follower 复制了：他会把 commit 结果直接发给大家。</li>
+<li>如果发现此操作还没被大多数 follower 复制：他会先广播到大多数都复制了再 commit。</li>
+</ul>
+<p>可以总结一下：</p>
+<ul>
+<li>如果 Leader 广播了一个操作并且成功被任意 Follower 收到，那么这个操作一定会被提交。
+<ul>
+<li>被大多数 Follower 收到，直接 commit。</li>
+<li>没有被大多数 Follower 收到，但新的 Leader 一定会有这条记录，所以会先广播再 commit。</li>
+</ul>
+</li>
+<li>如果 Leader 只是收到了一个操作，还未来得及广播，就挂掉了，无论是否重连，这个操作都会被忽略。</li>
+</ul>
+<h2 id="References">References</h2>
+<ul>
+<li><a target="_blank" rel="noopener" href="http://diyhpl.us/~bryan/papers2/distributed/distributed-systems/zab.totally-ordered-broadcast-protocol.2008.pdf">zab.totally-ordered-broadcast-protocol.2008.pdf</a></li>
+<li><a target="_blank" rel="noopener" href="https://zhuanlan.zhihu.com/p/267291281">zookeeper 核心之 ZAB 协议就这么简单！</a></li>
+</ul>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Distributed/" class="category-chain-item">Distributed</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/PaperNote/" class="print-no-link">#PaperNote</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Paper Note: Zab: High-performance broadcast for primary-backup systems</div>
+      <div>http://blog.kkkzoz.top/2023/11/15/Papers/zab/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 15, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/22/Papers/Distributed%20Transactions/epoxy/" title="Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/13/Books/Design%20Data-Intensive%20Applications/chapter-9-consistency-and-consensus/" title="DDIA: Chapter 9 Consistency and Consensus">
+                        <span class="hidden-mobile">DDIA: Chapter 9 Consistency and Consensus</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,1118 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="写这篇文章的原因是之前在测试 6.824 Lab2B 时总是会出现几个错误，去提了 issue 后也没有得到令人信服的结果，自己有一点头绪但是没验证，这事就这么放着了。 然后最近有个同样做 6.824 的同学给我发了邮件，说他也遇到了同样的问题，重新分析了一下后，本来想简单回复一下的，结果回复的内容越写越多，就干脆直接整理为一篇文章，供大家参考。 异常情况 我之前在对 Lab2B 进行测试时，总是">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Research: 6.824 Lab2B 中异常情况的分析">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/11/08/Talks/6.824-lab2b-research/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="写这篇文章的原因是之前在测试 6.824 Lab2B 时总是会出现几个错误，去提了 issue 后也没有得到令人信服的结果，自己有一点头绪但是没验证，这事就这么放着了。 然后最近有个同样做 6.824 的同学给我发了邮件，说他也遇到了同样的问题，重新分析了一下后，本来想简单回复一下的，结果回复的内容越写越多，就干脆直接整理为一篇文章，供大家参考。 异常情况 我之前在对 Lab2B 进行测试时，总是">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108132222640.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108132352257.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108125355851.png">
+<meta property="article:published_time" content="2023-11-07T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-14T03:04:15.337Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="6.824">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108132222640.png">
+  
+  
+  
+  <title>Research: 6.824 Lab2B 中异常情况的分析 - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Research: 6.824 Lab2B 中异常情况的分析"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-08 00:00" pubdate>
+          November 8, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          7.4k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          62 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Research: 6.824 Lab2B 中异常情况的分析</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>写这篇文章的原因是之前在测试 6.824 Lab2B 时总是会出现几个错误，去提了 <a target="_blank" rel="noopener" href="https://github.com/OneSizeFitsQuorum/MIT6.824-2021/issues/35">issue</a> 后也没有得到令人信服的结果，自己有一点头绪但是没验证，这事就这么放着了。</p>
+<p>然后最近有个同样做 6.824 的同学给我发了邮件，说他也遇到了同样的问题，重新分析了一下后，本来想简单回复一下的，结果回复的内容越写越多，就干脆直接整理为一篇文章，供大家参考。</p>
+<h2 id="异常情况">异常情况</h2>
+<p>我之前在对 Lab2B 进行测试时，总是有几个简单的测试点过不了，仿佛代码即使正确，也总是可能出错。我经过分析后发现，都遵循以下这种错误模式：</p>
+<ol>
+<li>Leader 接收了来自上层的请求，还未提交该日志或者只有他提交了日志（该日志已经被 major 收到）时，就因为收到了其他 peer 的 RequestVote RPC 重新变回了 Follower。</li>
+<li>重新选举后再次成为 Leader 后，由于旧任期的 Log 不能被新任期的 Leader 提交，所以之前的日志无法提交。</li>
+<li>没有新的请求进来，导致该日志一致无法提交，然后 2 秒后超时，测试无法通过。</li>
+<li>错误提示都是 <code>one(xxx) failed to reach agreement</code>。</li>
+</ol>
+<h3 id="为什么会出现">为什么会出现</h3>
+<p>在 Lab2B 最开始的几个测试中，测试的编写者为了简化测试，测试代码中提交 command 的操作均为 <code>cfg.one(cmd, servers, false)</code>，这个函数的第三个参数名为 <code>retry</code>，控制的是对于一个请求，是否需要在超时后重新提交。</p>
+<p>这里 <code>retry</code> 被设置为了 false，也就是说整个执行过程中只会调用 <code>rf.Start()</code> 一次，如果遇见了上文说的异常情况，就会被卡住，最后出现超时报错的情况。</p>
+<p>也就是说，<strong>所谓的异常情况就是恰好遇见了一个 timing 加上 Lab2B 前面的几个测试有“缺陷”造成的</strong>。</p>
+<h3 id="no-op-机制">no-op 机制</h3>
+<p>Raft 协议中本身是没有这个问题的，在<a target="_blank" rel="noopener" href="https://pdos.csail.mit.edu/6.824/papers/raft-extended.pdf">论文</a>第 13 页中说明了一个节点在当选 Leader 后会发送一个 no-op 的日志，这样新 Leader 就能把 no-op 以及它之前未提交的日志一起提交，就不会卡住了。</p>
+<p>而且就如同我在 issue 里面说的，那些 <code>cfg.one()</code> 中 <code>retry=false</code> 的测试才可能出现这样的问题，原因在 <code>cfg.one()</code> 的注释中也说明了:</p>
+<blockquote>
+<p>if retry==false, calls Start() only once, in order to simplify the early Lab 2B tests.</p>
+</blockquote>
+<p>那么它是怎么简化那些测试的呢，其实是假想了最简单的情况（即不考虑 no-op 机制的情况）：通过比较 <code>cfg.one()</code> 返回的 index 和理想中的 index 做判断，如果两者相等，那么测试就能通过。</p>
+<p>比如我提交了三次 command，那么这三次的 command 对应的 log index 就应该是 1，2，3，三次 <code>cfg.one()</code> 返回的 index 也应该是 1，2，3。实现了 no-op 机制的话，三次 <code>cfg.one()</code> 返回的可能是 1，3，4（index 为 2 的日志是 no-op）。</p>
+<p>所以添加了 no-op 机制的话，会导致 log index 不可控地发生变化，进而导致测试失败。</p>
+<p>这个问题好像无解了，难道真的是测试的编写人员没有考虑到这种 corner case 吗？</p>
+<h2 id="理论分析">理论分析</h2>
+<p>我们可以考虑一下什么情况下会出现我之前描述的那种异常情况呢？</p>
+<p>一个必要条件是出现 Leader 换届。</p>
+<p>那什么情况下会发生 Leader 换届呢？</p>
+<p>只有当某个节点发生 election timeout 之后才会出现。</p>
+<p>这里我们可以考虑分布式系统中的 NPC 问题：</p>
+<ul>
+<li>Network Delay</li>
+<li>Process Pause</li>
+<li>Clock Drift</li>
+</ul>
+<p>由于 Raft 没有对各个服务器之间的时钟有着同步的限制，并且 golang 底层测量时间都用的是单调时钟，正常情况下（特别是在能稳定复现的情况下）Clock Drift 的问题不用考虑。</p>
+<h3 id="Network-Delay">Network Delay</h3>
+<p>测试中都模拟的是 Network Delay 的情况，比如：</p>
+<ul>
+<li>消息会丢失</li>
+<li>消息会延迟到达</li>
+</ul>
+<p>消息会丢失/消息会延迟到达意味着网络是不可靠的，这种情况下可能会发生 Leader 换届，也就有可能发生那种异常情况。</p>
+<p>但是在我提到的那三个测试中（<code>TestBasicAgree2B</code>,<code>TestFollowerFailure2B</code>,<code>TestLeaderFailure2B</code>），网络都是可靠的，因为这些测试的环境配置都是 <code>cfg := make_config(t, servers, false, false)</code>，其中的 <code>unreliable</code> 被设置成了 <code>false</code>。</p>
+<p>我们可以查看一下网络环境的源代码：</p>
+<figure class="highlight golang"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><code class="hljs golang"><span class="hljs-comment">// func (rn *Network) processReq(req reqMsg)</span><br><span class="hljs-keyword">if</span> reliable == <span class="hljs-literal">false</span> &#123;<br>   <span class="hljs-comment">// short delay</span><br>   ms := (rand.Int() % <span class="hljs-number">27</span>)<br>   time.Sleep(time.Duration(ms) * time.Millisecond)<br>  &#125;<br><br><span class="hljs-keyword">if</span> reliable == <span class="hljs-literal">false</span> &amp;&amp; (rand.Int()%<span class="hljs-number">1000</span>) &lt; <span class="hljs-number">100</span> &#123;<br>   <span class="hljs-comment">// drop the request, return as if timeout</span><br>   req.replyCh &lt;- replyMsg&#123;<span class="hljs-literal">false</span>, <span class="hljs-literal">nil</span>&#125;<br>   <span class="hljs-keyword">return</span><br>  &#125;<br></code></pre></td></tr></table></figure>
+<p>这段代码说明，只要网络被配置为了 <code>reliable</code> ，就不会出现消息丢失或者消息延迟到达的情况，说明实验模拟的网络环境是一个理想环境，节点不会因为网络环境而出现 election timeout。</p>
+<p><strong>所以问题不出在 Network Delay 上。</strong></p>
+<h3 id="Process-Pause">Process Pause</h3>
+<p>问题有可能是出在了 Process Pause 上，可能有几种原因：</p>
+<ul>
+<li>GC （垃圾回收）</li>
+<li>负载过重导致线程调度时某些线程迟迟得不到运行（我猜想的，到底会不会出现这种情况没有考证过）</li>
+</ul>
+<p>两种情况都可能会导致异常情况的发生，我们可以假设下面的这个情景：</p>
+<p>一个 Leader 进程由于 GC 被暂停了 1s（负载过重同理），期间无法发送 <code>heartbeat</code>，而 Follower 的进程正常运行，导致在 election timeout 这段时间中没有收到来自 Leader 的 AppendEntries RPC，所以发起新一轮选举，Term 改变，异常情况随之发生。</p>
+<h2 id="实验模拟">实验模拟</h2>
+<p>进行完了理论分析，我们可以动手进行实验来验证一下。</p>
+<p>根据我们在上文中提到的假设：负载过重导致超时，我们可以从负载和超时两方面进行验证：</p>
+<ul>
+<li>如果负载增加的情况，异常情况增多</li>
+<li>或者 election timeout 设置的越短，异常情况越多，</li>
+<li>把 <code>cfg.one()</code> 中的 <code>retry</code> 参数设置为 true，理论上异常情况应该不会发生。</li>
+</ul>
+<p>我们就可以认为该假设是成立的。</p>
+<h3 id="负载增加">负载增加</h3>
+<p>设置六次实验，每次实验跑 Lab2B 中的 <code>TestRPCBytes2B</code> 10000 次：</p>
+<ul>
+<li>并发数为 200</li>
+<li>并发数为 150</li>
+<li>并发数为 100</li>
+<li>并发数为 50</li>
+<li>并发数为 32</li>
+<li>并发数为 16</li>
+</ul>
+<p><strong>并发数为 200</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 200 -n 10000 -o pause_test_200 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>590</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>17.76</mn><mo>±</mo><mn>7.28</mn></mrow><annotation encoding="application/x-tex">17.76 \pm 7.28</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">17.76</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">7.28</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 150</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 150 -n 10000 -o pause_test_150 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>68</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8.24</mn><mo>±</mo><mn>1.76</mn></mrow><annotation encoding="application/x-tex">8.24 \pm 1.76</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8.24</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.76</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 125</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 125 -n 10000 -o pause_test_125 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>32</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>6.61</mn><mo>±</mo><mn>1.16</mn></mrow><annotation encoding="application/x-tex">6.61 \pm 1.16</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">6.61</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.16</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 100</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 100 -n 10000 -o pause_test_100 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<p><strong>执行情况</strong></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>9</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>5.21</mn><mo>±</mo><mn>1.00</mn></mrow><annotation encoding="application/x-tex">5.21 \pm 1.00</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">5.21</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.00</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 75</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 75 -n 10000 -o pause_test_75 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>2</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3.95</mn><mo>±</mo><mn>0.84</mn></mrow><annotation encoding="application/x-tex">3.95 \pm 0.84</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">3.95</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.84</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 50</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 50 -n 10000 -o pause_test_50 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>1</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>2.78</mn><mo>±</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">2.78 \pm 0.59</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">2.78</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.59</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p><strong>并发数为 25</strong></p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 25 -n 10000 -o pause_test_25 TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>2</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.42</mn><mo>±</mo><mn>0.59</mn></mrow><annotation encoding="application/x-tex">1.42 \pm 0.59</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">1.42</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">0.59</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<h4 id="Summary">Summary</h4>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108132222640.png" alt="image-20231108132222640"></p>
+<p>把数据统计为图表后可以看到，负载越高出现异常情况的概率就越大。</p>
+<h3 id="改变-Timeout">改变 Timeout</h3>
+<p>这里统一选取并发数为 150 的情况作为基准。</p>
+<p>Election Timeout:   <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>200</mn><mo>∼</mo><mn>300</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">200 \sim 300ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">200</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">300</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>172</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8.04</mn><mo>±</mo><mn>1.47</mn></mrow><annotation encoding="application/x-tex">8.04 \pm 1.47</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8.04</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.47</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout:   <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>300</mn><mo>∼</mo><mn>400</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">300 \sim 400ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">300</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">400</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>68</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8.24</mn><mo>±</mo><mn>1.76</mn></mrow><annotation encoding="application/x-tex">8.24 \pm 1.76</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8.24</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.76</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>400</mn><mo>∼</mo><mn>500</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">400 \sim 500ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">400</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">500</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>16</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>10.31</mn><mo>±</mo><mn>2.73</mn></mrow><annotation encoding="application/x-tex">10.31 \pm 2.73</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">10.31</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2.73</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>500</mn><mo>∼</mo><mn>600</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">500 \sim 600ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">500</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">600</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>16</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7.92</mn><mo>±</mo><mn>1.46</mn></mrow><annotation encoding="application/x-tex">7.92 \pm 1.46</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">7.92</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.46</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>600</mn><mo>∼</mo><mn>700</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">600 \sim 700ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">600</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">700</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>14</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>7.87</mn><mo>±</mo><mn>1.40</mn></mrow><annotation encoding="application/x-tex">7.87 \pm 1.40</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">7.87</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1.40</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>700</mn><mo>∼</mo><mn>800</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">700 \sim 800ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">700</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">800</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>12</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8.14</mn><mo>±</mo><mn>2.40</mn></mrow><annotation encoding="application/x-tex">8.14 \pm 2.40</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8.14</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2.40</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<p>Election Timeout: <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>800</mn><mo>∼</mo><mn>900</mn><mi>m</mi><mi>s</mi></mrow><annotation encoding="application/x-tex">800 \sim 900ms</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">800</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">∼</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">900</span><span class="mord mathnormal">m</span><span class="mord mathnormal">s</span></span></span></span></p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>9</td>
+<td>10000</td>
+<td><span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>8.01</mn><mo>±</mo><mn>2.09</mn></mrow><annotation encoding="application/x-tex">8.01 \pm 2.09</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.7278em;vertical-align:-0.0833em;"></span><span class="mord">8.01</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">±</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">2.09</span></span></span></span></td>
+</tr>
+</tbody>
+</table>
+<h5 id="Summary-2">Summary</h5>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108132352257.png" alt="image-20231108132352257"></p>
+<p>把数据统计为图表后可以看到，election timeout 设置的越长，出现异常情况的概率就越低。</p>
+<h3 id="更改参数">更改参数</h3>
+<p>将 <code>TestRPCBytes2B</code> 中的 <code>cfg.one()</code> 参数改为 true，重新跑一次下面的命令：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs bash">dstest -p 150 -n 10000 -o pause_test_150_retry TestRPCBytes2B<br></code></pre></td></tr></table></figure>
+<p>得到的结果是：</p>
+<table>
+<thead>
+<tr>
+<th>Test</th>
+<th>Failed</th>
+<th>Total</th>
+<th>Time</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>TestRPCBytes2B</td>
+<td>2</td>
+<td>10000</td>
+<td>8.38 +/- 1.73</td>
+</tr>
+</tbody>
+</table>
+<p>其中的两次失败都是因为重试次数超过 2 次导致 RPC Byte 数量过大。</p>
+<h2 id="实际分析">实际分析</h2>
+<p>我选取了实验模拟中的一次记录，分析了它的日志和 <code>trace</code> 文件</p>
+<h3 id="日志分析">日志分析</h3>
+<p>如果假设成立，那么我们在日志中应该观察到 Leader 并没有按照固定的 <code>HeartbeatInterval</code> 发送心跳检测。</p>
+<p>以下是日志截取：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><code class="hljs bash">...<br>0103294 TIMR S1 Leader, checking heartbeats <span class="hljs-keyword">in</span> T1<br>...<br>0107883 TIMR S1 Leader, checking heartbeats <span class="hljs-keyword">in</span> T1<br>...<br>0112964 TIMR S1 Leader, checking heartbeats <span class="hljs-keyword">in</span> T1<br>...<br>0129159 TIMR S1 Leader, checking heartbeats <span class="hljs-keyword">in</span> T1<br>...<br>0132759 CLNT S1 accepted Client<span class="hljs-string">&#x27;s request Lqog</span><br><span class="hljs-string">0132783 TIMR S1 Leader, checking heartbeats in T1</span><br><span class="hljs-string">0132783 LOG1 S1 -&gt; S0 Sending (with heartbeat) in T1 &#123;T:1 preLogIdx:9 preLogT:1 len:1 lCommit:9&#125;</span><br><span class="hljs-string">0132784 LOG1 S1 -&gt; S2 Sending (with heartbeat) in T1 &#123;T:1 preLogIdx:9 preLogT:1 len:1 lCommit:9&#125;</span><br><span class="hljs-string">0199527 LEAD S2 timeout, starts a new election for T2</span><br><span class="hljs-string">0199569 LEAD S0 timeout, starts a new election for T2</span><br><span class="hljs-string">0199707 TIMR S1 Leader, checking heartbeats in T1</span><br><span class="hljs-string">0199709 LOG1 S1 -&gt; S0 Sending (with heartbeat) in T1 &#123;T:1 preLogIdx:9 preLogT:1 len:1 lCommit:9&#125;</span><br><span class="hljs-string">0199710 LOG1 S1 -&gt; S2 Sending (with heartbeat) in T1 &#123;T:1 preLogIdx:9 preLogT:1 len:1 lCommit:9&#125;</span><br><span class="hljs-string">0199713 VOTE S1 stepping down from leader in T2</span><br><span class="hljs-string">0199714 VOTE S1 votes for S2 in T2</span><br><span class="hljs-string">0199714 PERS S1 persisting state in T2: &#123;T:2 VF:2 LogLength:11&#125;, rf.getFirstLogIndex:0</span><br><span class="hljs-string">0212364 VOTE S2 received vote from S1 (for T2) in T2</span><br><span class="hljs-string">0212366 LEAD S2 achieved Majority for T2 (2), converting to leader</span><br><span class="hljs-string">0212368 LEAD S2 heartbeat reset triggered manually</span><br><span class="hljs-string">...</span><br><span class="hljs-string">// repeat pattern</span><br><span class="hljs-string">0212369 TIMR S2 Leader, checking heartbeats in T2</span><br><span class="hljs-string">0212370 LOG1 S2 -&gt; S0 Sending heartbeat in T2 &#123;T:2 preLogIdx:10 preLogT:1 len:0 lCommit:9&#125;</span><br><span class="hljs-string">0212371 LOG1 S2 -&gt; S1 Sending heartbeat in T2 &#123;T:2 preLogIdx:10 preLogT:1 len:0 lCommit:9&#125;</span><br><span class="hljs-string">...</span><br></code></pre></td></tr></table></figure>
+<p>分析一下这段日志：</p>
+<ul>
+<li>一开始 S1 确实在按照 50ms 的间隔发送心跳检测:
+<ul>
+<li><code>0103294 TIMR S1 Leader, checking heartbeats in T1</code></li>
+<li><code>0107883 TIMR S1 Leader, checking heartbeats in T1</code></li>
+<li><code>0112964 TIMR S1 Leader, checking heartbeats in T1</code></li>
+</ul>
+</li>
+<li>S1 收到了来自上层的请求：
+<ul>
+<li><code>0132759 CLNT S1 accepted Client's request Lqog</code></li>
+</ul>
+</li>
+<li>时隔 <strong>670ms</strong>，S1 才发送了下一轮的心跳检测:
+<ul>
+<li><code>0132783 TIMR S1 Leader, checking heartbeats in T1</code></li>
+<li><code>0199707 TIMR S1 Leader, checking heartbeats in T1</code></li>
+</ul>
+</li>
+<li>在这 670ms 中，S0 和 S2 由于没有收到来自于 Leader S1 的心跳检测超时了并开始了下一轮选举：
+<ul>
+<li><code>0199527 LEAD S2 timeout, starts a new election for T2</code></li>
+<li><code>0199569 LEAD S0 timeout, starts a new election for T2</code></li>
+</ul>
+</li>
+<li>S2 被选举为新的 Leader，开始发送心跳检测</li>
+<li>由于旧任期的 Log 不能被新任期的 Leader 提交，所以 <code>Lqog</code> 无法被提交，卡住了</li>
+</ul>
+<p>时隔 670ms 后 S1 才发送了下一轮的心跳检测，可以推断这段时间内发生了 GC 或者在 670ms 内这个进程都未得到调度并执行，符合我们的推断。</p>
+<p>但到底是什么原因呢？</p>
+<p>我们可以记录并查看 trace 文件来寻找：</p>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go"><span class="hljs-comment">// func TestRPCBytes2B(t *testing.T)</span><br>traceName := <span class="hljs-string">&quot;trace-&quot;</span> + randstring(<span class="hljs-number">5</span>)<br>traceFile, _ := os.Create(traceName)<br><span class="hljs-keyword">defer</span> traceFile.Close()<br>t.Logf(<span class="hljs-string">&quot;trace file: %s&quot;</span>, traceName)<br>trace.Start(traceFile)<br><span class="hljs-keyword">defer</span> trace.Stop()<br><br><span class="hljs-comment">// using go tool</span><br><span class="hljs-keyword">go</span> tool trace trace-xxx<br></code></pre></td></tr></table></figure>
+<h3 id="Trace-文件分析">Trace 文件分析</h3>
+<p>打开上述日志对应的 trace 文件后，我们可以查看所有 goroutine 的执行情况和垃圾回收的情况。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231108125355851.png" alt="image-20231108125355851"></p>
+<p>查看之后可以发现，确实是发生了长达 620ms 的垃圾回收！</p>
+<p>在 <em>stop-the-wold(STW)</em> 期间，所有的线程都会被暂停执行，等待垃圾回收完成。</p>
+<blockquote>
+<p>为什么会有长达 620ms 的垃圾回收呢？</p>
+<p>个人推测与 CPU 负载过高有关。</p>
+</blockquote>
+<h2 id="结论">结论</h2>
+<p>异常情况是由 GC 引起的，GC 导致 Leader 不能以正常频率发送心跳检测，导致 Follower 重新开始选举。</p>
+<p>测试的编写人员假设了网络环境是理想的，却猜不到有同学在本地跑的时候负载过大发生长时间GC而导致测试失败的情况。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/6-824/" class="category-chain-item">6.824</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/6-824/" class="print-no-link">#6.824</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Research: 6.824 Lab2B 中异常情况的分析</div>
+      <div>http://blog.kkkzoz.top/2023/11/08/Talks/6.824-lab2b-research/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 8, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/12/Papers/cap-twelve-years-later/" title="Paper Note: CAP Twelve Years Later: How the &#34;Rules&#34; have Changed">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Paper Note: CAP Twelve Years Later: How the &#34;Rules&#34; have Changed</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/07/Talks/talk-about-consistency-and-consensus/" title="Talk about Consistency and Consensus">
+                        <span class="hidden-mobile">Talk about Consistency and Consensus</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

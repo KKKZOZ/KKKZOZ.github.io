@@ -1,0 +1,946 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="A transaction is a way for an application to group several reads and writes together into a logical unit. Transactions are not a law of nature; they were created with a purpose, namely to simplify the">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA: Chapter 7 Transactions">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/10/29/Books/Design%20Data-Intensive%20Applications/chapter-7-transactions/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="A transaction is a way for an application to group several reads and writes together into a logical unit. Transactions are not a law of nature; they were created with a purpose, namely to simplify the">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027210404555.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027210613103.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027211047138.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027211726343.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027212233622.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027212947963.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231029163540054.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231029164043852.png">
+<meta property="article:published_time" content="2023-10-28T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="BookNote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027210404555.png">
+  
+  
+  
+  <title>DDIA: Chapter 7 Transactions - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA: Chapter 7 Transactions"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-10-29 00:00" pubdate>
+          October 29, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          20k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          166 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA: Chapter 7 Transactions</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <p>A transaction is a way for an application to group several reads and writes together into a logical unit.</p>
+<p>Transactions are not a law of nature; they were created with a purpose, namely to <em>simplify the programming model</em> for applications accessing a database.</p>
+<blockquote>
+<p>相当于数据库提供了一层重要的抽象，在编写应用程序时不用再去考虑那些能被事务处理的错误与问题了。</p>
+</blockquote>
+<h2 id="The-Meaning-of-ACID">The Meaning of ACID</h2>
+<p>The safety guarantees provided by transactions are often described by the well known acronym ACID, which stands for <em>Atomicity</em>, <em>Consistency</em>, <em>Isolation</em>, and <em>Durability</em>.</p>
+<blockquote>
+<p>However, in practice, one database’s implementation of ACID does not equal another’s implementation. The high-level idea is sound, but the devil is in the details. ACID has unfortunately become mostly a marketing term.</p>
+</blockquote>
+<blockquote>
+<p>Systems that do not meet the ACID criteria are sometimes called BASE, which stands for <em>Basically Available</em>, <em>Soft state</em>, and <em>Eventual consistency</em>. This is even more vague than the definition of ACID. It seems that the only sensible definition of BASE is “not ACID”; i.e., it can mean almost anything you want.)</p>
+</blockquote>
+<h3 id="Atomicity">Atomicity</h3>
+<blockquote>
+<p>“All or nothing”</p>
+</blockquote>
+<p>If the writes are grouped together into an atomic transaction, and the transaction cannot be completed (<em>committed</em>) due to a fault, then the transaction is <em>aborted</em> and the database must discard or undo any writes it has made so far in that transaction.</p>
+<p>Atomicity simplifies this problem: if a transaction was aborted, the application can be sure that it didn’t change anything, so it can safely be retried.</p>
+<p><strong>The ability to abort a transaction on error and have all writes from that transaction discarded is the defining feature of ACID atomicity.</strong></p>
+<h3 id="Consistency">Consistency</h3>
+<blockquote>
+<p>“It looks correct to me”</p>
+</blockquote>
+<p>The word <em>consistency</em> is terribly overloaded:</p>
+<ul>
+<li>Discussed <em>replica consistency</em> and the issue of <em>eventual consistency</em> that arises in asynchronously replicated systems.</li>
+<li><em>Consistent hashing</em> is an approach to partitioning that some systems use for rebalancing.</li>
+<li>In the CAP theorem, the word <em>consistency</em> is used to mean <em>linearizability</em>.</li>
+<li>In the context of ACID, <em>consistency</em> refers to an application-specific notion of the database being in a “good state.”</li>
+</ul>
+<p>The idea of ACID consistency is that you have certain statements about your data (invariants) that must always be true.</p>
+<p>For example, in an accounting system, credits and debits across all accounts must always be balanced.</p>
+<p>This idea of consistency depends on the application’s <strong>notion of invariants</strong>, and <strong>it’s the application’s responsibility to define its transactions correctly so that they preserve consistency</strong>.</p>
+<p><strong>Atomicity, isolation, and durability are properties of the database, whereas consistency (in the ACID sense) is a property of the application.</strong></p>
+<p>The application may rely on the database’s atomicity and isolation properties in order to achieve consistency, but it’s not up to the database alone. Thus, the letter C doesn’t really belong in ACID.</p>
+<h3 id="Isolation">Isolation</h3>
+<blockquote>
+<p>“As if alone”</p>
+</blockquote>
+<p><em>Isolation</em> in the sense of ACID means that concurrently executing transactions are isolated from each other: they cannot step on each other’s toes. The classic database textbooks formalize isolation as <em>serializability</em>, which means that each transaction can pretend that it is the only transaction running on the entire database.</p>
+<p>The database ensures that when the transactions have committed, the result is the same as if they had run <em>serially</em> (one after another), even though in reality they may have run concurrently.</p>
+<h3 id="Durability">Durability</h3>
+<blockquote>
+<p>“Survive failures”</p>
+</blockquote>
+<p><em>Durability</em> is the promise that once a transaction has committed successfully, any data it has written will not be forgotten, even if there is a hardware fault or the database crashes.</p>
+<h2 id="Single-Object-and-Multi-Object-Operations">Single-Object and Multi-Object Operations</h2>
+<p>In ACID, atomicity and isolation describe what the database should do if a client makes several writes within the same transaction:</p>
+<ul>
+<li><em>Atomicity</em>
+<ul>
+<li>If an error occurs halfway through a sequence of writes, the transaction should be aborted, and the writes made up to that point should be discarded.</li>
+<li>In other words, the database saves you from having to worry about partial failure, by giving an <em>all-or-nothing</em> guarantee.</li>
+</ul>
+</li>
+<li><em>Isolation</em>
+<ul>
+<li>Concurrently running transactions shouldn’t interfere with each other.</li>
+</ul>
+</li>
+</ul>
+<p>Such <em>multi-object transactions</em> are often needed if several pieces of data need to be kept in sync.</p>
+<h3 id="Single-object-writes">Single-object writes</h3>
+<blockquote>
+<p>“Transactions should be introduced when write large objects into database.”</p>
+</blockquote>
+<p>Atomicity and isolation also apply when a single object is being changed. For example, imagine you are writing a 20 KB JSON document to a database.</p>
+<p>Atomicity can be implemented using a log for crash recovery, and isolation can be implemented using a lock on each object (allowing only one thread to access an object at any one time).</p>
+<h3 id="The-need-for-multi-object-transactions">The need for multi-object transactions</h3>
+<p>However, in many other cases writes to several different objects need to be coordinated:</p>
+<ul>
+<li>In a relational data model, a row in one table often has a foreign key reference to a row in another table. Multi-object transactions allow you to ensure that these references remain valid.</li>
+<li>When denormalized information needs to be updated, you need to update several documents in one go. Transactions are very useful in this situation to prevent denormalized data from going out of sync.</li>
+<li>In databases with secondary indexes (almost everything except pure key-value stores), the indexes also need to be updated every time you change a value.</li>
+</ul>
+<h3 id="Handling-errors-and-aborts">Handling errors and aborts</h3>
+<blockquote>
+<p>“Retrying is not perfect.”</p>
+</blockquote>
+<p>Retrying an aborted transaction is a simple and effective error handling mechanism, it isn’t perfect:</p>
+<ul>
+<li>If the transaction actually succeeded, but the network failed while the server tried to acknowledge the successful commit to the client (so the client thinks it failed), then retrying the transaction causes it to be performed twice — <strong>unless you have an additional application-level deduplication mechanism in place</strong>.</li>
+<li>If the error is due to overload, retrying the transaction will make the problem worse, not better.</li>
+<li>If the transaction also has side effects outside of the database, those side effects may happen even if the transaction is aborted.</li>
+<li>If the client process fails while retrying, any data it was trying to write to the database is lost.</li>
+</ul>
+<h2 id="Weak-Isolation-Levels">Weak Isolation Levels</h2>
+<blockquote>
+<p>“Stronger isolation, worse performance.”</p>
+</blockquote>
+<p>If two transactions don’t touch the same data, they can safely be run in parallel, because neither depends on the other.</p>
+<p>Databases have long tried to hide concurrency issues from application developers by providing <em>transaction isolation</em>. In theory, isolation should make your life easier by letting you pretend that no concurrency is happening.</p>
+<p><em>Serializable</em> isolation means that the database guarantees that transactions have the same effect as if they ran <em>serially</em> (i.e., one at a time, without any concurrency). However, serializable isolation has a performance cost, and many databases don’t want to pay that price.</p>
+<p>It’s therefore common for systems to use weaker levels of isolation, which protect against some concurrency issues, but not all.</p>
+<h3 id="Read-Committed">Read Committed</h3>
+<blockquote>
+<p>“No dirty reads and no dirty writes.”</p>
+</blockquote>
+<p>The most basic level of transaction isolation is <em>read committed</em>. It makes two guarantees:</p>
+<ol>
+<li>When reading from the database, you will only <strong>see data that has been committed</strong> (<em>no dirty reads</em>).</li>
+<li>When writing to the database, you will only <strong>overwrite data that has been committed</strong> (<em>no dirty writes</em>).</li>
+</ol>
+<h4 id="No-dirty-reads">No dirty reads</h4>
+<blockquote>
+<p>“Any writes by a transaction only become visible to others when that transaction commits”</p>
+</blockquote>
+<p>Imagine a transaction has written some data to the database, but the transaction has not yet committed or aborted. Can another transaction see that uncommitted data? If yes, that is called a <em>dirty read</em>.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027210404555.png" alt="image-20231027210404555"></p>
+<h4 id="No-dirty-writes">No dirty writes</h4>
+<p>Transactions running at the read committed isolation level must prevent dirty writes, usually by delaying the second write until the first write’s transaction has committed or aborted.</p>
+<blockquote>
+<p>With dirty writes, conflicting writes from different transactions can be mixed up.</p>
+</blockquote>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027210613103.png" alt="image-20231027210613103"></p>
+<h4 id="Implementing-read-committed">Implementing read committed</h4>
+<p>Most commonly, databases prevent dirty writes by using row-level locks: when a transaction wants to modify a particular object (row or document), it must first acquire a lock on that object. It must then hold that lock until the transaction is committed or aborted.</p>
+<p>How about dirty reads?</p>
+<p>One option would be to use the same lock, but it is not practicing, since one long-running write transaction can force many read-only transactions to wait until the long-running transaction has completed.</p>
+<p>Another approach is better: For every object that is written, the database remembers both the old committed value and the new value set by the transaction that currently holds the write lock. While the transaction is ongoing, any other transactions that read the object are simply given the old value. Only when the new value is committed do transactions switch over to reading the new value.</p>
+<h3 id="Snapshot-Isolation-and-Repeatable-Read">Snapshot Isolation and Repeatable Read</h3>
+<p>However, there are still plenty of ways in which you can have concurrency bugs when using this isolation level:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027211047138.png" alt="image-20231027211047138"></p>
+<p>This anomaly is called a <em>nonrepeatable</em> read or <em>read skew</em>: if Alice were to read the balance of account 1 again at the end of the transaction, she would see a different value ($600) than she saw in her previous query.</p>
+<p>Read skew is considered acceptable under read committed isolation: the account balances that Alice saw were indeed committed at the time when she read them.</p>
+<p>In Alice’s case, this is not a lasting problem, because she will most likely see consistent account balances if she reloads the online banking website a few seconds later.</p>
+<p><em>Snapshot isolation</em> is the most common solution to this problem. The idea is that each transaction reads from a <em>consistent snapshot</em> of the database—that is, the transaction sees all the data that was committed in the database at the start of the transaction.</p>
+<h4 id="Implementing-snapshot-isolation">Implementing snapshot isolation</h4>
+<p>From a performance point of view, a key principle of snapshot isolation is <em>readers never block writers, and writers never block readers</em>.</p>
+<p>To implement snapshot isolation, databases use a generalization of the mechanism. The database must potentially keep several different committed versions of an object, because various in-progress transactions may need to see the state of the database at different points in time. Because it maintains several versions of an object side by side, this technique is known as <em>multiversion concurrency control</em> (MVCC).</p>
+<p>If a database only needed to provide read committed isolation, but not snapshot isolation, it would be sufficient to keep two versions of an object: the committed version and the overwritten-but-not-yet-committed version. However, storage engines that support snapshot isolation typically use MVCC for their read committed isolation level as well. A typical approach is that read committed uses a separate snapshot for each query, while snapshot isolation uses the same snapshot for an entire transaction.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027211726343.png" alt="image-20231027211726343"></p>
+<p>With append-only B-trees, every write transaction (or batch of transactions) creates a new B-tree root, and a particular root is a consistent snapshot of the database at the point in time when it was created.</p>
+<h3 id="Preventing-Lost-Updates">Preventing Lost Updates</h3>
+<p>There are several other interesting kinds of conflicts that can occur between concurrently writing transactions. The best known of these is the <em>lost update</em> problem, illustrated below:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027212233622.png" alt="image-20231027212233622"></p>
+<p>The lost update problem can occur if an application reads some value from the database, modifies it, and writes back the modified value (a <em>read-modify-write</em> cycle).</p>
+<p>This pattern occurs in various different scenarios:</p>
+<ul>
+<li>Incrementing a counter or updating an account balance。</li>
+<li>Making a local change to a complex value, e.g., adding an element to a list within a JSON document (requires parsing the document, making the change, and writing back the modified document)</li>
+<li>Two users editing a wiki page at the same time, where each user saves their changes by sending the entire page contents to the server, overwriting whatever is currently in the database.</li>
+</ul>
+<p>Because this is such a common problem, a variety of solutions have been developed.</p>
+<h4 id="Atomic-write-operations">Atomic write operations</h4>
+<p>Many databases provide atomic update operations, which remove the need to implement read-modify-write cycles in application code. They are usually the best solution if your code can be expressed in terms of those operations.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">UPDATE</span> counters <span class="hljs-keyword">SET</span> <span class="hljs-keyword">value</span> <span class="hljs-operator">=</span> <span class="hljs-keyword">value</span> <span class="hljs-operator">+</span> <span class="hljs-number">1</span> <span class="hljs-keyword">WHERE</span> key <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;foo&#x27;</span>;<br></code></pre></td></tr></table></figure>
+<h4 id="Automatically-detecting-lost-updates">Automatically detecting lost updates</h4>
+<p>An alternative is to allow them to execute in parallel and, if the transaction manager detects a lost update, abort the transaction and force it to retry its read-modify-write cycle.</p>
+<h4 id="Compare-and-set">Compare-and-set</h4>
+<p>The purpose of this operation is to avoid lost updates by allowing an update to happen only if the value has not changed since you last read it.</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-comment">-- This may or may not be safe, depending on the database implementation </span><br><span class="hljs-keyword">UPDATE</span> wiki_pages <span class="hljs-keyword">SET</span> content <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;new content&#x27;</span> <span class="hljs-keyword">WHERE</span> id <span class="hljs-operator">=</span> <span class="hljs-number">1234</span> <span class="hljs-keyword">AND</span> content <span class="hljs-operator">=</span> <span class="hljs-string">&#x27;old content&#x27;</span>;<br></code></pre></td></tr></table></figure>
+<h4 id="Conflict-resolution-and-replication">Conflict resolution and replication</h4>
+<p>Locks and compare-and-set operations assume that there is a single up-to-date copy of the data. However, databases with multi-leader or leaderless replication usually allow several writes to happen concurrently and replicate them asynchronously, so they cannot guarantee that there is a single up-to-date copy of the data.</p>
+<p>A common approach in such replicated databases is to allow concurrent writes to create several conflicting versions of a value (also known as siblings), and to <strong>use application code</strong> or special data structures to resolve and merge these versions after the fact.</p>
+<h3 id="Write-Skew-and-Phantoms">Write Skew and Phantoms</h3>
+<p>This is an example of <em>write skew</em>:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231027212947963.png" alt="image-20231027212947963"></p>
+<h4 id="Characterizing-write-skew">Characterizing write skew</h4>
+<p>The anomalous behavior was only possible because the transactions ran concurrently.</p>
+<p>You can think of write skew as a generalization of the lost update problem. Write skew can occur if two transactions read the same objects, and then update some of those objects (different transactions may update different objects).</p>
+<p>All of these examples follow a similar pattern:</p>
+<ol>
+<li>A <code>SELECT</code> query checks whether some requirement is satisfied by searching for rows that match some search condition.</li>
+<li>Depending on the result of the first query, the application code decides how to continue.</li>
+<li>If the application decides to go ahead, it makes a write (<code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code>) to the database and commits the transaction.</li>
+</ol>
+<p>The effect of this write <strong>changes the precondition</strong> of the decision of step 2. In other words, if you were to repeat the SELECT query from step 1 after commiting the write, you would get a different result, because the write changed the set of rows matching the search condition.</p>
+<p>This effect, where a write in one transaction changes the result of a search query in another transaction, is called a <em>phantom</em>. Snapshot isolation avoids phantoms in read-only queries, but in read-write transactions like the examples we discussed, phantoms can lead to particularly tricky cases of write skew.</p>
+<h3 id="Serializability">Serializability</h3>
+<p>Serializable isolation is usually regarded as the strongest isolation level. It guarantees that even though transactions may execute in parallel, the end result is the same as if they had executed one at a time, <em>serially</em>, without any concurrency. In other words, the database prevents all possible race conditions.</p>
+<h4 id="Actual-Serial-Execution">Actual Serial Execution</h4>
+<p>The simplest way of avoiding concurrency problems is to remove the concurrency entirely: to execute only one transaction at a time, in serial order, on a single thread.</p>
+<p>This approach looks silly, but it is definitely valuable:</p>
+<ul>
+<li>RAM became cheap enough that for many use cases is now feasible to keep the entire active dataset in memory. (transactions can execute much faster)</li>
+<li>Database designers realized that OLTP transactions are usually short and only make a small number of reads and writes.</li>
+</ul>
+<p>A system designed for single-threaded execution can sometimes perform better than a system that supports concurrency, because it can avoid the coordination overhead of locking.</p>
+<p>Summary:</p>
+<ul>
+<li>Every transaction must be small and fast, because it takes only one slow transaction to stall all transaction processing.</li>
+<li>It is limited to use cases where the active dataset can fit in memory.</li>
+<li>Write throughput must be low enough to be handled on a single CPU core.</li>
+</ul>
+<h4 id="Two-Phase-Locking-2PL">Two-Phase Locking (2PL)</h4>
+<p>In 2PL, writers don’t just block other writers; they also block readers and vice versa. Snapshot isolation has the mantra <em>readers never block writers, and writers never block readers</em>, which captures this key difference between snapshot isolation and two-phase locking.</p>
+<p>2PL provides serializability, it protects against all the race conditions discussed earlier, including lost updates and write skew.</p>
+<h5 id="Implementation-of-two-phase-locking">Implementation of two-phase locking</h5>
+<p>The lock can either be in <em>shared mode</em> or in <em>exclusive mode</em>. The lock is used as follows:</p>
+<ul>
+<li>If a transaction wants to read an object, it must first acquire the lock in shared mode.</li>
+<li>If a transaction wants to write to an object, it must first acquire the lock in exclusive mode.</li>
+<li>If a transaction first reads and then writes an object, it may upgrade its shared lock to an exclusive lock.</li>
+<li>After a transaction has acquired the lock, it must continue to hold the lock until the end of the transaction (commit or abort).</li>
+</ul>
+<blockquote>
+<p>This is where the name “two phase” comes from: the first phase (while the transaction is executing) is when the locks are acquired, and the second phase (at the end of the transaction) is when all the locks are released.</p>
+</blockquote>
+<h5 id="Performance-of-two-phase-locking">Performance of two-phase locking</h5>
+<p>Transaction throughput and response times of queries are significantly worse under two-phase locking than under weak isolation. This is partly due to the overhead of acquiring and releasing all those locks, but more importantly due to reduced concurrency.</p>
+<p>Although deadlocks can happen with the lock-based read committed isolation level, they occur much more frequently under 2PL serializable isolation。</p>
+<h5 id="Predicate-locks">Predicate locks</h5>
+<p>How to prevent phantoms with serializable isolation?</p>
+<blockquote>
+<p>In the meeting room booking example this means that if one transaction has searched for existing bookings for a room within a certain time window, another transaction is not allowed to concurrently insert or update another booking for the same room and time range.</p>
+</blockquote>
+<p>Conceptually, we need a <em>predicate lock</em>. It works similarly to the shared/exclusive lock described earlier, but rather than belonging to a particular object (e.g., one row in a table), it belongs to <strong>all objects that match some search condition</strong>, such as:</p>
+<figure class="highlight sql"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><code class="hljs sql"><span class="hljs-keyword">SELECT</span> <span class="hljs-operator">*</span> <span class="hljs-keyword">FROM</span> bookings <br> <span class="hljs-keyword">WHERE</span> room_id <span class="hljs-operator">=</span> <span class="hljs-number">123</span> <span class="hljs-keyword">AND</span> <br>  end_time <span class="hljs-operator">&gt;</span> <span class="hljs-string">&#x27;2018-01-01 12:00&#x27;</span> <span class="hljs-keyword">AND</span> <br>  start_time <span class="hljs-operator">&lt;</span> <span class="hljs-string">&#x27;2018-01-01 13:00&#x27;</span>;<br></code></pre></td></tr></table></figure>
+<p>A predicate lock restricts access as follows:</p>
+<ul>
+<li>If transaction A wants to read objects matching some condition, like in that SELECT query, it must acquire a shared-mode predicate lock on the conditions of the query. If another transaction B currently has an exclusive lock on any object matching those conditions, <strong>A must wait until B releases its lock before it is allowed to make its query</strong>.</li>
+<li>If transaction A wants to insert, update, or delete any object, it must first check whether either the old or the new value matches any existing predicate lock.</li>
+</ul>
+<p>The key idea here is that a predicate lock applies even to objects that do not yet exist in the database, but which might be added in the future (phantoms).</p>
+<h4 id="Serializable-Snapshot-Isolation-SSI">Serializable Snapshot Isolation (SSI)</h4>
+<p>An algorithm called <em>serializable snapshot isolation</em> (SSI) is very promising. It provides full serializability, but has only a small performance penalty compared to snapshot isolation.</p>
+<h5 id="Pessimistic-versus-optimistic-concurrency-control">Pessimistic versus optimistic concurrency control</h5>
+<p>Two-phase locking is a so-called <em>pessimistic</em> concurrency control mechanism: it is based on the principle that if anything might possibly go wrong (as indicated by a lock held by another transaction), it’s better to wait until the situation is safe again before doing anything.</p>
+<p>Serial execution is, in a sense, pessimistic to the extreme: it is essentially equivalent to each transaction having an exclusive lock on the entire database (or one partition of the database) for the duration of the transaction.</p>
+<p>By contrast, serializable snapshot isolation is an <em>optimistic</em> concurrency control technique. Optimistic in this context means that instead of blocking if something potentially dangerous happens, transactions continue anyway, in the hope that everything will turn out all right.</p>
+<p>If there is enough spare capacity, and if contention between transactions is not too high, optimistic concurrency control techniques tend to perform better than pessimistic ones.</p>
+<p>On top of snapshot isolation, SSI adds an algorithm for detecting serialization conflicts among writes and determining which transactions to abort.</p>
+<h5 id="Decisions-based-on-an-outdated-premise">Decisions based on an outdated premise</h5>
+<blockquote>
+<p>“read first then write, indicates the decision of writing may depend on the result of reading.”</p>
+</blockquote>
+<p>We observed a recurring pattern when discussing write skew: a transaction reads some data from the database, examines the result of the query, and decides to take some action (write to the database) based on the result that it saw.</p>
+<p>The transaction is taking an action based on a <em>premise</em> (a fact that was true at the beginning of the transaction.)</p>
+<p>To be safe, the database needs to assume that any change in the query result (the premise) means that writes in that transaction may be invalid.</p>
+<blockquote>
+<p>In other words, there may be <em><strong>a causal dependency</strong></em> between the queries and the writes in the transaction.</p>
+</blockquote>
+<p><strong>In order to provide serializable isolation, the database must detect situations in which a transaction may have acted on an outdated premise and abort the transaction in that case.</strong></p>
+<p>How does the database know if a query result might have changed? There are two cases to consider:</p>
+<ul>
+<li>Detecting reads of a stale MVCC object version (uncommitted write occurred before the read)</li>
+<li>Detecting writes that affect prior reads (the write occurs after the read)</li>
+</ul>
+<h5 id="Detecting-stale-MVCC-reads">Detecting stale MVCC reads</h5>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231029163540054.png" alt="image-20231029163540054"></p>
+<blockquote>
+<p>简单来说，在事务准备提交时，数据库会检查它读过的数据是否发生了改变（即那些数据是不是被其他事务提交过），如果是的话，就中断本次事务。</p>
+</blockquote>
+<p>However, by the time transaction 43 wants to commit, transaction 42 has already committed. This means that the write that was ignored when reading from the consistent snapshot has now taken effect, and transaction 43’s premise is no longer true.</p>
+<p>In order to prevent this anomaly, the database <strong>needs to track when a transaction ignores another transaction’s writes due to MVCC visibility rules</strong>. When the transaction wants to commit, the database checks whether any of the ignored writes have now been committed. If so, the transaction must be aborted.</p>
+<p>注意这种方法只适用于并发写发生在读之前，因为数据库需要跟踪的是那些因为可见性规则被忽略的写操作，如果并发写发生在读之后，是不会有“因为可见性规则被忽略的写操作”的。</p>
+<h5 id="Detecting-writes-that-affect-prior-reads">Detecting writes that affect prior reads</h5>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231029164043852.png" alt="In serializable snapshot isolation, detecting when one transaction modifies another transaction’s reads."></p>
+<p>When a transaction writes to the database, it must look in the indexes for any other transactions that have recently read the affected data. This process is similar to acquiring a write lock on the affected key range, but rather than blocking until the readers have committed, the lock acts as a tripwire: it simply notifies the transactions that the data they read may no longer be up to date.</p>
+<p>Transaction 43 notifies transaction 42 that its prior read is outdated, and vice versa. Transaction 42 is first to commit, and it is successful: although transaction 43’s write affected 42, 43 hasn’t yet committed, so the write has not yet taken effect. However, when transaction 43 wants to commit, the conflicting write from 42 has already been committed, so 43 must abort.</p>
+<h5 id="Performance-of-serializable-snapshot-isolation">Performance of serializable snapshot isolation</h5>
+<p>Compared to two-phase locking, the big advantage of serializable snapshot isolation is that one transaction doesn’t need to block waiting for locks held by another transaction.</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Design-Data-Intensive-Applications/" class="category-chain-item">Design Data-Intensive Applications</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/BookNote/" class="print-no-link">#BookNote</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA: Chapter 7 Transactions</div>
+      <div>http://blog.kkkzoz.top/2023/10/29/Books/Design Data-Intensive Applications/chapter-7-transactions/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>October 29, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/10/30/Papers/zookeeper/" title="Paper Note: ZooKeeper">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Paper Note: ZooKeeper</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/10/24/Books/Design%20Data-Intensive%20Applications/chapter-6-partioning/" title="DDIA: Chapter 6 Partioning">
+                        <span class="hidden-mobile">DDIA: Chapter 6 Partioning</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

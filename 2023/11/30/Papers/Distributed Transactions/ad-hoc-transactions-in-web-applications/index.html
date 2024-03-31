@@ -1,0 +1,843 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="这篇文章讲道理不应该写这么长的，但讲的东西比较“好玩”，于是就多记录了一些。  FAQ What is an ad hoc transaction? It refers to database operations coordinated by application code. Specifically, developers might explicitly use locking prim">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/11/30/Papers/Distributed%20Transactions/ad-hoc-transactions-in-web-applications/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="这篇文章讲道理不应该写这么长的，但讲的东西比较“好玩”，于是就多记录了一些。  FAQ What is an ad hoc transaction? It refers to database operations coordinated by application code. Specifically, developers might explicitly use locking prim">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130202805493.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130205056132.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130213035736.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130213240511.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130215857374.png">
+<meta property="article:published_time" content="2023-11-29T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="PaperNote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130202805493.png">
+  
+  
+  
+  <title>Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-30 00:00" pubdate>
+          November 30, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          11k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          90 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <blockquote>
+<p>这篇文章讲道理不应该写这么长的，但讲的东西比较“好玩”，于是就多记录了一些。</p>
+</blockquote>
+<h2 id="FAQ">FAQ</h2>
+<h4 id="What-is-an-ad-hoc-transaction"><em>What is an ad hoc transaction?</em></h4>
+<p>It refers to database operations coordinated by application code. Specifically, developers might explicitly use locking primitives and validation procedures to implement concurrency control amid the application code to coordinate critical database operations.</p>
+<h4 id="Why-do-not-use-database-transactions-instead"><em>Why do not use database transactions instead?</em></h4>
+<p>For flexibility or efficiency.</p>
+<p>在一般的数据库使用场景下，伴随着数据库的隔离级别提升，性能下降十分严重，为此，应用层临时事务需要做到既利用低隔离级别的数据库防止性能下降，又要实现应用层的事务机制防止数据一致性错误等问题。</p>
+<h4 id="What-is-a-false-conflict-in-database-systems"><em>What is a false conflict in database systems?</em></h4>
+<p>In database systems, a false conflict, also known as a phantom conflict, occurs when a transaction appears to conflict with other transactions, but in reality, it does not. This can happen in situations where transactions are using optimistic concurrency control or multi-version concurrency control mechanisms.</p>
+<p>A false conflict might occur in scenarios like the following:</p>
+<ul>
+<li>Two transactions are reading and writing different parts of a data structure, like separate rows in a database table, but the isolation mechanism inaccurately perceives them as overlapping operations on the same item.</li>
+<li>In systems that use row-versioning, when multiple versions of data are stored to support concurrent operations, a transaction might conflict with an older version of a row that is not actually relevant to the current state of the database.</li>
+<li>When a range lock conflicts with an insert operation into the database, even though the new record does not actually interfere with the transaction holding the range lock.</li>
+</ul>
+<blockquote>
+<p>For example, let’s say there is a transaction attempting to read all records where the value is between 1 and 10. If another transaction inserts a record with a value of 11, a simplistic locking mechanism might block this operation due to a range lock on 1 to 10, even though the insert doesn’t actually conflict with the read operation.</p>
+</blockquote>
+<p><em><strong>False conflicts can lead to unnecessary transaction rollbacks, reduced concurrency, and lower overall system performance.</strong></em> Database systems aim to minimize the occurrence of false conflicts to maintain high levels of efficiency and ensure good performance under concurrent access patterns. Techniques for reducing false conflicts include fine-grained locking, multi-version concurrency control (MVCC), and validation-based concurrency control schemes.</p>
+<h4 id="What-is-ORM-provided-invariant-validation"><em>What is ORM-provided invariant validation?</em></h4>
+<p>It refers to checks that ensure the data managed by the ORM adheres to certain predefined rules or constraints at all times.</p>
+<p>ORM-provided invariant validation might include things like:</p>
+<ul>
+<li>Field Validation: Ensuring that data fields contain valid information, such as checking for non-null values in required fields, string length, or pattern matching.</li>
+<li>State Validation: Confirming that an object’s state is valid when it transitions from one state to another—commonly used in state machines within an object.</li>
+<li>Consistency Checks: These validations help ensure that the entire system remains in a consistent state. For instance, if an ORM deletes an object, it could enforce the deletion of all associated objects to maintain referential integrity.</li>
+</ul>
+<h4 id="What-is-a-predicate-lock-in-database-systems"><em>What is a predicate lock in database systems?</em></h4>
+<p>A predicate lock is a type of lock that is used to ensure the consistency of data by restricting access based on a specific condition or a predicate. Unlike traditional locking mechanisms that lock individual rows or tables, predicate locks are generally more granular and are used to lock a set of rows that satisfy a certain condition.</p>
+<p>For example, if a transaction is executed to update all rows in a table where the value of a certain column is greater than 100, <strong>a predicate lock would prevent other transactions from inserting, updating, or deleting rows that have a column value greater than 100 until the first transaction is completed.</strong></p>
+<p>However, predicate locking can be expensive in terms of performance due to the overhead of checking conditions, and not all database management systems implement predicate locks.</p>
+<h4 id="What-is-gap-lock-in-database-systems"><em>What is gap lock in database systems?</em></h4>
+<p>In database systems, a gap lock is a type of lock that is used to prevent phantom reads by transactions in serializable and repeatable read isolation levels.</p>
+<p>A gap lock is not a lock on an actual record, but rather on the “gap” between records. It effectively prevents other transactions from inserting new records into ranges that have been read by a transaction that holds the gap lock until the original transaction is complete. This ensures repeatable reads, meaning the same SELECT query will return the same set of rows throughout the transaction.</p>
+<p>For example, let’s say there is a table with an indexed column containing values {1, 2, 4}. If a transaction were to run a query to select records with indexed values less than 3, it would lock the gap before 1, between 1 and 2, and between 2 and 4. If another transaction tries to insert a record with the indexed value of 3, it would be blocked until the first transaction is complete. The gap lock in this case prevents a phantom insert of a value that would affect the original transaction’s result set.</p>
+<p>Gap locking is often associated with InnoDB storage engine in MySQL, where it is implemented to enforce the next-key lock for preventing phantom reads. However, gap locking can have an impact on performance because it increases lock contention and reduces concurrency.</p>
+<h2 id="Introduction">Introduction</h2>
+<p>简单来说，研究人员有以下几个发现：</p>
+<ul>
+<li>Every studied application uses ad hoc transactions on critical APIs.</li>
+<li>Ad hoc transactions’ usages and implementations are much more flexible than database transactions.</li>
+<li>Ad hoc transactions are prone to errors.</li>
+<li>Ad hoc transactions can have performance benefits under high-contention workloads.
+<ul>
+<li>Using application semantics such as access patterns, ad hoc transactions’ CC could be implemented in a simple yet precise way.</li>
+</ul>
+</li>
+</ul>
+<h2 id="Background-and-Motivation">Background and Motivation</h2>
+<p>Like database transactions, ad hoc transactions provide isolation semantics such as serializability to database operations. The difference is that ad hoc transactions coordinate operations with application code—<strong>it is the application developers, instead of database developers, who design and implement the CC.</strong></p>
+<p>论文作者们工作量还是比较大的，他们先选取了几种类型下的 8 个代表应用，然后直接分析其源代码，比如说直接查找 lock，concurrency, consistency 等关键字，然后找到并识别那些隔离了数据库操作的代码。最后针对以下三个问题做了分析和调研：</p>
+<ul>
+<li>How are ad hoc transactions constructed among applications?</li>
+<li>Can ad hoc transactions always ensure the correct semantics?</li>
+<li>How is ad hoc transactions’ performance, especially in comparison with database transactions?</li>
+</ul>
+<h2 id="Characteristics-of-Ad-Hoc-Transactions">Characteristics of Ad Hoc Transactions</h2>
+<p>Th cases can still be classified into <em>pessimistic</em> ad hoc transactions (65/91) and <em>optimistic</em> ad hoc transactions (26/91):</p>
+<ul>
+<li>In pessimistic cases, developers explicitly use locks to block conflicting database operations in ad hoc transactions.</li>
+<li>Meanwhile, optimistic ad hoc transactions execute operations aggressively and validate the execution result before writing updates back to the database system.</li>
+</ul>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130202805493.png" alt=""></p>
+<blockquote>
+<p>(a) and (b) belongs to pessimistic ad hoc transactions, while © is an optimistic ad hoc transactions.</p>
+</blockquote>
+<h3 id="What-Do-Ad-Hoc-Transactions-Coordinate">What Do Ad Hoc Transactions Coordinate?</h3>
+<h4 id="All-Database-Operations-vs-Specific-Database-Operations">All Database Operations vs. Specific Database Operations</h4>
+<p>论文中给出了以下伪代码：</p>
+<figure class="highlight rust"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><code class="hljs rust"><span class="hljs-keyword">in</span>: sku_id, requested <br><span class="hljs-title function_ invoke__">lock</span>(sku_id) <br>sku := Select * <span class="hljs-built_in">From</span> SKUs Where id=sku_id <br><span class="hljs-keyword">if</span> sku.quantity &gt;= requested: <br> sku.quantity -= requested <br> <span class="hljs-comment">// the followig statements are auto-generated by ORM.save(sku) </span><br> Transaction Start <br> Update SKUs Set quantity=sku.quantity Where id=sku.id<br> Update Products Set updated_at=<span class="hljs-title function_ invoke__">now</span>() Where id=sku.product_id <br> category_ids := Select category_id <br>  <span class="hljs-built_in">From</span> Categories Join ProductCategories Using category_id <br>  Where product_id=sku.product_id <br> Update Categories Set updated_at=<span class="hljs-title function_ invoke__">now</span>() Where id In category_ids <br> Transaction Commit <br><span class="hljs-title function_ invoke__">unlock</span>(sku_id)<br></code></pre></td></tr></table></figure>
+<p>在这段代码中，很明显对 sku 的操作是需要序列化的 (为了防止 <em>lost update</em>)，所以就需要在开头和末尾进行上锁。值得注意的是，如果直接用 <code>Transaction Start/Commit</code> 替换掉 <code>lock()/unlock()</code> 的话，性能可能会下降：因为整个事务需要序列化，如果有两个事务同时在执行对 Category 相关的操作，有可能会导致死锁从而使事务退出。</p>
+<blockquote>
+<p>However, with ad hoc transactions, only the critical SKU operations are serialized, and Categories accesses are executed in MySQL’s default isolation level, Repeatable Read, which does not acquire reader locks.</p>
+</blockquote>
+<h4 id="Individual-Requests-vs-Multiple-Requests">Individual Requests vs. Multiple Requests</h4>
+<p>有些时候单个 ad hoc transaction 有可能涉及到多个 database request，比如下面的这个关于修改帖子的伪代码：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130205056132.png" alt=""></p>
+<p>这段代码中，开发者使用了 optimistic ad hoc transaction：在更新帖子之前，需要先检查一致性，注意必须用锁来保证验证和提交这两个操作的原子性。</p>
+<p>像这样的 LLT，如果不使用乐观的并发控制的话，可能会导致长时间阻塞，对于 LLT，也有一些机制可以处理，比如 Sagas 和 savepoints。</p>
+<blockquote>
+<p>Alternatively, developers can set savepoints after handling each request when coordinating multi-request user interactions with conventional, long-lived database transactions. When the application detects an error (except for fatal errors such as deadlocks), it can explicitly roll back the transaction state to previously set savepoints instead of aborting the entire LLT.</p>
+</blockquote>
+<h4 id="Database-Operation-vs-Non-Database-Operations">Database Operation vs. Non-Database Operations</h4>
+<p>The flexibility of ad hoc transactions is also reflected in coordinating non-database operations. A web application may use several storage systems to persist its data. Thus, it needs to ensure data consistency across different systems.</p>
+<p>讲道理这种操作需要类似于 XA 的协议来保证事务的原子性，但是很多数据库不支持这些分布式事务协议，所以开发者只能采用 ad hoc transaction 的模式来实现类型功能。</p>
+<h3 id="How-is-The-Coordination-Implemented">How is The Coordination Implemented?</h3>
+<blockquote>
+<p>Developers need to manually coordinate ad hoc transactions, including locking (for pessimistic cases) and validation (for optimistic cases). However, the locking primitives and validation procedures usually have different implementations.</p>
+</blockquote>
+<p>这一节主要讲了开发者们在锁和验证步骤上的具体实现，锁的实现可以分为：</p>
+<ul>
+<li>利用现有系统的锁
+<ul>
+<li>利用数据库中的 <code>Select For Update</code> 语句</li>
+<li>直接利用编程语言中的特性，比如 Java 的 <code>synchronized</code></li>
+</ul>
+</li>
+<li>自己实现的锁
+<ul>
+<li>在 Redis 中实现的租约锁</li>
+<li>在数据库中专门留出一张锁的表</li>
+<li>内存中实现，比如 <code>ConcurrentHashMap</code></li>
+</ul>
+</li>
+</ul>
+<h3 id="What-Are-The-Coordination-Granularities">What Are The Coordination Granularities?</h3>
+<p>Developers often have a deep understanding of applications that enables them to customize the coordination granularity.</p>
+<p>直觉上，开发者可能会用细粒度的协作来避免 false conflict，但研究发现 ad hoc transaction 经常将多个请求放在一起并用一个锁，这样可以大幅度的减少 ad hoc transaction 并发控制的复杂度和死锁的可能性。</p>
+<p>研究发现，超过一半的 ad hoc transaction 都只用了单个锁来协调多个数据库请求。原因是开发者经常能识别出以下两种访问模式。</p>
+<h4 id="Associated-Accesses">Associated Accesses</h4>
+<blockquote>
+<p>Given two database rows, r1 and r2, if accesses to r2 always happen in a transaction that also accesses r1, we say r2 is associatively accessed with r1 and refer to this access pattern as the associated access pattern.</p>
+</blockquote>
+<p>在进行一对多关系时经常会遇到这种访问模式，在这种情况下，如果我们能结合语义进行加锁，大概率只需要用一把锁。考虑 <code>Figure1 a</code> 中的情况,访问购物车 (Cart) 和该购物车所包含的商品 (Item)：在 Item 这张表中，里面的 row 只会以特定的形式访问到，并不会有理论上的随机读写，就可以不在这些 row 上加细粒度的锁。</p>
+<p>这样也能避免事务之间的冲突：这样的锁明确地在前期序列化冲突事务，从而避免了在使用数据库事务时可能发生的终止。在 PostgreSQL 中，一个事务中的购物车更新会由于写写冲突，中止掉所有在更新之前发生的冲突事务。在 MySQL 中，购物车更新和商品插入都可能形成死锁，因为其他事务可能已经以共享模式锁定了这两个表。</p>
+<h4 id="Read-Modify-Writes">Read-Modify-Writes</h4>
+<p>In a 2PL system without sufficient deadlock prevention mechanisms, such as MySQL, there can be a deadlock if two concurrent transactions perform the RMW on the same row.</p>
+<p>考虑 <code>Figure1 b</code> 中的情况，用一把锁就可以避免可能的死锁问题。</p>
+<h4 id="Discussion">Discussion</h4>
+<p>Reducing the number of locks simplifies the implementation and avoids potential deadlocks. However, <em><strong>such optimizations can rarely be used in database systems because they highly rely on application semantics.</strong></em></p>
+<h4 id="Fine-Grained-vs-Coarse-Grained">Fine-Grained vs. Coarse-Grained</h4>
+<p>使用比数据库更细粒度的控制可以更好地避免 false conflict，比如使用基于列的控制：</p>
+<blockquote>
+<p>Developers could coordinate database accesses at the column granularity if they know which fields are used.</p>
+</blockquote>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130213035736.png" alt=""></p>
+<p>Though these operations have no column-level conflicts, if they access the same row, an RDBMS using row locks cannot execute them in parallel.</p>
+<p>Optimistic ad hoc transactions can also benefit from column-based coordination — <strong>they only need to validate whether specific column values have been updated.</strong></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130213240511.png" alt=""></p>
+<p>It performs value-based validation on the updated content column to detect concurrent changes. <strong>Any concurrent update to other columns, including <code>view_cnt</code> increments, will not interfere with content updates.</strong></p>
+<p>还有一种细粒度的控制方案是使用 predicate locks：</p>
+<blockquote>
+<p>Predicate locks can avoid false conflicts caused by the gap lock used in the major RDBMSs.</p>
+</blockquote>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231130215857374.png" alt=""></p>
+<blockquote>
+<p>Suppose transaction Txn1 and Txn2 with <code>order_id</code> of 10 and 11:</p>
+<p>Suppose executing line 3 of Txn1 causes the RDBMS to acquire a gap lock on the index interval (9, 12), blocking concurrent inserts to this range so that re-executing line 3 can obtain repeatable results. Meanwhile, line 5 in Txn 2 inserts a new payment row for another order whose order_id equals 11. Though this insert does not interfere with Txn 1’s line 3, it would nevertheless be blocked by the gap lock.</p>
+</blockquote>
+<p>后面的话主要是讲了一些错误处理和正确性问题，这里就不多赘述了。</p>
+<h2 id="Conclusion">Conclusion</h2>
+<p>Ad hoc transactions are much more flexible than database transactions, which is a double-edged sword—they potentially have performance benefits but are prone to correctness issues.</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Distributed/" class="category-chain-item">Distributed</a>
+  
+  
+
+      </span>
+    
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Transactions/" class="category-chain-item">Transactions</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/PaperNote/" class="print-no-link">#PaperNote</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly</div>
+      <div>http://blog.kkkzoz.top/2023/11/30/Papers/Distributed Transactions/ad-hoc-transactions-in-web-applications/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 30, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/12/04/Talks/talk-about-postgres-visibility-check-rules/" title="Talk about Postgres Visibility Check Rules">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Talk about Postgres Visibility Check Rules</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/29/Pieces/a-piece-of-threadlocal/" title="A Piece Of: ThreadLocal">
+                        <span class="hidden-mobile">A Piece Of: ThreadLocal</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

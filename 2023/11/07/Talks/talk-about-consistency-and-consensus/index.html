@@ -1,0 +1,850 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="ACID 中的一致性 我们现在关注的是其中的 C，即一致性 Consistency。它是什么意思呢？通俗地说，它指的是任何一个数据库事务的执行，都应该让整个数据库保持在「一致」的状态：  ACID 中的「一致性」，是对于整个数据库的「一致」状态的维持。抽象来看，对数据库每进行一次事务操作，它的状态就发生一次变化。这相当于把数据库看成了状态机，只要数据库的起始状态是「一致」的，并且每次事务操作都能保">
+<meta property="og:type" content="article">
+<meta property="og:title" content="Talk about Consistency and Consensus">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/11/07/Talks/talk-about-consistency-and-consensus/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="ACID 中的一致性 我们现在关注的是其中的 C，即一致性 Consistency。它是什么意思呢？通俗地说，它指的是任何一个数据库事务的执行，都应该让整个数据库保持在「一致」的状态：  ACID 中的「一致性」，是对于整个数据库的「一致」状态的维持。抽象来看，对数据库每进行一次事务操作，它的状态就发生一次变化。这相当于把数据库看成了状态机，只要数据库的起始状态是「一致」的，并且每次事务操作都能保">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640-20231106201453194.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640-20231106201807555.png">
+<meta property="article:published_time" content="2023-11-06T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="Talk">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640.png">
+  
+  
+  
+  <title>Talk about Consistency and Consensus - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="Talk about Consistency and Consensus"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-07 00:00" pubdate>
+          November 7, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          6.1k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          51 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">Talk about Consistency and Consensus</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="ACID-中的一致性">ACID 中的一致性</h2>
+<p>我们现在关注的是其中的 C，即一致性 <em>Consistency</em>。它是什么意思呢？通俗地说，它指的是任何一个数据库事务的执行，都应该让整个数据库保持在「一致」的状态：</p>
+<ul>
+<li>ACID 中的「一致性」，是对于整个数据库的「一致」状态的维持。抽象来看，对数据库每进行一次事务操作，它的状态就发生一次变化。这相当于把数据库看成了状态机，只要数据库的起始状态是「一致」的，并且每次事务操作都能保持「一致性」，那么数据库就能始终保持在「一致」的状态上 (Consistency Preservation)。</li>
+<li>所谓状态是不是「一致」，其实是由业务层规定的。比如转账的例子，“转账前后账户总额保持不变”，这个规定只对于「转账」这个特定的业务场景有效。如果换一个业务场景，「一致」的概念就不是这样规定了。所以说，ACID 中的「一致性」，其实是体现了业务逻辑上的合理性，并不是由数据库本身的技术特性所决定的。</li>
+</ul>
+<p>为了让事务总是能保持 ACID 的一致性，我们需要在实现上考虑哪些因素呢？</p>
+<ul>
+<li>出错情况 (failure/error)
+<ul>
+<li>事务本身的实现逻辑可能存在错误，这需要应用层进行恰当的编码来保证。</li>
+<li>需要 ACID 中的 A（原子性）来保障。简言之，原子性保障了事务的执行要么全部成功，要么全部失败，而不允许出现“只执行了一半”这种“部分成功”的情况。</li>
+</ul>
+</li>
+<li>并发行为
+<ul>
+<li>需要 ACID 中的 I（隔离性）来保障了。什么是隔离性呢？它对于并发执行的多个事务进行合理的排序，保障了不同事务的执行互不干扰。换言之，隔离性这种特性，能够让并发执行的多个事务就好像是按照「先后顺序」执行的一样。</li>
+</ul>
+</li>
+</ul>
+<h3 id="Summary">Summary</h3>
+<ul>
+<li>ACID 中的一致性，是个很偏应用层的概念。这跟 ACID 中的原子性、隔离性和持久性有很大的不同。原子性、隔离性和持久性，都是数据库本身所提供的技术特性；而一致性，则是由特定的业务场景规定的。</li>
+<li>要真正做到 ACID 中的一致性，它是要依赖数据库的原子性和隔离性的（应对错误和并发）。</li>
+<li>最后，ACID 中的一致性，甚至跟分布式都没什么直接关系。它跟分布式的唯一关联在于，在分布式环境下，它所依赖的数据库原子性和隔离性更难实现。</li>
+</ul>
+<p><strong>总之，ACID中的一致性，是一个非常特殊的概念。除了数据库事务处理，它很难扩展到其它场景，也跟分布式理论中的其它「一致性」概念没有什么关系。</strong></p>
+<h2 id="分布式事务与共识算法的关系">分布式事务与共识算法的关系</h2>
+<p>共识问题 (consensus problem)。这是分布式系统中的一个十分基础而核心的问题，它表示如何在分布式系统中的多个节点之间就某事达成共识。</p>
+<p>网上通常提到的「分布式一致性协议」，或者「分布式一致性算法」，一般来说就是解决这里的共识问题的算法。</p>
+<blockquote>
+<p>这些算法或协议，经常包含 Paxos 之类，但也可能包括两阶段提交协议 (2 PC)或三阶段提交协议 (3 PC)。</p>
+</blockquote>
+<p>ACID 中的原子性，要求事务的执行要么全部成功，要么全部失败，而不允许出现“部分成功”的情况。在分布式事务中，这要求参与事务的所有节点，要么全部执行 Commit 操作，要么全部执行 Abort 操作。换句话说，参与事务的所有节点，需要在“执行 Commit 还是 Abort”这一点上达成一致（其实就是共识）。这个问题在学术界被称为<strong>原子提交问题</strong>（<em>Atomic Commitment Problem</em>），而能够解决原子提交问题的算法，则被称为<strong>原子提交协议</strong>（<em>Atomic Commitment Protocal</em>，简称<strong>ACP</strong>）。2PC 和3PC，属于原子提交协议两种不同的具体实现。</p>
+<p>我们可以发现原子提交问题和共识问题的关联：</p>
+<ul>
+<li>共识问题，解决的是如何在分布式系统中的多个节点之间就某个提议达成共识。</li>
+<li>原子提交问题，解决的是参与分布式事务的所有节点在“执行 Commit 还是 Abort”这一点上达成共识。</li>
+<li>所以，原子提交问题是共识问题的一个特例。（？）</li>
+</ul>
+<p>一些细节的不同，可能导致非常大的差异。当我们描述共识问题的时候，我们说的是在<strong>多个节点</strong>之间达成共识；而当我们描述原子提交问题的时候，我们说的是在<strong>所有节点</strong>之间达成共识。这个细微的差别，让这两类问题，几乎变成了完全不同的问题（谁也替代不了谁）：</p>
+<ul>
+<li>Paxos 协议为例，它只要求网络中的大部分节点达成共识就可以了，这样 Paxos 才能提供一定的容错性，只要网络中发生故障的节点不超过一半仍然能够正常工作（不会被阻塞）</li>
+<li>对于解决原子提交问题的 2PC 或者 3PC 来说，即使只有一个节点发生故障了，其它节点也不能擅自决策进行 Commit 操作。所以，原子提交协议必须保证在参与分布式事务的<strong>所有节点</strong>（包括故障的节点）上对于“执行 Commit 还是 Abort”达成共识。</li>
+</ul>
+<p>原子提交问题可以被抽象成一个新的一致性问题，称为 uniform consensus 问题，它是与通常的共识问题（consensus problem）不同的问题，而且是更难的问题。uniform consensus，要求所有节点（包括故障节点）都要达成共识；而 consensus 问题只关注没有发生故障的节点达成共识。</p>
+<h3 id="Summary-2">Summary</h3>
+<ul>
+<li>共识问题（consensus problem），解决的是如何在分布式系统中的多个节点之间就某个提议达成共识。它只关注没有发生故障的节点达成共识就可以了。</li>
+<li>在分布式事务中，ACID 中的原子性，引出了原子提交问题，它解决的是参与分布式事务的所有节点在“执行 Commit 还是 Abort”这一点上达成共识。原子提交问题属于 uniform consensus 问题，要求所有节点（包括故障节点）都要达成共识，是比 consensus 问题更难的一类问题。</li>
+<li>Paxos 和解决拜占庭将军问题的算法，解决的是 consensus 问题；2PC/3PC，解决的是一个特定的 uniform consensus 问题。</li>
+</ul>
+<h2 id="CAP-与线性一致性">CAP 与线性一致性</h2>
+<p>CAP 的三个字母分别代表了分布式系统的三个特性：一致性（Consistency）、可用性（Availability）和分区容错性（Partition-tolerance）。而 CAP 定理指出：任何一个分布式系统只能同时满足三个特性中的两个。但是，这一描述曾经引发了非常多的误解。</p>
+<p>CAP 中的 C，也就是一致性，它是什么意思呢？在证明 CAP 定理的原始论文中，C 指的是 <em>linearizable consistency</em>，也就是「线性一致性」。更精简的英文表达则是 <em>linearizability</em>。</p>
+<blockquote>
+<p><strong>线性一致性</strong>（<em>linearizability</em>）是 CAP 中的 C 的原始定义。而很多人在谈到 CAP 时，则会把这个 C 看成是<strong>强一致性</strong>（<em>strong consistency</em>）。这其实也没错，因为线性一致性的另一个名字，就是强一致性。</p>
+</blockquote>
+<p>所以线性一致性是什么意思呢？</p>
+<p>大体上是说，在一个并发执行的环境中，不同的操作之间可能是有严格的先后关系的（一个操作执行结束之后另一个操作才开始执行），也可能是并发执行的（一个操作还没执行结束，另一个操作就开始执行了）；如果能够把所有操作排列成一个「合法」的全局线性顺序，那么这些操作就是满足线性一致性的。当然，在这个重新排列的过程中，原来就存在的严格的先后关系，必须得以保持。</p>
+<p>对于一个分布式存储系统来说，线性一致性的含义可以用一个具体的描述来取代：对于任何一个数据对象来说，<strong>系统表现得就像它只有一个副本一样</strong>。</p>
+<h2 id="一致性模型的来历">一致性模型的来历</h2>
+<p>我们之所以使用分布式系统，无非是因为分布式系统能带来一些「好处」，比如容错性、可扩展性等等。为了获得这些「好处」，分布式系统实现上常用的方法是复制 (<em>replication</em>) 和分片 (<em>sharding</em>)。而我们将要讨论的一致性模型 (<em>consistency model</em>)，主要是与复制有关。</p>
+<p>复制带来的具体「好处」主要是体现在两个方面：</p>
+<ul>
+<li>容错 (<em>fault tolerance</em>)。即使某些网络节点发生故障，由于原本保存着在故障节点上的数据在正常节点上还有备份，所以整个系统仍然可能是可用的。这也是我们期待分布式系统能够提供的「高可用」特性。</li>
+<li>提升吞吐量。将一份数据复制多份并保存在多个副本节点上，还顺便带来一个好处：对于同一个数据对象的访问请求（至少是读请求）可以由多个副本节点分担，从而使得整个系统可以随着请求量的增加不断扩展。</li>
+</ul>
+<p>而复制带来的最大的挑战就是数据一致性问题。严格意义上来说，让所有副本在任何时刻都保持一致是不可能的，因为副本之间的数据同步是需要时间的。但是只要系统能够保证，每当我们去「观察」的时候（即读取数据副本的时候），系统表现出来的行为是一致的，就可以了。</p>
+<p>所以我们应该从系统用户（使用系统的开发者）的角度来对数据一致性的要求进行定义。</p>
+<p>讨论一个例子：用户 A 先在第1个副本上执行 x=42，然后用户 B 再在第2个副本上执行 x=43，最后用户 C 在第3个副本上读取_x_的值。仍然为了让系统“表现得像只有一个副本”，直觉上看，用户 C 读取到的_x_的值似乎应该是43。但是，也不一定非要如此。因为两个写操作是分别由用户 A 和用户 B 发起的，他们并不知道彼此谁先谁后（虽然从时间上看用户 A 的写操作确实在先）。所以，我们也可以选择认为用户 B 执行 x=43在用户 A 执行 x=42之前。这样的话，用户 C 读取到的 x 的值就应该是42。（这种排序<strong>满足顺序一致性，但不满足线性一致性</strong>。）</p>
+<p>一个系统在数据一致性上的具体表现如何，取决于系统对关键事件（读写操作）的排序和执行采取什么样的规则和限制。比如在上述的例子中，虽然两种排序结果不同，但它们都做到了让系统“表现得像只有一个副本”。它们的不同在于，前一种排序遵循了不同用户的操作的时间先后顺序，而后一种排序没有。</p>
+<p>一个分布式系统对于读写操作的某种排序和执行规则，就定义了一种一致性模型 (<em>consistency model</em>)。当一个系统选定了某种特定的一致性模型（比如线性一致性或顺序一致性），那么你就只能看到这种一致性模型所允许的那些操作序列。</p>
+<h2 id="顺序一致性和线性一致性">顺序一致性和线性一致性</h2>
+<ul>
+<li>顺序一致性：<em>sequential consistency</em></li>
+<li>线性一致性：<em>linearizability</em></li>
+</ul>
+<h3 id="顺序一致性">顺序一致性</h3>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640.png" alt="Example 1"></p>
+<ul>
+<li><em>A</em> --&gt; w_i(<em>x</em>)，表示一个写操作：第 i 个进程向数据对象 x 写入了值 A。</li>
+<li>r_i(<em>x</em>) --&gt; <em>A</em>，表示一个读操作：第 i 个进程从数据对象 x 中读到了值 A。</li>
+</ul>
+<p>上图的这样一个执行过程，是否满足顺序一致性？</p>
+<p><strong>顺序一致性</strong>定义：如果一个并发执行过程所包含的所有读写操作能够重排成一个全局线性有序的序列，并且这个序列满足以下两个条件，那么这个并发执行过程就是满足顺序一致性的：</p>
+<ul>
+<li><strong>条件I</strong>：重排后的序列中每一个读操作返回的值，必须等于前面对同一个数据对象的最近一次写操作所写入的值。</li>
+<li><strong>条件 II</strong>：原来每个进程中各个操作的执行先后顺序，在这个重排后的序列中必须保持一致。</li>
+</ul>
+<p>简单重排一下：</p>
+<ol>
+<li>写 A</li>
+<li>读 A</li>
+<li>写 C</li>
+<li>读 C</li>
+<li>写 B</li>
+<li>读 B</li>
+</ol>
+<p>这个序列是满足顺序一致性的两个条件的，所以上图的执行过程是满足顺序一致性的。</p>
+<p>为什么顺序一致性会这样定义呢？</p>
+<p>首先，重排成一个全局线性有序的序列，相当于系统对外表现出了一种「假象」，原本多进程并发执行的操作，好像是顺序执行的一样。顺序一致性正是遵循了这种「系统假象」，系统对外表现就好像在操作一个单一的副本，执行顺序也必然是可以看做顺序执行的：</p>
+<ul>
+<li>条件 I 规定了系统的表现是合理的（即合乎逻辑的）；</li>
+<li>条件 II 则保证了以任何进程的视角来看，它所发起的操作执行顺序都是符合它原本的预期的。</li>
+</ul>
+<p>总之，一个满足顺序一致性的系统，对外表现就好像总是在操作一个副本一样。</p>
+<p>下图是一个不满足顺序一致性的例子：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640-20231106201453194.png" alt="Example 2"></p>
+<h3 id="线性一致性">线性一致性</h3>
+<p>线性一致性的定义，与顺序一致性非常相似，也是试图把所有读写操作重排成一个全局线性有序的序列，但除了满足前面的条件 I 和条件 II 之外，还要同时满足一个条件：</p>
+<ul>
+<li><strong>条件 III</strong>：不同进程的操作，如果在时间上不重叠，那么它们的执行先后顺序，在这个重排后的序列中必须保持一致。</li>
+</ul>
+<p>所以下图这个例子是不满足线性一致性的：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640.png" alt="Example 1"></p>
+<blockquote>
+<p>C 已经成功写入了，P_3 的第一次读是不会读到 A 的。</p>
+</blockquote>
+<p>下图是满足线性一致性的：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/640-20231106201807555.png" alt="Example 3"></p>
+<p>重排后一个有效的序列是：</p>
+<ol>
+<li>写 A</li>
+<li>读 A</li>
+<li>写 C</li>
+<li>读 C</li>
+<li>写 B</li>
+<li>读 B</li>
+</ol>
+<p>现在我们可以仔细分析一下条件 II 和条件 III，它们囊括了任意两个操作之间所有可能的先后关系：</p>
+<ul>
+<li>进程内的任意两个操作之间，总是先后顺序执行的（执行时间上不可能重叠）；而根据条件II，它们的先后顺序在最后重排后的序列中也会保持。</li>
+<li>不同进程的不同操作之间，在执行时间上可能重叠（并发执行），也可能不重叠。根据条件 III，不重叠的两个操作，它们在时间上的先后顺序，在最后重排后的序列中会得以保持。而对于执行时间上重叠的两个操作，它们在最后重排后的序列中的先后顺序没有规定。</li>
+</ul>
+<h3 id="Summary-3">Summary</h3>
+<ul>
+<li>线性一致性隐含了时效性保证（<em>recency guarantee</em>）。它保证我们总是能读到数据最新的值。</li>
+<li>在顺序一致性中，我们有可能读到旧版本的数据。</li>
+</ul>
+<h2 id="最终一致性">最终一致性</h2>
+<p>系统维持强一致性是有成本的。想要维持越强的一致性，就需要在副本节点之间做更多的通信和协调工作，因此会降低操作的总延迟，进而降低整个系统的性能。</p>
+<p>从20世纪90年代中期开始，互联网开始蓬勃发展，系统的规模也变得越来越大。人们设计大型分布式系统的指导思想，也逐步开始更倾向于系统的高可用性和高性能。取舍的结果就是，降低系统提供的一致性保障。这其中非常重要的一条思路就是最终一致性。</p>
+<p>最终一致性的定义如下：</p>
+<blockquote>
+<p>Eventual consistency. This is a specific form of weak consistency; the storage system guarantees that if no new updates are made to the object, eventually all accesses will return the last updated value.<br>
+最终一致性是弱一致性的一种特殊形式；存储系统保证，如果对象没有新的修改操作，那么所有的访问最终都会返回最新写入的值。</p>
+</blockquote>
+<p>虽然最终一致性和本文前面讨论的线性一致性或顺序一致性在命名上非常相似，但它的定义却与后两者存在非常大的差别。深层的原因在于，它们其实属于不同类别的系统属性 (<em>property</em>)。</p>
+<ul>
+<li>线性一致性和顺序一致性属于 <em>safety property</em>（安全性）；</li>
+<li>最终一致性属于 <em>liveness property</em>（活性）</li>
+</ul>
+<blockquote>
+<p>实际上，最终一致性有点名不副实，它更好的名字可能是收敛性 (<em>convergence</em>)，表示所有副本最终都会收敛到相同的值。</p>
+</blockquote>
+<h2 id="一致性的强弱关系">一致性的强弱关系</h2>
+<p>一致性模型的强弱关系，其实是有更严格的定义的：</p>
+<ul>
+<li>当且仅当一个一致性模型所能接受的执行过程，都能被另一个一致性模型所接受时（前者的集合是后者集合的子集），我们就说前者是比后者「更强」(<em>stronger</em>) 的一致性模型。</li>
+</ul>
+<p>仔细分析一下也能知道，一致性模型的强弱关系定义，是基于 safety 属性定义的。所以，将线性一致性或顺序一致性与最终一致性比较强弱，这并不是一个严格的做法。实际上，就像我们前一小节所讨论的，最终一致性在 safety 方面提供的保证为零，它是属于 liveness 的概念。一个系统可以在提供最终一致性的同时，也提供另外一种更强一点的带有 safety 属性的一致性（比如因果一致性）。</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Distributed/" class="category-chain-item">Distributed</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/Talk/" class="print-no-link">#Talk</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>Talk about Consistency and Consensus</div>
+      <div>http://blog.kkkzoz.top/2023/11/07/Talks/talk-about-consistency-and-consensus/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 7, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/08/Talks/6.824-lab2b-research/" title="Research: 6.824 Lab2B 中异常情况的分析">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Research: 6.824 Lab2B 中异常情况的分析</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/11/06/Papers/chain-replication/" title="Paper Note: Chain Replication">
+                        <span class="hidden-mobile">Paper Note: Chain Replication</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

@@ -1,0 +1,951 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Replication Versus Partitioning There are two common ways data is distributed across multiple nodes:  Replication  Keeping a copy of the same data on several different nodes, potentially in different">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA: Chapter 5 Replication">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/10/23/Books/Design%20Data-Intensive%20Applications/chapter-5-replication/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="Replication Versus Partitioning There are two common ways data is distributed across multiple nodes:  Replication  Keeping a copy of the same data on several different nodes, potentially in different">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022225932806.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022230551280.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022230716125.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023215614516.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023220403916.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023221102161.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023221853133.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023222244150.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023223225109.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023223425441.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023224727922.png">
+<meta property="article:published_time" content="2023-10-22T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="BookNote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022225932806.png">
+  
+  
+  
+  <title>DDIA: Chapter 5 Replication - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA: Chapter 5 Replication"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-10-23 00:00" pubdate>
+          October 23, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          15k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          126 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA: Chapter 5 Replication</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="Replication-Versus-Partitioning">Replication Versus Partitioning</h2>
+<p>There are two common ways data is distributed across multiple nodes:</p>
+<ul>
+<li><em>Replication</em>
+<ul>
+<li>Keeping a copy of the <strong>same data</strong> on several different nodes, potentially in different locations. Replication provides <strong>redundancy</strong> and can also help improve performance.</li>
+</ul>
+</li>
+<li><em>Partitioning</em>
+<ul>
+<li>Splitting a big database into <strong>smaller subsets</strong> called partitions so that different partitions can be assigned to different nodes (also known as <em>sharding</em>).</li>
+</ul>
+</li>
+</ul>
+<p>These are separate mechanisms, but they often go hand in hand:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022225932806.png" alt="image-20231022225932806"></p>
+<p>Here are several reasons why you might want to replicate data:</p>
+<ul>
+<li>To reduce latency.</li>
+<li>To increase availability.</li>
+<li>To increase read throughput.</li>
+</ul>
+<h2 id="Leaders-and-Followers">Leaders and Followers</h2>
+<p>The most common solution for this is called <em>leader-based replication</em>.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022230551280.png" alt="image-20231022230551280"></p>
+<h3 id="Synchronous-Versus-Asynchronous-Replication">Synchronous Versus Asynchronous Replication</h3>
+<p>An important detail of a replicated system is whether the replication happens <em>synchronously</em> or <em>asynchronously</em>.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231022230716125.png" alt="image-20231022230716125"></p>
+<ul>
+<li>The replication to follower 1 is <em>synchronous</em></li>
+<li>The replication to follower 2 is <em>asynchronous</em></li>
+</ul>
+<blockquote>
+<p>By the way，这图更像是在表达 write needs to be agreed on a majority of nodes.</p>
+</blockquote>
+<p>The advantage of synchronous replication is that the follower is guaranteed to have an <strong>up-to-date</strong> copy of the data that is <strong>consistent</strong> with the leader.</p>
+<p>The disadvantage is that if the synchronous follower doesn’t respond (because it has crashed, or there is a network fault, or for any other reason), the write cannot be processed.</p>
+<p>For this reason, it is impractical for all followers to be synchronous. In practice, if you enable synchronous replication on a database, it usually means that <strong>one of the followers is synchronous, and the others are asynchronous.</strong></p>
+<blockquote>
+<p>This configuration is sometimes also called <em>semi-synchronous</em></p>
+</blockquote>
+<p>Completely asynchronous will weaken durability. Weakening durability may sound like a bad trade-off, but asynchronous replication is nevertheless widely used, especially if there are many followers or if they are geographically distributed.</p>
+<h3 id="Implementation-of-Replication-Logs">Implementation of Replication Logs</h3>
+<h4 id="Statement-based-replication">Statement-based replication</h4>
+<p>In the simplest case, the leader logs every write request (statement) that it executes and sends that statement log to its followers. For a relational database, this means that every <code>INSERT</code>, <code>UPDATE</code>, or <code>DELETE</code> statement is forwarded to followers.</p>
+<p>One problem with this approach is that any statement that calls a nondeterministic function, such as <code>NOW()</code> to get the current date and time or <code>RAND()</code> to get a random number, is likely to generate a different value on each replica. (Recall how to solve this problem in vm-ft)</p>
+<h4 id="Write-ahead-log-WAL-shipping">Write-ahead log (WAL) shipping</h4>
+<p>We can use the exact same log to build a replica on another node <strong>which storage engine uses</strong>: besides writing the log to disk, the leader also sends it across the network to its followers.</p>
+<p>The main disadvantage is that the log describes the data <strong>on a very low level</strong>: a WAL contains details of which bytes were changed in which disk blocks. This makes replication <strong>closely coupled to the storage engine</strong>.</p>
+<p>If the replication protocol allows the follower to use a newer software version than the leader, you can perform a zero-downtime upgrade of the database software by first upgrading the followers and then performing a failover to make one of the upgraded nodes the new leader.</p>
+<h4 id="Logical-row-based-log-replication">Logical (row-based) log replication</h4>
+<p>An alternative is to use different log formats for replication and for the storage engine, which allows the replication log to be <strong>decoupled from the storage engine</strong> internals.</p>
+<blockquote>
+<p>This kind of replication log is called a logical log, to distinguish it from the storage engine’s (physical) data representation.</p>
+</blockquote>
+<p>A logical log for a relational database is usually a sequence of records describing writes to database tables at the granularity of a row.</p>
+<h3 id="Problems-with-Replication-Lag">Problems with Replication Lag</h3>
+<p>Leader-based replication requires all writes to go through a single node, but readonly queries can go to any replica. For workloads that consist of mostly reads and only a small percentage of writes (a common pattern on the web), there is an attractive option.</p>
+<p>In this read-scaling architecture, you can increase the capacity for serving read-only requests simply by adding more followers.</p>
+<p>这种方法只适用于异步复制，但异步复制就会带来数据不一致的问题：用户可能会从副本中读到过时的数据，但是这种不一致只是暂时的（比如可能由网络延迟带来），所有追随者的数据<strong>最终</strong>会与领导者的数据一致，这种一致性就被称作最终一致性。</p>
+<blockquote>
+<p>You may get different results, because not all writes have been reflected in the follower. This inconsistency is just a temporary state—if you stop writing to the database and wait a while, the followers will eventually catch up and become consistent with the leader. For that reason, this effect is known as <em>eventual consistency</em>.</p>
+</blockquote>
+<blockquote>
+<p>一致性和性能不能兼得，比如强一致性就要求读写操作都必须经过领导者，我们可以退一步，使用最终一致性，这样就能将读操作分摊到各个副本上。<br>
+很多案例都不需要强一致性的，比如各种信息的评论和点赞，慢一点没啥太大影响。</p>
+</blockquote>
+<h4 id="Reading-Your-Own-Writes">Reading Your Own Writes</h4>
+<p>Many applications let the user submit some data and then view what they have submitted. With asynchronous replication, there is a problem:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023215614516.png" alt="image-20231023215614516"></p>
+<p>In this situation, we need <em>read-after-write consistency</em>, also known as <em>read-your-writes consistency</em>. This is a guarantee that if the user reloads the page, they will always see any updates they submitted themselves. (It makes no promises about other users)</p>
+<p><em>How to deal</em></p>
+<p>How can we implement read-after-write consistency in a system with leader-based replication?</p>
+<ul>
+<li>When reading something that the user may have modified, read it from the leader; otherwise, read it from a follower.</li>
+<li>Track the time of the last update and, for one minute after the last update, make all reads from the leader.</li>
+<li>The client can remember the timestamp of its most recent write—then the system can ensure that the replica serving any reads for that user reflects updates at least until that timestamp.
+<ul>
+<li>If a replica is not sufficiently up to date:
+<ul>
+<li>The read can be handled by another replica.</li>
+<li>The query can wait until the replica has caught up.</li>
+</ul>
+</li>
+<li>The timestamp could be a logical timestamp (something like the log sequence number)</li>
+</ul>
+</li>
+</ul>
+<p>How about the same user is accessing your service form multiple device?</p>
+<p>In this case you may want to provide <em>cross-device</em> read-after-write consistency.</p>
+<blockquote>
+<p>Like collaborate editor? OneNote…</p>
+</blockquote>
+<h4 id="Monotonic-Reads">Monotonic Reads</h4>
+<p>Second example of an anomaly that can occur when reading from asynchronous followers is that it’s possible for a user to see things <em>moving backward in time</em>.</p>
+<p>情况如下：对于相同的两次查询，可能会被重定向到两个不同的副本当中，因为使用的是异步复制，所以有可能第一个被访问的副本数据比较新，而第二个副本的数据比较旧，从用户的角度，就会出现第二次查询反而数据变少的情况。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023220403916.png" alt="image-20231023220403916"></p>
+<p>Monotonic reads is a guarantee that this kind of anomaly does not happen. It’s <strong>a lesser guarantee than strong consistency</strong>, but <strong>a stronger guarantee than eventual consistency.</strong></p>
+<p>When you read data, you may see an old value, monotonic reads only means that if one user makes several reads in sequence, they will not see time go backward，that is they will not read older data after having previously read newer data.</p>
+<p><em>How to deal</em></p>
+<p>One way of achieving monotonic reads is to make sure that each user always makes their reads from the same replica (different users can read from different replicas).</p>
+<h4 id="Summary">Summary</h4>
+<ul>
+<li><em>Read-after-write consistency</em>
+<ul>
+<li>Users should always see data that they submitted themselves.</li>
+</ul>
+</li>
+<li><em>Monotonic reads</em>
+<ul>
+<li>After users have seen the data at one point in time, they shouldn’t later see the data from some earlier point in time.</li>
+</ul>
+</li>
+<li><em>Consistent prefix reads</em>
+<ul>
+<li>Users should see the data in a state that makes causal sense: for example, seeing a question and its reply in the correct order.</li>
+</ul>
+</li>
+</ul>
+<h4 id="Consistent-Prefix-Reads">Consistent Prefix Reads</h4>
+<p>Third example of replication lag anomalies concerns violation of causality.</p>
+<p>即在逻辑上具有先后顺序的数据在到达时不再具有此关系，或者说，乱序了。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023221102161.png" alt="image-20231023221102161"></p>
+<p>Preventing this kind of anomaly requires another type of guarantee: <em>consistent prefix reads</em>. This guarantee says that if a sequence of writes happens in a certain order, then anyone reading those writes will see them <strong>appear in the same order.</strong></p>
+<blockquote>
+<p>This is a particular problem in partitioned (sharded) databases.</p>
+</blockquote>
+<p><em>How to deal</em></p>
+<p>One solution is to make sure that any writes that are causally related to each other are written to the same partition.</p>
+<p>There are also algorithms that we will discuss in next chapter.</p>
+<h4 id="Solutions-for-Replication-Lag">Solutions for Replication Lag</h4>
+<p>It would be better if application developers didn’t have to worry about subtle replication issues and could just trust their databases to “do the right thing.”<br>
+This is why <em>transactions</em> exist: they are a way for a database to provide stronger guarantees so that the application can be simpler.</p>
+<h3 id="Multi-Leader-Replication">Multi-Leader Replication</h3>
+<p>A natural extension of the leader-based replication model is to allow more than one node to accept writes.</p>
+<blockquote>
+<p>允许在多个 Leader 里同时进行写操作，很自然地想到这种模式下要面对的一个重要问题就是如何解决并发时的写冲突。</p>
+</blockquote>
+<h4 id="Use-Cases-for-Multi-Leader-Replication">Use Cases for Multi-Leader Replication</h4>
+<h5 id="Multi-datacenter-operation">Multi-datacenter operation</h5>
+<p>In a multi-leader configuration, you can have a leader in each datacenter. Within each datacenter, regular leader-follower replication is used; between datacenters, each datacenter’s leader <strong>replicates its changes to the leaders in other datacenters.</strong></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023221853133.png" alt="image-20231023221853133"></p>
+<p>Let’s compare how the single-leader and multi-leader configurations fare in a multi-datacenter deployment:</p>
+<ul>
+<li><em>Performance</em>
+<ul>
+<li>The inter-datacenter network delay is hidden from users, which means the perceived performance may be better.</li>
+</ul>
+</li>
+<li><em>Tolerance of datacenter outages</em>
+<ul>
+<li>In a multi-leader configuration, each datacenter can continue operating independently of the others</li>
+</ul>
+</li>
+<li><em>Tolerance of network problems</em>
+<ul>
+<li>A multi-leader configuration with asynchronous replication can usually tolerate network problems better: a temporary network interruption does not prevent writes being processed.</li>
+</ul>
+</li>
+</ul>
+<h4 id="Handling-Write-Conflicts">Handling Write Conflicts</h4>
+<p>The biggest problem with multi-leader replication is that write conflicts can occur, which means that conflict resolution is required.</p>
+<p>For example, consider a wiki page that is simultaneously being edited by two users, as shown below:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023222244150.png" alt="image-20231023222244150"></p>
+<h5 id="Conflict-avoidance">Conflict avoidance</h5>
+<p>The simplest strategy for dealing with conflicts is to avoid them: if the application can ensure that all writes for a particular record go through the same leader, then conflicts cannot occur.</p>
+<p>For example, in an application where a user can edit their own data, you can ensure that requests from a particular user are always routed to the same datacenter and use the leader in that datacenter for reading and writing. Different users may have different “home” datacenters.</p>
+<h5 id="Converging-toward-a-consistent-state">Converging toward a consistent state</h5>
+<p>If each replica simply applied writes in the order that it saw the writes, the database would end up in an inconsistent state (this will be OK in a single-leader database).</p>
+<p>Thus, the database must resolve the conflict in a <em>convergent</em> way, which means that all replicas must arrive at the same final value when all changes have been replicated.</p>
+<p>There are various ways of achieving convergent conflict resolution:</p>
+<ul>
+<li>Give each write a unique ID, pick the write with the highest ID as the winner, and throw away the other writes. If a timestamp is used, this technique is known as <em>last write wins</em> (LWW).
+<ul>
+<li>It is dangerously prone to data loss.</li>
+</ul>
+</li>
+<li>Record the conflict in an explicit data structure that preserves all information, and write application code that resolves the conflict at some later time (perhaps by prompting the user).</li>
+</ul>
+<h5 id="Custom-conflict-resolution-logic">Custom conflict resolution logic</h5>
+<p>As the most appropriate way of resolving a conflict may depend on the application, most multi-leader replication tools let you write conflict resolution logic using application code.</p>
+<ul>
+<li><em>On write</em>
+<ul>
+<li>As soon as the database system detects a conflict in the log of replicated changes, it calls the conflict handler.</li>
+</ul>
+</li>
+<li><em>On read</em>
+<ul>
+<li>When a conflict is detected, all the conflicting writes are stored. The next time the data is read, these multiple versions of the data are returned to the application.</li>
+</ul>
+</li>
+</ul>
+<h4 id="Multi-Leader-Replication-Topologies">Multi-Leader Replication Topologies</h4>
+<p>A <em>replication topology</em> describes the communication paths along which writes are propagated from one node to another.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023223225109.png" alt="image-20231023223225109"></p>
+<p>To prevent infinite replication loops, each node is given a unique identifier, and in the replication log, each write is tagged with the identifiers of all the nodes it has passed through.</p>
+<p>With multi-leader replication, writes may arrive in the wrong order at some replicas:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023223425441.png" alt="image-20231023223425441"></p>
+<p>This is a problem of <em>causality</em>, simply attaching a timestamp to every write is not sufficient, because clocks cannot be trusted to be sufficiently in sync to correctly order these events at leader 2.</p>
+<p>To order these events correctly, a technique called version vectors can be used.</p>
+<h3 id="Leaderless-Replication">Leaderless Replication</h3>
+<blockquote>
+<p>这种模式下，用户在执行写操作时需要把请求发到各个副本上。</p>
+</blockquote>
+<h4 id="Writing-to-the-Database-When-a-Node-Is-Down">Writing to the Database When a Node Is Down</h4>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231023224727922.png" alt="image-20231023224727922"></p>
+<p>To solve that problem, when a client reads from the database, it doesn’t just send its request to one replica: <em>read requests</em> are also sent to several nodes <em>in parallel</em>. The client may get different responses from different nodes; i.e., the up-to-date value from one node and a stale value from another. Version numbers are used to determine which value is newer.</p>
+<h5 id="Read-repair-and-anti-entropy">Read repair and anti-entropy</h5>
+<p>The replication scheme should ensure that eventually all the data is copied to every replica. Two mechanisms are often used in Dynamo-style datastores:</p>
+<ul>
+<li><em>Read repair</em>
+<ul>
+<li>When a client makes a read from several nodes in parallel, it can detect any stale responses. The client sees that replica 3 has a stale value and writes the newer value back to that replica. This approach works well for <strong>values that are frequently read.</strong></li>
+</ul>
+</li>
+<li><em>Anti-entropy process</em>
+<ul>
+<li>Some datastores have a <strong>background</strong> process that constantly looks for differences in the data between replicas and copies any missing data from one replica to another.</li>
+</ul>
+</li>
+</ul>
+<p>Note that without an anti-entropy process, values that are rarely read may be missing from some replicas and thus have reduced durability, because read repair is only performed when a value is read by the application.</p>
+<h5 id="Quorums-for-reading-and-writing">Quorums for reading and writing</h5>
+<p>More generally, if there are <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> replicas, every write must be confirmed by <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> nodes to be considered successful, and we must query at least <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> nodes for each read.</p>
+<p>As long as <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>+</mo><mi>r</mi><mo>&gt;</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">w + r &gt; n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>, we expect to get an up-to-date value when reading, because at least one of the <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> nodes we’re reading from must be up to date. Reads and writes that obey these <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> values are called <em>quorum</em> reads and writes.</p>
+<blockquote>
+<p>You can think of <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> as the minimum number of votes required for the read or write to be valid.<br>
+Normally, reads and writes are always sent to all <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> replicas in parallel. The parameters <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> determine how many nodes we wait for.</p>
+</blockquote>
+<p>However, you can vary the numbers as you see fit. For example, a workload with few writes and many reads may benefit from setting <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>=</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">w = n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">r = 1</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">=</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.6444em;"></span><span class="mord">1</span></span></span></span>. This makes reads faster, but has the disadvantage that just one failed node causes all database writes to fail.</p>
+<h4 id="Limitations-of-Quorum-Consistency">Limitations of Quorum Consistency</h4>
+<p>If you have <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi></mrow><annotation encoding="application/x-tex">n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span> replicas, and you choose <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> such that <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi><mo>+</mo><mi>r</mi><mo>&gt;</mo><mi>n</mi></mrow><annotation encoding="application/x-tex">w + r &gt; n</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.6667em;vertical-align:-0.0833em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span><span class="mspace" style="margin-right:0.2222em;"></span><span class="mbin">+</span><span class="mspace" style="margin-right:0.2222em;"></span></span><span class="base"><span class="strut" style="height:0.5782em;vertical-align:-0.0391em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span><span class="mspace" style="margin-right:0.2778em;"></span><span class="mrel">&gt;</span><span class="mspace" style="margin-right:0.2778em;"></span></span><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal">n</span></span></span></span>, you can generally expect every read to return the most recent value written for a key. This is the case because the set of nodes to which you’ve written and the set of nodes from which you’ve read <strong>must overlap</strong>.</p>
+<p>With a smaller <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> you are more likely to read stale values, because it’s more likely that your read didn’t include the node with the latest value. On the upside, this configuration allows <strong>lower latency and higher availability</strong>.</p>
+<p>However, even with w + r &gt; n, there are likely to be edge cases where stale values are returned:</p>
+<ul>
+<li>If a write happens concurrently with a read, the write may be reflected on only some of the replicas. In this case, it’s undetermined whether the read returns the old or the new value.</li>
+<li>If a node carrying a new value fails, and its data is restored from a replica carrying an old value, the number of replicas storing the new value may fall below w, breaking the quorum condition.</li>
+<li>Even if everything is working correctly, there are edge cases in which you can get unlucky with the timing.</li>
+</ul>
+<p>The parameters <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>w</mi></mrow><annotation encoding="application/x-tex">w</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02691em;">w</span></span></span></span> and <span class="katex"><span class="katex-mathml"><math xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">r</annotation></semantics></math></span><span class="katex-html" aria-hidden="true"><span class="base"><span class="strut" style="height:0.4306em;"></span><span class="mord mathnormal" style="margin-right:0.02778em;">r</span></span></span></span> allow you to adjust the probability of stale values being read, but it’s wise to not take them as absolute guarantees.</p>
+<h4 id="Monitoring-staleness">Monitoring staleness</h4>
+<p>For leader-based replication, the database typically exposes metrics for the replication lag, which you can feed into a monitoring system. This is possible because writes are applied to the leader and to followers in the same order, and each node has a position in the replication log.</p>
+<p>Eventual consistency is a deliberately vague guarantee, but for operability it’s important to be able to quantify “eventual.”</p>
+<h4 id="Sloppy-Quorums-and-Hinted-Handoff">Sloppy Quorums and Hinted Handoff</h4>
+<p>Quorums reading and writing make databases with leaderless replication appealing for use cases that require high availability and low latency, and that can tolerate occasional stale reads.</p>
+<h3 id="Detecting-Concurrent-Writes">Detecting Concurrent Writes</h3>
+<h4 id="Last-write-wins-discarding-concurrent-writes">Last write wins (discarding concurrent writes)</h4>
+<p>One approach for achieving eventual convergence is to declare that each replica need only store the most “recent” value and allow “older” values to be overwritten and discarded.</p>
+<p>For example, we can attach a timestamp to each write, pick the biggest timestamp as the most “recent,” and discard any writes with an earlier timestamp. This conflict resolution algorithm, called <em>last write wins</em> (LWW).</p>
+<p>LWW achieves the goal of eventual convergence, but at the cost of durability: if there are several concurrent writes to the same key, even if they were all reported as successful to the client (because they were written to w replicas), only one of the writes will survive and the others will be silently discarded.</p>
+<h4 id="The-“happens-before”-relationship-and-concurrency">The “happens-before” relationship and concurrency</h4>
+<p>How do we decide whether two operations are concurrent or not?</p>
+<p>An operation A <em>happens before</em> another operation B if B knows about A, or depends on A, or builds upon A in some way. Whether one operation happens before another operation is the key to defining what concurrency means. In fact, we can simply say that two operations are <em>concurrent</em> if neither happens before the other.</p>
+<p>It may seem that two operations should be called concurrent if they occur “at the same time” — but in fact, it is not important whether they literally overlap in time because of problems with clocks in distributed systems.</p>
+<p>We simply call <strong>two operations concurrent if they are both unaware of each other, regardless of the physical time at which they occurred.</strong></p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Design-Data-Intensive-Applications/" class="category-chain-item">Design Data-Intensive Applications</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/BookNote/" class="print-no-link">#BookNote</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA: Chapter 5 Replication</div>
+      <div>http://blog.kkkzoz.top/2023/10/23/Books/Design Data-Intensive Applications/chapter-5-replication/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>October 23, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/10/24/Books/Design%20Data-Intensive%20Applications/chapter-6-partioning/" title="DDIA: Chapter 6 Partioning">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">DDIA: Chapter 6 Partioning</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/10/21/Books/Design%20Data-Intensive%20Applications/chapter-4-encoding-and-evolution/" title="DDIA: Chapter 4 Encoding and Evolution">
+                        <span class="hidden-mobile">DDIA: Chapter 4 Encoding and Evolution</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>

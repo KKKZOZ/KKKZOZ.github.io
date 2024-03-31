@@ -1,0 +1,870 @@
+
+
+<!DOCTYPE html>
+<html lang="en" data-default-color-scheme=auto>
+
+
+
+<head>
+  <meta charset="UTF-8">
+  <link rel="apple-touch-icon" sizes="76x76" href="/img/fluid.png">
+  <link rel="icon" href="/img/fluid.png">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+  
+  <meta name="theme-color" content="#2f4154">
+  <meta name="author" content="Liu Jinyi">
+  <meta name="keywords" content="">
+  
+    <meta name="description" content="Faults and Partial Failures An individual computer with good software is usually either fully functional or entirely broken, but not something in between. Thus, computers hide the fuzzy physical reali">
+<meta property="og:type" content="article">
+<meta property="og:title" content="DDIA: Chapter 8 The Trouble with Distributed Systems">
+<meta property="og:url" content="http://blog.kkkzoz.top/2023/11/02/Books/Design%20Data-Intensive%20Applications/chapter-8-the-trouble-with-distributed-systems/index.html">
+<meta property="og:site_name" content="Kelicopter&#39;s Blog">
+<meta property="og:description" content="Faults and Partial Failures An individual computer with good software is usually either fully functional or entirely broken, but not something in between. Thus, computers hide the fuzzy physical reali">
+<meta property="og:locale" content="en_US">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102205020195.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/IMG_2D4CCAC1628F-1.jpeg">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102210713994.png">
+<meta property="og:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102210844751.png">
+<meta property="article:published_time" content="2023-11-01T16:00:00.000Z">
+<meta property="article:modified_time" content="2024-01-09T09:18:13.253Z">
+<meta property="article:author" content="Liu Jinyi">
+<meta property="article:tag" content="BookNote">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102205020195.png">
+  
+  
+  
+  <title>DDIA: Chapter 8 The Trouble with Distributed Systems - Kelicopter&#39;s Blog</title>
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/twitter-bootstrap/4.6.1/css/bootstrap.min.css" />
+
+
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/github-markdown-css/4.0.0/github-markdown.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/hint.css/2.7.0/hint.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.css" />
+
+  <link  rel="stylesheet" href="https://lib.baomitu.com/KaTeX/0.16.2/katex.min.css" />
+
+
+
+<!-- 主题依赖的图标库，不要自行修改 -->
+<!-- Do not modify the link that theme dependent icons -->
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1749284_hj8rtnfg7um.css">
+
+
+
+<link rel="stylesheet" href="//at.alicdn.com/t/font_1736178_lbnruvf0jn.css">
+
+
+<link  rel="stylesheet" href="/css/main.css" />
+
+
+  <link id="highlight-css" rel="stylesheet" href="/css/highlight.css" />
+  
+    <link id="highlight-css-dark" rel="stylesheet" href="/css/highlight-dark.css" />
+  
+
+
+
+
+  <script id="fluid-configs">
+    var Fluid = window.Fluid || {};
+    Fluid.ctx = Object.assign({}, Fluid.ctx)
+    var CONFIG = {"hostname":"blog.kkkzoz.top","root":"/","version":"1.9.5-a","typing":{"enable":true,"typeSpeed":70,"cursorChar":"_","loop":false,"scope":[]},"anchorjs":{"enable":true,"element":"h1,h2,h3,h4,h5,h6","placement":"left","visible":"hover","icon":""},"progressbar":{"enable":true,"height_px":3,"color":"#29d","options":{"showSpinner":false,"trickleSpeed":100}},"code_language":{"enable":true,"default":"TEXT"},"copy_btn":true,"image_caption":{"enable":true},"image_zoom":{"enable":true,"img_url_replace":["",""]},"toc":{"enable":true,"placement":"right","headingSelector":"h1,h2,h3,h4,h5,h6","collapseDepth":0},"lazyload":{"enable":false,"loading_img":"/img/loading.gif","onlypost":false,"offset_factor":2},"web_analytics":{"enable":false,"follow_dnt":true,"baidu":null,"google":{"measurement_id":null},"tencent":{"sid":null,"cid":null},"woyaola":null,"cnzz":null,"leancloud":{"app_id":null,"app_key":null,"server_url":null,"path":"window.location.pathname","ignore_local":false}},"search_path":"/local-search.xml","include_content_in_search":true};
+
+    if (CONFIG.web_analytics.follow_dnt) {
+      var dntVal = navigator.doNotTrack || window.doNotTrack || navigator.msDoNotTrack;
+      Fluid.ctx.dnt = dntVal && (dntVal.startsWith('1') || dntVal.startsWith('yes') || dntVal.startsWith('on'));
+    }
+  </script>
+  <script  src="/js/utils.js" ></script>
+  <script  src="/js/color-schema.js" ></script>
+  
+
+
+  
+<meta name="generator" content="Hexo 6.3.0"></head>
+
+
+<body>
+  
+
+  <header>
+    
+
+<div class="header-inner" style="height: 70vh;">
+  <nav id="navbar" class="navbar fixed-top  navbar-expand-lg navbar-dark scrolling-navbar">
+  <div class="container">
+    <a class="navbar-brand" href="/">
+      <strong>Kelicopter</strong>
+    </a>
+
+    <button id="navbar-toggler-btn" class="navbar-toggler" type="button" data-toggle="collapse"
+            data-target="#navbarSupportedContent"
+            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+      <div class="animated-icon"><span></span><span></span><span></span></div>
+    </button>
+
+    <!-- Collapsible content -->
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="navbar-nav ml-auto text-center">
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="iconfont icon-home-fill"></i>
+                <span>Home</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/archives/">
+                <i class="iconfont icon-archive-fill"></i>
+                <span>Archives</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/categories/">
+                <i class="iconfont icon-category-fill"></i>
+                <span>Categories</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/tags/">
+                <i class="iconfont icon-tags-fill"></i>
+                <span>Tags</span>
+              </a>
+            </li>
+          
+        
+          
+          
+          
+          
+            <li class="nav-item">
+              <a class="nav-link" href="/about/">
+                <i class="iconfont icon-user-fill"></i>
+                <span>About</span>
+              </a>
+            </li>
+          
+        
+        
+          <li class="nav-item" id="search-btn">
+            <a class="nav-link" target="_self" href="javascript:;" data-toggle="modal" data-target="#modalSearch" aria-label="Search">
+              <i class="iconfont icon-search"></i>
+            </a>
+          </li>
+          
+        
+        
+          <li class="nav-item" id="color-toggle-btn">
+            <a class="nav-link" target="_self" href="javascript:;" aria-label="Color Toggle">
+              <i class="iconfont icon-dark" id="color-toggle-icon"></i>
+            </a>
+          </li>
+        
+      </ul>
+    </div>
+  </div>
+</nav>
+
+  
+
+<div id="banner" class="banner" parallax=true
+     style="background: url('/img/default.png') no-repeat center center; background-size: cover;">
+  <div class="full-bg-img">
+    <div class="mask flex-center" style="background-color: rgba(0, 0, 0, 0.3)">
+      <div class="banner-text text-center fade-in-up">
+        <div class="h2">
+          
+            <span id="subtitle" data-typed-text="DDIA: Chapter 8 The Trouble with Distributed Systems"></span>
+          
+        </div>
+
+        
+          
+  <div class="mt-3">
+    
+    
+      <span class="post-meta">
+        <i class="iconfont icon-date-fill" aria-hidden="true"></i>
+        <time datetime="2023-11-02 00:00" pubdate>
+          November 2, 2023 am
+        </time>
+      </span>
+    
+  </div>
+
+  <div class="mt-1">
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-chart"></i>
+        
+          17k words
+        
+      </span>
+    
+
+    
+      <span class="post-meta mr-2">
+        <i class="iconfont icon-clock-fill"></i>
+        
+        
+        
+          144 mins
+        
+      </span>
+    
+
+    
+    
+  </div>
+
+
+        
+      </div>
+
+      
+    </div>
+  </div>
+</div>
+
+</div>
+
+  </header>
+
+  <main>
+    
+      
+
+<div class="container-fluid nopadding-x">
+  <div class="row nomargin-x">
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+
+    </div>
+
+    <div class="col-lg-8 nopadding-x-md">
+      <div class="container nopadding-x-md" id="board-ctn">
+        <div id="board">
+          <article class="post-content mx-auto">
+            <h1 id="seo-header">DDIA: Chapter 8 The Trouble with Distributed Systems</h1>
+            
+            
+              <div class="markdown-body">
+                
+                <h2 id="Faults-and-Partial-Failures">Faults and Partial Failures</h2>
+<p>An individual computer with good software is usually either fully functional or entirely broken, but not something in between. Thus, computers hide the fuzzy physical reality on which they are implemented and present <strong>an idealized system model</strong> that operates with mathematical perfection.</p>
+<p>In a distributed system, there may well be some parts of the system that are broken in some unpredictable way, even though other parts of the system are working fine. This is known as a <em>partial failure</em>. The difficulty is that partial failures are <em>nondeterministic</em>: if you try to do anything involving multiple nodes and the network, it may sometimes work and sometimes unpredictably fail.</p>
+<h2 id="Unreliable-Networks">Unreliable Networks</h2>
+<h3 id="Network-Faults-in-Practice">Network Faults in Practice</h3>
+<p>Handling network faults doesn’t necessarily mean tolerating them: if your network is normally fairly reliable, a valid approach may be to simply show an error message to users while your network is experiencing problems.</p>
+<h3 id="Detecting-Faults">Detecting Faults</h3>
+<p>Unfortunately, the uncertainty about the network makes it difficult to tell whether a node is working or not.</p>
+<p>You can retry a few times (TCP retries transparently, but you may also retry at the application level), wait for a timeout to elapse, and eventually declare the node dead if you don’t hear back within the timeout.</p>
+<h3 id="Timeouts-and-Unbounded-Delays">Timeouts and Unbounded Delays</h3>
+<p>Imagine a fictitious system with a network that guaranteed a maximum delay for packets—every packet is either delivered within some time d, or it is lost, but delivery never takes longer than d. Furthermore, assume that you can guarantee that a nonfailed node always handles a request within some time r. In this case, you could guarantee that every successful request receives a response within time 2 d + r—and if you don’t receive a response within that time, you know that either the network or the remote node is not working. If this was true, 2 d + r would be a reasonable timeout to use.</p>
+<p>Unfortunately, most systems we work with have neither of those guarantees: asynchronous networks have <em>unbounded delays</em> (that is, they try to deliver packets as quickly as possible, but there is no upper limit on the time it may take for a packet to arrive), and most server implementations cannot guarantee that they can handle requests within some maximum time.</p>
+<h4 id="Network-congestion-and-queueing">Network congestion and queueing</h4>
+<p>The variability of packet delays on computer networks is most often due to queueing:</p>
+<ul>
+<li>If there is so much incoming data that the switch queue fills up, the packet is dropped, so it needs to be resent—even though the network is functioning fine.</li>
+<li>When a packet reaches the destination machine, if all CPU cores are currently busy, the incoming request from the network is queued by the operating system until the application is ready to handle it.</li>
+<li>TCP performs <em>flow control</em>, in which a node limits its own rate of sending in order to avoid overloading a network link or the receiving node.</li>
+</ul>
+<h4 id="Synchronous-Versus-Asynchronous-Networks">Synchronous Versus Asynchronous Networks</h4>
+<p>Why do datacenter networks and the internet use packet switching? The answer is that they are optimized for <em>bursty traffic</em>.</p>
+<p>With careful use of <em>quality of service</em> (QoS, prioritization and scheduling of packets) and <em>admission control</em> (rate-limiting senders), it is possible to emulate circuit switching on packet networks, or provide statistically bounded delay.</p>
+<p>However, currently deployed technology does not allow us to make any guarantees about delays or reliability of the network: we have to assume that network congestion, queueing, and unbounded delays will happen. Consequently, there’s no “correct” value for timeouts—they need to be determined experimentally.</p>
+<h2 id="Unreliable-Clocks">Unreliable Clocks</h2>
+<p>This fact sometimes makes it difficult to determine the order in which things happened when multiple machines are involved.</p>
+<h3 id="Monotonic-Versus-Time-of-Day-Clocks">Monotonic Versus Time-of-Day Clocks</h3>
+<p>Modern computers have at least two different kinds of clocks: a <em>time-of-day clock</em> and a <em>monotonic clock</em>. Although they both measure time, it is important to distinguish the two, since they serve different purposes.</p>
+<h4 id="Time-of-day-clocks">Time-of-day clocks</h4>
+<p>A time-of-day clock does what you intuitively expect of a clock: it returns the current date and time according to some calendar.</p>
+<blockquote>
+<p>For example, <code>clock_gettime(CLOCK_REALTIME)</code> on Linux.</p>
+</blockquote>
+<p>Time-of-day clocks are usually synchronized with NTP, which means that a timestamp from one machine (ideally) means the same as a timestamp on another machine. In particular, if the local clock is too far ahead of the NTP server, it may be forcibly reset and appear to jump back to a previous point in time. <strong>These jumps, as well as the fact that they often ignore leap seconds, make time-of-day clocks unsuitable for measuring elapsed time</strong>.</p>
+<h4 id="Monotonic-clocks">Monotonic clocks</h4>
+<p>A monotonic clock is suitable for measuring a duration (time interval), such as a timeout or a service’s response time: <code>clock_gettime(CLOCK_MONOTONIC)</code> on Linux and <code>System.NanoTime()</code> in Java are monotonic clocks, for example.</p>
+<p>The name comes from the fact that they are guaranteed to always move forward (whereas a time-of-day clock may jump back in time).</p>
+<p>In a distributed system, using a monotonic clock for measuring elapsed time (e.g., timeouts) is usually fine, because it doesn’t assume any synchronization between different nodes’ clocks and is not sensitive to slight inaccuracies of measurement.</p>
+<h3 id="Clock-Synchronization-and-Accuracy">Clock Synchronization and Accuracy</h3>
+<p>Monotonic clocks don’t need synchronization, but time-of-day clocks need to be set according to an NTP server or other external time source in order to be useful.</p>
+<p>Our methods for getting a clock to tell the correct time aren’t nearly as reliable or accurate as you might hope：</p>
+<ul>
+<li>The quartz clock in a computer is not very accurate: it drifts (runs faster or slower than it should).</li>
+<li>If a computer’s clock differs too much from an NTP server, it may refuse to synchronize, or the local clock will be forcibly reset。</li>
+<li>NTP synchronization can only be as good as the network delay, so there is a limit to its accuracy when you’re on a congested network with variable packet delays.</li>
+<li>Leap seconds result in a minute that is 59 seconds or 61 seconds long, which messes up timing assumptions in systems that are not designed with leap seconds in mind.</li>
+<li>In virtual machines, the hardware clock is virtualized, which raises additional challenges for applications that need accurate timekeeping.</li>
+</ul>
+<h3 id="Relying-on-Synchronized-Clocks">Relying on Synchronized Clocks</h3>
+<p>The problem with clocks is that while they seem simple and easy to use, they have a surprising number of pitfalls:</p>
+<ul>
+<li>A day may not have exactly 86,400 seconds.</li>
+<li>Time-of-day clocks may move backward in time.</li>
+<li>The time on one node may be quite different from the time on another node.</li>
+</ul>
+<h4 id="Timestamps-for-ordering-events">Timestamps for ordering events</h4>
+<p>Let’s consider one particular situation in which it is tempting, but dangerous, to rely on clocks: ordering of events across multiple nodes. For example, if two clients write to a distributed database, who got there first?</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102205020195.png" alt="The write by client B is causally later than the write by client A, but B’s write has an earlier timestamp."></p>
+<blockquote>
+<p>The write x = 1 has a timestamp of 42.004 seconds, but the write x = 2 has a timestamp of 42.003 seconds, even though x = 2 occurred unambiguously later. When node 2 receives these two events, it will incorrectly conclude that x = 1 is the more recent value and drop the write x = 2. In effect, client B’s increment operation will be lost.</p>
+</blockquote>
+<p>This conflict resolution strategy is called last write wins (LWW), and it is widely used in both multi-leader replication and leaderless databases.</p>
+<ul>
+<li>Database writes can mysteriously disappear: a node with a lagging clock is unable to overwrite values previously written by a node with a fast clock until the clock skew between the nodes has elapsed.</li>
+<li>LWW cannot distinguish between writes that occurred sequentially in quick succession.</li>
+<li>It is possible for two nodes to independently generate writes with the same timestamp, especially when the clock only has millisecond resolution.</li>
+</ul>
+<p>Could NTP synchronization be made accurate enough that such incorrect orderings cannot occur? Probably not, because NTP’s synchronization accuracy is itself limited by the network round-trip time, in addition to other sources of error such as quartz drift. <strong>For correct ordering, you would need the clock source to be significantly more accurate than the thing you are measuring (namely network delay)</strong>.</p>
+<p>这种时候<em>逻辑时钟</em>就能派上用场了，还是上面的那种情况：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/IMG_2D4CCAC1628F-1.jpeg" alt="IMG_2D4CCAC1628F-1"></p>
+<p>因为 <code>set x=1</code> 和 <code>increase x+=1</code> 是有因果关系的，所以用 Happened Before 这种关系维护的全局排序是能反映这两个操作的因果关系的（<code>increase x+=1</code> 的时间戳一定大于 <code>set x=1</code>，因为在 N3 里它后于 <code>set x=1</code> 发生）。</p>
+<h4 id="Clock-readings-have-a-confidence-interval">Clock readings have a confidence interval</h4>
+<blockquote>
+<p>“置信区间”</p>
+</blockquote>
+<p>The uncertainty bound can be calculated based on your time source. If you have a GPS receiver or atomic (caesium) clock directly attached to your computer, the expected error range is reported by the manufacturer. If you’re getting the time from a server, the uncertainty is based on the expected quartz drift since your last sync with the server, plus the NTP server’s uncertainty, plus the network round-trip time to the server (to a first approximation, and assuming you trust the server).</p>
+<p>Unfortunately, most systems don’t expose this uncertainty: for example, when you call <code>clock_gettime()</code>, the return value doesn’t tell you the expected error of the timestamp, so you don’t know if its confidence interval is five milliseconds or five years.</p>
+<h4 id="Synchronized-clocks-for-global-snapshots">Synchronized clocks for global snapshots</h4>
+<p>The most common implementation of snapshot isolation requires a monotonically increasing transaction ID. If a write happened later than the snapshot (i.e., the write has a greater transaction ID than the snapshot), that write is invisible to the snapshot transaction.</p>
+<p>However, when a database is distributed across many machines, potentially in multiple datacenters, a global, monotonically increasing transaction ID (across all partitions) is difficult to generate, <strong>because it requires coordination.</strong></p>
+<p>Spanner implements snapshot isolation across datacenters in this way. It uses the clock’s confidence interval as reported by the TrueTime API, and is based on the following observation: if you have two confidence intervals, each consisting of an earliest and latest possible timestamp (A = [Aearliest, Alatest] and B = [Bearliest, Blatest]), and those two intervals do not overlap (i.e., Aearliest &lt; Alatest &lt; Bearliest &lt; Blatest), then B definitely happened after A—there can be no doubt. Only if the intervals overlap are we unsure in which order A and B happened.</p>
+<p>Using clock synchronization for distributed transaction semantics is an area of active research. These ideas are interesting, but they have not yet been implemented in mainstream databases outside of Google.</p>
+<h3 id="Process-Pauses">Process Pauses</h3>
+<figure class="highlight go"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><code class="hljs go">while (<span class="hljs-literal">true</span>) &#123; <br> request = getIncomingRequest(); <br> <span class="hljs-comment">// Ensure that the lease always has at least 10 seconds remaining </span><br> <span class="hljs-keyword">if</span> (lease.expiryTimeMillis - System.currentTimeMillis() &lt; <span class="hljs-number">10000</span>) &#123;<br>  lease = lease.renew(); <br> &#125; <br> <span class="hljs-keyword">if</span> (lease.isValid()) &#123; <br>  process(request); <br> &#125; <br>&#125;<br></code></pre></td></tr></table></figure>
+<p><em>What’s wrong with this code?</em></p>
+<p>Firstly, <strong>it’s relying on synchronized clocks</strong>: the expiry time on the lease is set by a different machine (where the expiry may be calculated as the current time plus 30 seconds, for example), and it’s being compared to the local system clock. If the clocks are out of sync by more than a few seconds, this code will start doing strange things.</p>
+<p>Secondly, even if we change the protocol to only use the local monotonic clock, there is another problem: <strong>the code assumes that very little time passes</strong> between the point that it checks the time (<code>System.CurrentTimeMillis()</code>) and the time when the request is processed (<code>process (request)</code>).</p>
+<p>Is it crazy to assume that a thread might be paused for so long? Unfortunately not. There are various reasons why this could happen:</p>
+<ul>
+<li>Many programming language runtimes (such as the Java Virtual Machine) have a <em>garbage collector</em> (GC) that occasionally needs to stop all running threads. These <em>“stop-the-world” GC pauses</em> have sometimes been known to last for several minutes.</li>
+<li>In virtualized environments, a virtual machine can be suspended (pausing the execution of all processes and saving the contents of memory to disk) and resumed (restoring the contents of memory and continuing execution).</li>
+<li>If the application performs synchronous disk access, a thread may be paused waiting for a slow disk I/O operation to complete.</li>
+<li>If the operating system is configured to allow swapping to disk (paging), a simple memory access may result in a page fault that requires a page from disk to be loaded into memory. The thread is paused while this slow I/O operation takes place.</li>
+</ul>
+<p><strong>You can’t assume anything about timing, because arbitrary context switches and parallelism may occur.</strong></p>
+<h4 id="Limiting-the-impact-of-garbage-collection">Limiting the impact of garbage collection</h4>
+<p>An emerging idea is to treat GC pauses like brief planned outages of a node, and to let other nodes handle requests from clients while one node is collecting its garbage.</p>
+<p>A variant of this idea is to use the garbage collector only for short-lived objects (which are fast to collect) and to restart processes periodically, before they accumulate enough long-lived objects to require a full GC of long-lived objects.</p>
+<h3 id="Knowledge-Truth-and-Lies">Knowledge, Truth, and Lies</h3>
+<p>So far in this chapter we have explored the ways in which distributed systems are different from programs running on a single computer: <strong>there is no shared memory, only message passing via an unreliable network with variable delays, and the systems may suffer from partial failures, unreliable clocks, and processing pauses.</strong></p>
+<h4 id="The-Truth-Is-Defined-by-the-Majority">The Truth Is Defined by the Majority</h4>
+<p>A distributed system cannot exclusively rely on a single node, because a node may fail at any time, potentially leaving the system stuck and unable to recover. Instead, many distributed algorithms rely on a <em>quorum</em>, that is, voting among the nodes: decisions require some minimum number of votes from several nodes in order to reduce the dependence on any one particular node.</p>
+<h5 id="The-leader-and-the-lock">The leader and the lock</h5>
+<p>Frequently, a system requires there to be only one of some thing:</p>
+<ul>
+<li>Only one node is allowed to be the leader for a database partition, to avoid split brain.</li>
+<li>Only one transaction or client is allowed to hold the lock for a particular resource or object, to prevent concurrently writing to it and corrupting it.</li>
+<li>Only one user is allowed to register a particular username, because a username must uniquely identify a user.</li>
+</ul>
+<p>Below shows a data corruption bug due to an incorrect implementation of locking:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102210713994.png" alt="Incorrect implementation of a distributed lock: client 1 believes that it still has a valid lease, even though it has expired, and thus corrupts a file in storage."></p>
+<p>If the client holding the lease is paused for too long, its lease expires. Another client can obtain a lease for the same file, and start writing to the file. When the paused client comes back, it believes (incorrectly) that it still has a valid lease and proceeds to also write to the file.</p>
+<h5 id="Fencing-tokens">Fencing tokens</h5>
+<p>When using a lock or lease to protect access to some resource, we need to ensure that a node that is under a false belief of being “the chosen one” cannot disrupt the rest of the system. A fairly simple technique that achieves this goal is called <em>fencing</em>:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231102210844751.png" alt="Making access to storage safe by allowing writes only in the order of increasing fencing tokens."></p>
+<blockquote>
+<p>This approach is under arguments:</p>
+<p>Distributed locks are very useful exactly when <strong>we have no other control in the shared resource.</strong></p>
+</blockquote>
+<p>If ZooKeeper is used as lock service, the transaction ID zxid or the node version cversion can be used as fencing token. Since they are guaranteed to be monotonically increasing, they have the required properties.</p>
+<h3 id="Byzantine-Faults">Byzantine Faults</h3>
+<p>Distributed systems problems become much harder if there is a risk that nodes may “lie” (send arbitrary faulty or corrupted responses)—for example, if a node may claim to have received a particular message when in fact it didn’t. Such behavior is known as a <em>Byzantine fault</em>, and the problem of reaching consensus in this untrusting environment is known as the <em>Byzantine Generals Problem</em>.</p>
+<p>A system is <em>Byzantine fault-tolerant</em> if it continues to operate correctly even if some of the nodes are malfunctioning and not obeying the protocol, or if malicious attackers are interfering with the network.</p>
+<p>A bug in the software could be regarded as a Byzantine fault, but if you deploy the same software to all nodes, then a Byzantine fault-tolerant algorithm cannot save you. Most Byzantine fault-tolerant algorithms require a supermajority of more than twothirds of the nodes to be functioning correctly (i.e., if you have four nodes, at most one may malfunction).</p>
+<h3 id="System-Model-and-Reality">System Model and Reality</h3>
+<p>Algorithms need to be written in a way that does not depend too heavily on the details of the hardware and software configuration on which they are run. This in turn requires that we somehow formalize the kinds of faults that we expect to happen in a system.</p>
+<p>We do this by defining a <em>system model</em>, which is an abstraction that describes what things an algorithm may assume.</p>
+<p>With regard to timing assumptions, three system models are in common use:</p>
+<ul>
+<li><em>Synchronous model</em>
+<ul>
+<li>The synchronous model assumes bounded network delay, bounded process pauses, and bounded clock error.</li>
+<li>This does not imply exactly synchronized clocks or zero network delay; it just means you know that network delay, pauses, and clock drift will never exceed some fixed upper bound.</li>
+</ul>
+</li>
+<li><em>Partially synchronous model</em>
+<ul>
+<li>Partially synchronous model Partial synchrony means that a system behaves like a synchronous system <em>most of the time</em>, but it sometimes exceeds the bounds for network delay, process pauses, and clock drift.</li>
+<li>This is a realistic model of many systems: most of the time, networks and processes are quite well behaved—otherwise we would never be able to get anything done—but we have to reckon with the fact that any timing assumptions may be shattered occasionally.</li>
+</ul>
+</li>
+<li><em>Asynchronous model</em>
+<ul>
+<li>asynchronous model In this model, an algorithm is not allowed to make any timing assumptions — in fact, it does not even have a clock (so it cannot use timeouts).</li>
+</ul>
+</li>
+</ul>
+<p>Moreover, besides timing issues, we have to consider node failures. The three most common system models for nodes are:</p>
+<ul>
+<li><em>Crash-stop faults</em>
+<ul>
+<li>In the crash-stop model, an algorithm may assume that a node can fail in only one way, namely by crashing.</li>
+</ul>
+</li>
+<li><em>Crash-recovery faults</em>
+<ul>
+<li>We assume that nodes may crash at any moment, and perhaps start responding again after some unknown time. In the crash-recovery model, nodes are assumed to have stable storage (i.e., nonvolatile disk storage) that is preserved across crashes, while the in-memory state is assumed to be lost.</li>
+</ul>
+</li>
+<li><em>Byzantine (arbitrary) faults</em>
+<ul>
+<li>Nodes may do absolutely anything, including trying to trick and deceive other nodes.</li>
+</ul>
+</li>
+</ul>
+<p>For modeling real systems, the partially synchronous model with crash-recovery faults is generally the most useful model.</p>
+<h4 id="Correctness-of-an-algorithm">Correctness of an algorithm</h4>
+<p>To define what it means for an algorithm to be correct, we can describe its <em>properties</em>.</p>
+<blockquote>
+<p>For example, the output of a sorting algorithm has the property that for any two distinct elements of the output list, the element further to the left is smaller than the element further to the right.</p>
+</blockquote>
+<h5 id="Safety-and-liveness">Safety and liveness</h5>
+<p>To clarify the situation, it is worth distinguishing between two different kinds of properties: <em>safety</em> and <em>liveness</em> properties.</p>
+<p>What distinguishes the two kinds of properties? A giveaway is that liveness properties often include the word “eventually” in their definition. (And yes, you guessed it - <em>eventual consistency</em> is a liveness property.)</p>
+<p>Safety is often informally defined as <em>nothing bad happens</em>, and liveness as <em>something good eventually happens</em>.</p>
+<p>The actual definitions of safety and liveness are precise and mathematical:</p>
+<ul>
+<li>If a safety property is violated, we can point at a particular point in time at which it was broken. After a safety property has been violated, the violation cannot be undone—the damage is already done.</li>
+<li>A liveness property works the other way round: it may not hold at some point in time. There is always hope that it may be satisfied in the future (namely by receiving a response).</li>
+</ul>
+<p>An advantage of distinguishing between safety and liveness properties is that it helps us deal with difficult system models.</p>
+<p>For distributed algorithms, it is common to require that safety properties <em>always</em> hold, in all possible situations of a system model. That is, even if all nodes crash, or the entire network fails, the algorithm must nevertheless ensure that it does not return a wrong result (i.e., that the safety properties remain satisfied).</p>
+<p>However, with liveness properties we are allowed to make caveats: for example, we could say that a request needs to receive a response only if a majority of nodes have not crashed, and only if the network <em>eventually</em> recovers from an outage. The definition of the partially synchronous model requires that eventually the system returns to a synchronous state—that is, any period of network interruption lasts only for a finite duration and is then repaired.</p>
+
+                
+              </div>
+            
+            <hr/>
+            <div>
+              <div class="post-metas my-3">
+  
+    <div class="post-meta mr-3 d-flex align-items-center">
+      <i class="iconfont icon-category"></i>
+      
+
+<span class="category-chains">
+  
+  
+    
+      <span class="category-chain">
+        
+  <a href="/categories/Design-Data-Intensive-Applications/" class="category-chain-item">Design Data-Intensive Applications</a>
+  
+  
+
+      </span>
+    
+  
+</span>
+
+    </div>
+  
+  
+    <div class="post-meta">
+      <i class="iconfont icon-tags"></i>
+      
+        <a href="/tags/BookNote/" class="print-no-link">#BookNote</a>
+      
+    </div>
+  
+</div>
+
+
+              
+  
+
+  <div class="license-box my-3">
+    <div class="license-title">
+      <div>DDIA: Chapter 8 The Trouble with Distributed Systems</div>
+      <div>http://blog.kkkzoz.top/2023/11/02/Books/Design Data-Intensive Applications/chapter-8-the-trouble-with-distributed-systems/</div>
+    </div>
+    <div class="license-meta">
+      
+        <div class="license-meta-item">
+          <div>Author</div>
+          <div>Liu Jinyi</div>
+        </div>
+      
+      
+        <div class="license-meta-item license-meta-date">
+          <div>Posted on</div>
+          <div>November 2, 2023</div>
+        </div>
+      
+      
+      
+        <div class="license-meta-item">
+          <div>Licensed under</div>
+          <div>
+            
+              
+              
+                <a class="print-no-link" target="_blank" href="https://creativecommons.org/licenses/by/4.0/">
+                  <span class="hint--top hint--rounded" aria-label="BY - Attribution">
+                    <i class="iconfont icon-by"></i>
+                  </span>
+                </a>
+              
+            
+          </div>
+        </div>
+      
+    </div>
+    <div class="license-icon iconfont"></div>
+  </div>
+
+
+
+              
+                <div class="post-prevnext my-3">
+                  <article class="post-prev col-6">
+                    
+                    
+                      <a href="/2023/11/02/Talks/talk-about-redlock/" title="Talk about Redlock">
+                        <i class="iconfont icon-arrowleft"></i>
+                        <span class="hidden-mobile">Talk about Redlock</span>
+                        <span class="visible-mobile">Previous</span>
+                      </a>
+                    
+                  </article>
+                  <article class="post-next col-6">
+                    
+                    
+                      <a href="/2023/10/31/Papers/chubby/" title="Paper Note: Chubby">
+                        <span class="hidden-mobile">Paper Note: Chubby</span>
+                        <span class="visible-mobile">Next</span>
+                        <i class="iconfont icon-arrowright"></i>
+                      </a>
+                    
+                  </article>
+                </div>
+              
+            </div>
+
+            
+  
+  
+    <article id="comments">
+      
+  <script type="text/javascript">
+    Fluid.utils.loadComments('#comments', function() {
+      var light = 'github-light';
+      var dark = 'github-dark';
+      var schema = document.documentElement.getAttribute('data-user-color-scheme');
+      if (schema === 'dark') {
+        schema = dark;
+      } else {
+        schema = light;
+      }
+      window.UtterancesThemeLight = light;
+      window.UtterancesThemeDark = dark;
+      var s = document.createElement('script');
+      s.setAttribute('src', 'https://utteranc.es/client.js');
+      s.setAttribute('repo', 'KKKZOZ/KKKZOZ.github.io');
+      s.setAttribute('issue-term', 'pathname');
+      
+      s.setAttribute('label', 'utterances');
+      
+      s.setAttribute('theme', schema);
+      s.setAttribute('crossorigin', 'anonymous');
+      document.getElementById('comments').appendChild(s);
+    })
+  </script>
+  <noscript>Please enable JavaScript to view the comments</noscript>
+
+
+    </article>
+  
+
+
+          </article>
+        </div>
+      </div>
+    </div>
+
+    <div class="side-col d-none d-lg-block col-lg-2">
+      
+  <aside class="sidebar" style="margin-left: -1rem">
+    <div id="toc">
+  <p class="toc-header">
+    <i class="iconfont icon-list"></i>
+    <span>Table of Contents</span>
+  </p>
+  <div class="toc-body" id="toc-body"></div>
+</div>
+
+
+
+  </aside>
+
+
+    </div>
+  </div>
+</div>
+
+
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+
+  
+
+
+  
+  
+
+
+
+
+
+
+
+
+    
+
+    
+      <a id="scroll-top-button" aria-label="TOP" href="#" role="button">
+        <i class="iconfont icon-arrowup" aria-hidden="true"></i>
+      </a>
+    
+
+    
+      <div class="modal fade" id="modalSearch" tabindex="-1" role="dialog" aria-labelledby="ModalLabel"
+     aria-hidden="true">
+  <div class="modal-dialog modal-dialog-scrollable modal-lg" role="document">
+    <div class="modal-content">
+      <div class="modal-header text-center">
+        <h4 class="modal-title w-100 font-weight-bold">Search</h4>
+        <button type="button" id="local-search-close" class="close" data-dismiss="modal" aria-label="Close">
+          <span aria-hidden="true">&times;</span>
+        </button>
+      </div>
+      <div class="modal-body mx-3">
+        <div class="md-form mb-5">
+          <input type="text" id="local-search-input" class="form-control validate">
+          <label data-error="x" data-success="v" for="local-search-input">Keyword</label>
+        </div>
+        <div class="list-group" id="local-search-result"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+    
+
+    
+  </main>
+
+  <footer>
+    <div class="footer-inner">
+  
+    <div class="footer-content">
+       <a href="https://hexo.io" target="_blank" rel="nofollow noopener"><span>Hexo</span></a> <i class="iconfont icon-love"></i> <a href="https://github.com/fluid-dev/hexo-theme-fluid" target="_blank" rel="nofollow noopener"><span>Fluid</span></a> 
+    </div>
+  
+  
+  
+  
+</div>
+
+  </footer>
+
+  <!-- Scripts -->
+  
+  <script  src="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.js" ></script>
+  <link  rel="stylesheet" href="https://lib.baomitu.com/nprogress/0.2.0/nprogress.min.css" />
+
+  <script>
+    NProgress.configure({"showSpinner":false,"trickleSpeed":100})
+    NProgress.start()
+    window.addEventListener('load', function() {
+      NProgress.done();
+    })
+  </script>
+
+
+<script  src="https://lib.baomitu.com/jquery/3.6.4/jquery.min.js" ></script>
+<script  src="https://lib.baomitu.com/twitter-bootstrap/4.6.1/js/bootstrap.min.js" ></script>
+<script  src="/js/events.js" ></script>
+<script  src="/js/plugins.js" ></script>
+
+
+  <script  src="https://lib.baomitu.com/typed.js/2.0.12/typed.min.js" ></script>
+  <script>
+    (function (window, document) {
+      var typing = Fluid.plugins.typing;
+      var subtitle = document.getElementById('subtitle');
+      if (!subtitle || !typing) {
+        return;
+      }
+      var text = subtitle.getAttribute('data-typed-text');
+      
+        typing(text);
+      
+    })(window, document);
+  </script>
+
+
+
+
+
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/tocbot/4.20.1/tocbot.min.js', function() {
+    var toc = jQuery('#toc');
+    if (toc.length === 0 || !window.tocbot) { return; }
+    var boardCtn = jQuery('#board-ctn');
+    var boardTop = boardCtn.offset().top;
+
+    window.tocbot.init(Object.assign({
+      tocSelector     : '#toc-body',
+      contentSelector : '.markdown-body',
+      linkClass       : 'tocbot-link',
+      activeLinkClass : 'tocbot-active-link',
+      listClass       : 'tocbot-list',
+      isCollapsedClass: 'tocbot-is-collapsed',
+      collapsibleClass: 'tocbot-is-collapsible',
+      scrollSmooth    : true,
+      includeTitleTags: true,
+      headingsOffset  : -boardTop,
+    }, CONFIG.toc));
+    if (toc.find('.toc-list-item').length > 0) {
+      toc.css('visibility', 'visible');
+    }
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('tocbot' in window) {
+        tocbot.refresh();
+        var toc = jQuery('#toc');
+        if (toc.length === 0 || !tocbot) {
+          return;
+        }
+        if (toc.find('.toc-list-item').length > 0) {
+          toc.css('visibility', 'visible');
+        }
+      }
+    });
+  });
+</script>
+
+
+  <script src=https://lib.baomitu.com/clipboard.js/2.0.11/clipboard.min.js></script>
+
+  <script>Fluid.plugins.codeWidget();</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/anchor-js/4.3.1/anchor.min.js', function() {
+    window.anchors.options = {
+      placement: CONFIG.anchorjs.placement,
+      visible  : CONFIG.anchorjs.visible
+    };
+    if (CONFIG.anchorjs.icon) {
+      window.anchors.options.icon = CONFIG.anchorjs.icon;
+    }
+    var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+    var res = [];
+    for (var item of el) {
+      res.push('.markdown-body > ' + item.trim());
+    }
+    if (CONFIG.anchorjs.placement === 'left') {
+      window.anchors.options.class = 'anchorjs-link-left';
+    }
+    window.anchors.add(res.join(', '));
+
+    Fluid.events.registerRefreshCallback(function() {
+      if ('anchors' in window) {
+        anchors.removeAll();
+        var el = (CONFIG.anchorjs.element || 'h1,h2,h3,h4,h5,h6').split(',');
+        var res = [];
+        for (var item of el) {
+          res.push('.markdown-body > ' + item.trim());
+        }
+        if (CONFIG.anchorjs.placement === 'left') {
+          anchors.options.class = 'anchorjs-link-left';
+        }
+        anchors.add(res.join(', '));
+      }
+    });
+  });
+</script>
+
+
+  
+<script>
+  Fluid.utils.createScript('https://lib.baomitu.com/fancybox/3.5.7/jquery.fancybox.min.js', function() {
+    Fluid.plugins.fancyBox();
+  });
+</script>
+
+
+  <script>Fluid.plugins.imageCaption();</script>
+
+  <script  src="/js/local-search.js" ></script>
+
+
+
+
+
+<!-- 主题的启动项，将它保持在最底部 -->
+<!-- the boot of the theme, keep it at the bottom -->
+<script  src="/js/boot.js" ></script>
+
+
+  
+
+  <noscript>
+    <div class="noscript-warning">Blog works best with JavaScript enabled</div>
+  </noscript>
+</body>
+</html>
