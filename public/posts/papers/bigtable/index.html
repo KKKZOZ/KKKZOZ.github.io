@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Paper Note: BigTable - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="FAQ
+What is a single-row transaction?
+在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/papers/bigtable/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Paper Note: BigTable">
+  <meta property="og:description" content="FAQ What is a single-row transaction?
+在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2023-10-30T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-10-30T00:00:00+00:00">
+    <meta property="article:tag" content="PaperNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Paper Note: BigTable">
+  <meta name="twitter:description" content="FAQ What is a single-row transaction?
+在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Paper Note: BigTable</h1>
+			<div class="meta">Posted on Oct 30, 2023</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="faq">FAQ</h2>
+<p><em>What is a single-row transaction?</em></p>
+<p>在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。</p>
+<p>但是，Bigtable 支持某些需要在其他数据库中执行事务的写入操作。实际上，Bigtable 使用单行事务来完成这些操作。这些操作包括读取和写入操作，且所有读取和写入均以原子方式执行，但仍然只是在行级的原子操作：</p>
+<ul>
+<li><strong>读取-修改-写入 (Read-modify-write) 操作</strong>（包括增量和附加）。在读取-修改-写入 (read-modify-write) 操作中，Cloud Bigtable 会读取现有值，对现有值进行增量或附加操作，并将更新后的值写入表中。</li>
+<li><strong>检查并更改 (Check-and-mutate) 操作</strong>（也称为条件更改或条件写入）。在检查并更改 (check-and-mutate) 操作中，Bigtable 会对行进行检查以了解其是否符合指定条件。如果符合条件，Bigtable 则会将新值写入该行中。</li>
+</ul>
+<p><em>What is SSTable format?</em></p>
+<p>SSTable (Sorted Strings Table) is a file format used in Apache Cassandra, a popular NoSQL database. An SSTable is a data structure that provides a persistent, ordered immutable map from keys to values, where both keys and values are arbitrary byte streams. It contains a series of key-value pairs sorted by keys, which enables efficient lookup and range queries. It&rsquo;s used to store and retrieve data in a highly optimized manner. The SSTable also supports internal indexing, which makes accessing a particular data point faster.</p>
+<h2 id="analyze">Analyze</h2>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li>A distributed storage system for managing structured data</li>
+<li>Scalability</li>
+<li>High performance</li>
+<li>High availability</li>
+</ul>
+<h3 id="basic-structures">Basic Structures</h3>
+<h4 id="data-view">Data View</h4>
+<ul>
+<li>A Bigtable cluster stores a number of tables.</li>
+<li>Each table consists of a set of tablets.</li>
+<li>Each tablet contains all data associated with a row range.</li>
+<li>Each row range is called a tablet, which is the unit of distribution and load balancing.</li>
+<li>The Google <em>SSTable</em> file format is used internally to store Bigtable data.</li>
+<li>Each SSTable contains a sequence of blocks (typically each block is 64 KB in size, but this is configurable). A block index (stored at the end of the SSTable) is used to locate blocks.</li>
+</ul>
+<h4 id="system-view">System View</h4>
+<ul>
+<li>Bigtable uses the distributed Google File System (GFS) to store log and data files.</li>
+<li>Bigtable relies on a highly-available and persistent distributed lock service called Chubby.
+<ul>
+<li>to ensure that there is at most one active master at any time</li>
+<li>to store the bootstrap location of Bigtable data</li>
+<li>to discover tablet servers and finalize tablet server deaths</li>
+<li>to store Bigtable schema information (the column family information for each table)</li>
+<li>to store access control lists</li>
+</ul>
+</li>
+</ul>
+<p>Three components:</p>
+<ul>
+<li>A library that is linked into every client.</li>
+<li>One master server.</li>
+<li>Many tablet servers.</li>
+</ul>
+<p>The master is responsible for assigning tablets to tablet servers, detecting the addition and expiration of tablet servers, balancing tablet-server load, and garbage collection of files in GFS.</p>
+<p>Each tablet server manages a set of tablets (typically we have somewhere between ten to a thousand tablets per tablet server).</p>
+<h3 id="basic-operations">Basic Operations</h3>
+<h4 id="locate-a-tablet">Locate a Tablet</h4>
+<p>有点像多级页表的结构：Chubby 中存储了 Root tablet 的位置信息，Root tablet 中存储了其他 METADATA tablet 的位置信息，METADATA tablet 中存储了所有其他 User Table 的信息。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231030194906112.png" alt="image-20231030194906112"></p>
+<p>用户端会缓存 tablet 的位置信息，如果一开始没有，就会沿着上图的这个结构层次去寻找。</p>
+<h4 id="tablet-assignment">Tablet Assignment</h4>
+<p>Bigtable uses Chubby to keep track of tablet servers. When a tablet server starts, it creates, and acquires an exclusive lock on, a uniquely-named file in a specific Chubby directory. The master monitors this directory (the <em>servers</em> directory) to discover tablet servers.</p>
+<p>When a master is started:</p>
+<ol>
+<li>The master grabs a unique master lock in Chubby.</li>
+<li>The master scans the <em>servers</em> directory in Chubby to find the live servers.</li>
+<li>The master communicates with every live tablet server to discover what tablets are already assigned to each server.</li>
+<li>The master scans the METADATA table to learn the set of tablets.</li>
+<li>Whenever this scan encounters a tablet that is not already assigned, the master adds the tablet to the set of unassigned tablets, which makes the tablet eligible for tablet assignment.</li>
+</ol>
+<h4 id="read-request">Read Request</h4>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231030200933745.png" alt="image-20231030200933745"></p>
+<p>Steps:</p>
+<ol>
+<li>Check for well-formedness and proper authorization.</li>
+<li>Seek in memtable</li>
+<li>If not found, seek in SSTable Files from new to old. First use bloom filter to decide whether the data resides in the file, if true, look into the sparse index to find an approriate block, then perform a disk read.</li>
+</ol>
+<h4 id="write-request">Write Request</h4>
+<p>Steps:</p>
+<ol>
+<li>Check for well-formedness and proper authorization.</li>
+<li>A valid mutation is written to the commit log.</li>
+<li>After the write has been committed, its contents are inserted into the memtable.</li>
+</ol>
+<h4 id="compactions">Compactions</h4>
+<p>Three kinds of compactions are mentioned:</p>
+<ul>
+<li><em>minor compaction</em>
+<ul>
+<li>When the memtable size reaches a threshold, the memtable is frozen, a new memtable is created, and the frozen memtable is converted to an SSTable and written to GFS.</li>
+</ul>
+</li>
+<li><em>merging compaction</em>
+<ul>
+<li>A merging compaction reads the contents of a few SSTables and the memtable, and writes out a new SSTable.</li>
+</ul>
+</li>
+<li><em>major compaction</em>
+<ul>
+<li>A merging compaction that rewrites all SSTables into exactly one SSTable.</li>
+</ul>
+</li>
+</ul>
+<h3 id="performance">Performance</h3>
+<h4 id="locality-groups">Locality groups</h4>
+<p>Clients can group multiple column families together into a locality group. A separate SSTable is generated for each locality group in each tablet.</p>
+<p>For example:</p>
+<p>Page metadata in Webtable can be in one locality group, and the contents of the page can be in a different group: an application that wants to read the metadata does not need to read through all of the page contents.</p>
+<h4 id="caching-for-read-performance">Caching for read performance</h4>
+<p>Two levels of caching:</p>
+<ul>
+<li><em>The Scan Cache</em>
+<ul>
+<li>caches the key-value pairs returned by the SSTable interface to the tablet server code.</li>
+<li>useful for applications that tend to read the same data repeatedly.</li>
+</ul>
+</li>
+<li><em>The Block Cache</em>
+<ul>
+<li>caches SSTables blocks that were read from GFS.</li>
+<li>useful for applications that tend to read data that is close to the data they recently read.</li>
+</ul>
+</li>
+</ul>
+<h4 id="commit-log-implementation">Commit-log implementation</h4>
+<p>原本是每个 tablet 都有自己的提交日志，这样对底层的 GFS 不友好，相当于每时每刻都在做大量不同文件的顺序写操作（某种程序上就相当于是随机写了），破坏了 SSTable 顺序写的特性，会造成严重的性能开销。</p>
+<p>所以作者决定每一台 tablet server 只有一个提交日志，即所有的 tablets 共享该日志。有一个问题是当服务器失效后，假设有其他 100 台服务器要重新分配之前的 tablets，那么这个日志就会被读取 100 次。解决方法就是按照 <code>〈table, row name, log sequence number〉</code> 先排个序，这样每个服务器就只会读相应的一部分。</p>
+<p>所以在 minor compaction 时，当 memtable 写入到磁盘时 commit log 并不会被清空，而是更新 redo point，即重新记录该 tablet 的 memtable 对应的日志开始的地方。重建 memtable 时就从 redo point 那里开始重新应用对应的更改。</p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/papernote">PaperNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

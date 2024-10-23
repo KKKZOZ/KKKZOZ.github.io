@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>A Piece Of: Go Tests - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="最近在写毕设项目时，总是发现有些单元测试在 VSCode 的 Testing Panel 连续运行测试时无法通过，但是单独运行时能正常通过，困扰了我好长一段时间。
+有一次我发现了一个盲点：
+在我写的框架中，有一个 config.go 文件：" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/pieces/a-piece-of-go-test/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="A Piece Of: Go Tests">
+  <meta property="og:description" content="最近在写毕设项目时，总是发现有些单元测试在 VSCode 的 Testing Panel 连续运行测试时无法通过，但是单独运行时能正常通过，困扰了我好长一段时间。
+有一次我发现了一个盲点：
+在我写的框架中，有一个 config.go 文件：">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-01-21T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-01-21T00:00:00+00:00">
+    <meta property="article:tag" content="Golang">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="A Piece Of: Go Tests">
+  <meta name="twitter:description" content="最近在写毕设项目时，总是发现有些单元测试在 VSCode 的 Testing Panel 连续运行测试时无法通过，但是单独运行时能正常通过，困扰了我好长一段时间。
+有一次我发现了一个盲点：
+在我写的框架中，有一个 config.go 文件：">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">A Piece Of: Go Tests</h1>
+			<div class="meta">Posted on Jan 21, 2024</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<p>最近在写毕设项目时，总是发现有些单元测试在 VSCode 的 Testing Panel 连续运行测试时无法通过，但是单独运行时能正常通过，困扰了我好长一段时间。</p>
+<p>有一次我发现了一个盲点：</p>
+<p>在我写的框架中，有一个 <code>config.go</code> 文件：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">var</span> <span style="color:#a6e22e">Config</span> = <span style="color:#a6e22e">config</span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">LeaseTime</span>:       <span style="color:#ae81ff">1000</span> <span style="color:#f92672">*</span> <span style="color:#a6e22e">time</span>.<span style="color:#a6e22e">Millisecond</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MaxRecordLength</span>: <span style="color:#ae81ff">2</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">IdGenerator</span>:     <span style="color:#a6e22e">NewIncrementalGenerator</span>(),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Serializer</span>:      <span style="color:#a6e22e">serializer</span>.<span style="color:#a6e22e">NewJSONSerializer</span>(),
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">LogLevel</span>:        <span style="color:#a6e22e">zapcore</span>.<span style="color:#a6e22e">InfoLevel</span>,
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>当我从 Testing Panel 连续运行测试时，不同的测试都会复用 <code>IdGenerator</code>。</p>
+<p>从网上查了资料后，才知道：</p>
+<blockquote>
+<p>The behavior you&rsquo;re seeing is expected because Config is a global variable and it&rsquo;s shared across the entire package. This means that state, such as the current ID from your NewIncrementalGenerator (), is preserved and reused across all your tests running within the same package.</p>
+<p><em><strong>Go runs test functions (those starting with Test) in parallel by default, but within a single test package, they all share the same memory space. Therefore, global variables will persist their state across individual tests within that package.</strong></em></p>
+</blockquote>
+<p>我一直以为像 config 这种全局变量，每个测试都有一个自己对应的，所以在一些特殊的单元测试中修改了某些参数后，没有及时修改回来，导致后面的测试使用了错误的参数，进而无法通过。</p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/golang">Golang</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

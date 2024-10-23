@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title> - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Name
+Oreo
+Database
+Assumptions on the platforms:
+
+The option when reading for single-item strong consistency
+Atomic conditional update and delete on single items, similar to Test-and-Set.
+Ability to include user-defined meta-data along with the content of a data item.
+
+Redis
+Conditional Set
+Yes, we can use lua-script to do this:" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/design/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:description" content="Name Oreo
+Database Assumptions on the platforms:
+The option when reading for single-item strong consistency Atomic conditional update and delete on single items, similar to Test-and-Set. Ability to include user-defined meta-data along with the content of a data item. Redis Conditional Set Yes, we can use lua-script to do this:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+  <meta name="twitter:description" content="Name Oreo
+Database Assumptions on the platforms:
+The option when reading for single-item strong consistency Atomic conditional update and delete on single items, similar to Test-and-Set. Ability to include user-defined meta-data along with the content of a data item. Redis Conditional Set Yes, we can use lua-script to do this:">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title"></h1>
+			<div class="meta">Posted on Jan 1, 1</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="name">Name</h2>
+<p>Oreo</p>
+<h2 id="database">Database</h2>
+<p>Assumptions on the platforms:</p>
+<ul>
+<li>The option when reading for single-item strong consistency</li>
+<li>Atomic conditional update and delete on single items, similar to Test-and-Set.</li>
+<li>Ability to include user-defined meta-data along with the content of a data item.</li>
+</ul>
+<h3 id="redis">Redis</h3>
+<h4 id="conditional-set">Conditional Set</h4>
+<p>Yes, we can use <code>lua-script</code> to do this:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-lua" data-lang="lua"><span style="display:flex;"><span><span style="color:#66d9ef">local</span> lts <span style="color:#f92672">=</span> tonumber(redis.call(<span style="color:#e6db74">&#39;GET&#39;</span>, KEYS[<span style="color:#ae81ff">1</span>]))
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">local</span> nts <span style="color:#f92672">=</span> tonumber(ARGV[<span style="color:#ae81ff">1</span>])
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">if</span> lts <span style="color:#f92672">&lt;</span> nts <span style="color:#66d9ef">then</span>
+</span></span><span style="display:flex;"><span>      redis.call(<span style="color:#e6db74">&#39;SET&#39;</span>, KEYS[<span style="color:#ae81ff">1</span>], nts)
+</span></span><span style="display:flex;"><span>      redis.call(<span style="color:#e6db74">&#39;SET, KEYS[2], ARGV[2])
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">end
+</span></span></span></code></pre></div><p>Or</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-lua" data-lang="lua"><span style="display:flex;"><span>EVAL <span style="color:#e6db74">&#34;if redis.call(&#39;get&#39;, &#39;myKey&#39;) == &#39;expectedVal&#39; then return redis.call(&#39;set&#39;, &#39;myKey&#39;, &#39;newVal&#39;) else return redis.error_reply(&#39;myKey has changed!&#39;) end&#34;</span> <span style="color:#ae81ff">0</span>
+</span></span></code></pre></div><p>Redis, unlike MongoDB, does not have a built-in query language or update operators for performing conditional updates directly like you would in a document store or relational database. Instead, updates in Redis are typically done by fetching the data, modifying it in the application, and then writing it back to Redis. For conditional updates, you would implement the condition checks in your application code.</p>
+<p>However, if you want to perform atomic updates conditionally, you can use Lua scripting with Redis or the WATCH command for optimistic locking.</p>
+<p>Here&rsquo;s a basic example of how you could perform a conditional set in Redis using Lua scripting with the go-redis library:</p>
+<p>Firstly, install the go-redis package if you haven&rsquo;t:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>go get github. Com/go-redis/redis/v8
+</span></span></code></pre></div><p>Now here&rsquo;s an example of doing a conditional set in Redis:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;github.com/go-redis/redis/v8&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create a new Redis client.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">rdb</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">NewClient</span>(<span style="color:#f92672">&amp;</span><span style="color:#a6e22e">redis</span>.<span style="color:#a6e22e">Options</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Addr</span>:     <span style="color:#e6db74">&#34;localhost:6379&#34;</span>, <span style="color:#75715e">// Your Redis address
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">Password</span>: <span style="color:#e6db74">&#34;&#34;</span>,               <span style="color:#75715e">// No password set
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">DB</span>:       <span style="color:#ae81ff">0</span>,                <span style="color:#75715e">// Use default DB
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    })
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Use context for timeout and cancellation.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">ctx</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Define the Lua script for conditional set.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// Key &#39;1&#39; will be checked if its value is &#34;existing_value&#34;.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// If condition matches, we will set the new value &#34;new_value&#34;.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">script</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">`
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        if redis.call(&#34;GET&#34;, KEYS[1]) == ARGV[1] then
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            return redis.call(&#34;SET&#34;, KEYS[1], ARGV[2])
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        else
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">            return 0
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">        end
+</span></span></span><span style="display:flex;"><span><span style="color:#e6db74">    `</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Using Eval to run the Lua script.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// KEYS[1]: The key to be checked and possibly set.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// ARGV[1]: The existing value we expect.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// ARGV[2]: The new value to set if the condition matches.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">Eval</span>(<span style="color:#a6e22e">ctx</span>, <span style="color:#a6e22e">script</span>, []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;your_key&#34;</span>}, <span style="color:#e6db74">&#34;existing_value&#34;</span>, <span style="color:#e6db74">&#34;new_value&#34;</span>).<span style="color:#a6e22e">Result</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Script result:&#34;</span>, <span style="color:#a6e22e">result</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Close the Redis client when finished.
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">rdb</span>.<span style="color:#a6e22e">Close</span>(); <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h4 id="meta-data">Meta-data</h4>
+<p>Use <code>HSET</code></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>redis&gt; HSET myhash field2 <span style="color:#e6db74">&#34;Hi&#34;</span> field3 <span style="color:#e6db74">&#34;World&#34;</span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">(</span>integer<span style="color:#f92672">)</span> <span style="color:#ae81ff">2</span>
+</span></span><span style="display:flex;"><span>redis&gt; HGET myhash field2
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;Hi&#34;</span>
+</span></span><span style="display:flex;"><span>redis&gt; HGET myhash field3
+</span></span><span style="display:flex;"><span><span style="color:#e6db74">&#34;World&#34;</span>
+</span></span></code></pre></div><h3 id="mongodb">MongoDB</h3>
+<h4 id="conditional-set-1">Conditional Set</h4>
+<p>In Go (Golang), you use the MongoDB Go Driver to interact with MongoDB. To perform a conditional update, you build a filter to match the documents you want to update based on your conditions, and then use the update operators to change the data accordingly.</p>
+<p>First, ensure you have the MongoDB Go Driver installed:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-shell" data-lang="shell"><span style="display:flex;"><span>go get go.Mongodb.org/mongo-driver/mongo
+</span></span><span style="display:flex;"><span>go get go.Mongodb.org/mongo-driver/mongo/options
+</span></span></code></pre></div><p>Here is an example of how to perform a conditional update using the MongoDB Go Driver in Golang:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;context&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;log&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;time&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;go.mongodb.org/mongo-driver/bson&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;go.mongodb.org/mongo-driver/mongo&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;go.mongodb.org/mongo-driver/mongo/options&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Set client options
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">clientOptions</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">options</span>.<span style="color:#a6e22e">Client</span>().<span style="color:#a6e22e">ApplyURI</span>(<span style="color:#e6db74">&#34;your-mongodb-uri&#34;</span>) <span style="color:#75715e">// Replace with your MongoDB URI
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Connect to MongoDB
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">client</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">mongo</span>.<span style="color:#a6e22e">Connect</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">TODO</span>(), <span style="color:#a6e22e">clientOptions</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check the connection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Ping</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#66d9ef">nil</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Connected to MongoDB!&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Get handle for your collection
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">collection</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Database</span>(<span style="color:#e6db74">&#34;your-db-name&#34;</span>).<span style="color:#a6e22e">Collection</span>(<span style="color:#e6db74">&#34;your-collection-name&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Define the filter for documents you want to update
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">filter</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bson</span>.<span style="color:#a6e22e">M</span>{<span style="color:#e6db74">&#34;reviewCount&#34;</span>: <span style="color:#a6e22e">bson</span>.<span style="color:#a6e22e">M</span>{<span style="color:#e6db74">&#34;$gt&#34;</span>: <span style="color:#ae81ff">10</span>}} <span style="color:#75715e">// Documents with reviewCount &gt; 10
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Define the update operation
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">update</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">bson</span>.<span style="color:#a6e22e">M</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#e6db74">&#34;$set&#34;</span>: <span style="color:#a6e22e">bson</span>.<span style="color:#a6e22e">M</span>{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;status&#34;</span>: <span style="color:#e6db74">&#34;approved&#34;</span>,
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Perform the update operation
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">result</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">collection</span>.<span style="color:#a6e22e">UpdateMany</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">Background</span>(), <span style="color:#a6e22e">filter</span>, <span style="color:#a6e22e">update</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;Matched %v documents and updated %v documents.\n&#34;</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">MatchedCount</span>, <span style="color:#a6e22e">result</span>.<span style="color:#a6e22e">ModifiedCount</span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Close the connection once no longer needed
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Disconnect</span>(<span style="color:#a6e22e">context</span>.<span style="color:#a6e22e">TODO</span>())
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">log</span>.<span style="color:#a6e22e">Fatal</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Connection to MongoDB closed.&#34;</span>)
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In the above example, replace your-mongodb-uri, your-db-name, and your-collection-name with your MongoDB connection string, database name, and collection name, respectively.</p>
+<p>The key points in this program are: - Establishing a connection to the MongoDB server using mongo. Connect. - Creating a filter with the condition (bson. M{&ldquo;reviewCount&rdquo;: bson. M{&quot;$gt&quot;: 10}}) which matches documents where the field reviewCount is greater than 10. - Defining the update using the $set operator to change the status field to &ldquo;approved&rdquo; for documents that match the filter. - Calling collection. UpdateMany with the context, the filter, and the update definition to perform the update operation.</p>
+<h4 id="meta-data-1">Meta-data</h4>
+<p>In a MongoDB database, we can store metadata as part of the documents in a collection. Since MongoDB is schema-less, you can structure your documents as you like, including any number of fields that could serve as metadata.</p>
+<p>For example:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-json" data-lang="json"><span style="display:flex;"><span>{
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#960050;background-color:#1e0010">ObjectId(</span><span style="color:#e6db74">&#34;507f1f77bcf86cd799439011&#34;</span><span style="color:#960050;background-color:#1e0010">)</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;filename&#34;</span>: <span style="color:#e6db74">&#34;picture.jpg&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;fileSize&#34;</span>: <span style="color:#e6db74">&#34;500KB&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;uploadDate&#34;</span>: <span style="color:#960050;background-color:#1e0010">ISODate(</span><span style="color:#e6db74">&#34;2020-10-01T00:00:00Z&#34;</span><span style="color:#960050;background-color:#1e0010">)</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;format&#34;</span>: <span style="color:#e6db74">&#34;jpg&#34;</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;uploaderId&#34;</span>: <span style="color:#960050;background-color:#1e0010">ObjectId(</span><span style="color:#e6db74">&#34;507f191e810c19729de860ea&#34;</span><span style="color:#960050;background-color:#1e0010">)</span>,
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;tags&#34;</span>: [<span style="color:#e6db74">&#34;nature&#34;</span>, <span style="color:#e6db74">&#34;vacation&#34;</span>],
+</span></span><span style="display:flex;"><span>    <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;A photo from my summer vacation.&#34;</span>
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><h3 id="couchdb">Couchdb</h3>
+<h4 id="conditional-update">Conditional Update</h4>
+<p>To perform a conditional update in CouchDB using Golang, you would typically use the CouchDB REST API with a HTTP library in Golang, such as net/http or higher-level libraries like resty.</p>
+<p>The general steps for performing a conditional update (also known as an update with conflict detection) in CouchDB from a Golang application are:</p>
+<p>Retrieve the current document along with its _rev (revision) field.
+Modify the document in your application code.
+Send an HTTP PUT request with the updated document and the _rev field back to CouchDB.</p>
+<p>If the _rev field you’re sending back matches the current revision of the document in the database, CouchDB will allow the update. Otherwise, CouchDB will respond with a conflict error, indicating that the document has been updated by another process since you retrieved it.</p>
+<p>Here&rsquo;s an example of how you might do this in Golang:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#f92672">package</span> <span style="color:#a6e22e">main</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#f92672">import</span> (
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;bytes&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;encoding/json&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;fmt&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;io/ioutil&#34;</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#e6db74">&#34;net/http&#34;</span>
+</span></span><span style="display:flex;"><span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">Document</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ID</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;_id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Rev</span>   <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;_rev,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add other document-specific fields here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">getDocument</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>) (<span style="color:#a6e22e">Document</span>, <span style="color:#66d9ef">error</span>) {
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">var</span> <span style="color:#a6e22e">doc</span> <span style="color:#a6e22e">Document</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Get</span>(<span style="color:#a6e22e">url</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">doc</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">doc</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Unmarshal</span>(<span style="color:#a6e22e">body</span>, <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">doc</span>, <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">updateDocument</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">doc</span> <span style="color:#a6e22e">Document</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">docBytes</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">req</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">NewRequest</span>(<span style="color:#e6db74">&#34;PUT&#34;</span>, <span style="color:#a6e22e">url</span>, <span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">NewBuffer</span>(<span style="color:#a6e22e">docBytes</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">req</span>.<span style="color:#a6e22e">Header</span>.<span style="color:#a6e22e">Set</span>(<span style="color:#e6db74">&#34;Content-Type&#34;</span>, <span style="color:#e6db74">&#34;application/json&#34;</span>)
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">client</span> <span style="color:#f92672">:=</span> <span style="color:#f92672">&amp;</span><span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Client</span>{}
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">client</span>.<span style="color:#a6e22e">Do</span>(<span style="color:#a6e22e">req</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Check if update was successful, if not handle the conflict
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">StatusCode</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusCreated</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle response codes like 409 Conflict here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Printf</span>(<span style="color:#e6db74">&#34;CouchDB Error: %s\n&#34;</span>, <span style="color:#a6e22e">body</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;couchdb error: %s&#34;</span>, <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Status</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">couchdbUrl</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;http://localhost:5984/mydb/mydocid&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Retrieve the document you want to update
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">doc</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">getDocument</span>(<span style="color:#a6e22e">couchdbUrl</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle error
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Modify the document as needed
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#75715e">// doc.&lt;field&gt; = &lt;new value&gt;
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Update the document with the new revision
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">err</span> = <span style="color:#a6e22e">updateDocument</span>(<span style="color:#a6e22e">couchdbUrl</span>, <span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Handle error
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In this code sample:</p>
+<p>The getDocument function retrieves a document from CouchDB and returns it along with its current _rev id.
+The updateDocument function takes an updated document and sends it back to CouchDB. It looks at the HTTP response to determine if the update was successful or if there was a conflict.
+The main function is an example of how to retrieve a document, modify it, and try to update it in CouchDB.</p>
+<p>Please note that you will need to modify the Document struct to include the actual fields present in your documents and handle additional error cases or HTTP response statuses as appropriate for your application&rsquo;s requirements.</p>
+<h4 id="meta-data-2">Meta-data</h4>
+<p>CouchDB allows you to add user-defined (custom) metadata fields to any document. Generally, custom metadata fields are just like any other fields in a document, and you can include them as needed. However, you should avoid using field names that begin with an underscore (_) because those are reserved for CouchDB&rsquo;s own metadata (like _id, _rev, etc.).</p>
+<p>Here&rsquo;s an example of how you might add custom metadata to a CouchDB document using Golang:</p>
+<p>Define the document structure, including any custom metadata fields:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">type</span> <span style="color:#a6e22e">CustomDocument</span> <span style="color:#66d9ef">struct</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">ID</span>      <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;_id&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Rev</span>     <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;_rev,omitempty&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">Type</span>    <span style="color:#66d9ef">string</span> <span style="color:#e6db74">`json:&#34;type&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">MyMeta</span>  <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{} <span style="color:#e6db74">`json:&#34;my_meta&#34;`</span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Add other document-specific fields here
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>}
+</span></span></code></pre></div><p>In this example, the MyMeta map can hold various key-value pairs that will serve as your custom metadata fields.</p>
+<p>Insert the document with custom metadata using an HTTP POST request:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-go" data-lang="go"><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">createDocumentWithMetadata</span>(<span style="color:#a6e22e">url</span> <span style="color:#66d9ef">string</span>, <span style="color:#a6e22e">doc</span> <span style="color:#a6e22e">CustomDocument</span>) <span style="color:#66d9ef">error</span> {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">docBytes</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">json</span>.<span style="color:#a6e22e">Marshal</span>(<span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">resp</span>, <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">Post</span>(<span style="color:#a6e22e">url</span>, <span style="color:#e6db74">&#34;application/json&#34;</span>, <span style="color:#a6e22e">bytes</span>.<span style="color:#a6e22e">NewBuffer</span>(<span style="color:#a6e22e">docBytes</span>))
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">err</span>
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">defer</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>.<span style="color:#a6e22e">Close</span>()
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">StatusCode</span> <span style="color:#f92672">!=</span> <span style="color:#a6e22e">http</span>.<span style="color:#a6e22e">StatusCreated</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">body</span>, <span style="color:#a6e22e">_</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">ioutil</span>.<span style="color:#a6e22e">ReadAll</span>(<span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Body</span>)
+</span></span><span style="display:flex;"><span>        <span style="color:#66d9ef">return</span> <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Errorf</span>(<span style="color:#e6db74">&#34;failed to create doc: %s, %s&#34;</span>, <span style="color:#a6e22e">resp</span>.<span style="color:#a6e22e">Status</span>, <span style="color:#a6e22e">body</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">return</span> <span style="color:#66d9ef">nil</span>
+</span></span><span style="display:flex;"><span>}
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">func</span> <span style="color:#a6e22e">main</span>() {
+</span></span><span style="display:flex;"><span>    <span style="color:#a6e22e">couchdbUrl</span> <span style="color:#f92672">:=</span> <span style="color:#e6db74">&#34;http://localhost:5984/mydb&#34;</span>
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Create and populate your document
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">doc</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">CustomDocument</span>{
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">ID</span>:     <span style="color:#e6db74">&#34;mydocid&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">Type</span>:   <span style="color:#e6db74">&#34;example&#34;</span>,
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">MyMeta</span>: <span style="color:#66d9ef">map</span>[<span style="color:#66d9ef">string</span>]<span style="color:#66d9ef">interface</span>{}{
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;author&#34;</span>: <span style="color:#e6db74">&#34;John Doe&#34;</span>,
+</span></span><span style="display:flex;"><span>            <span style="color:#e6db74">&#34;tags&#34;</span>:   []<span style="color:#66d9ef">string</span>{<span style="color:#e6db74">&#34;example&#34;</span>, <span style="color:#e6db74">&#34;metadata&#34;</span>},
+</span></span><span style="display:flex;"><span>        },
+</span></span><span style="display:flex;"><span>        <span style="color:#75715e">// Populate other document fields as necessary
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    }
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>    <span style="color:#75715e">// Save the document with the custom metadata to CouchDB
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>    <span style="color:#a6e22e">err</span> <span style="color:#f92672">:=</span> <span style="color:#a6e22e">createDocumentWithMetadata</span>(<span style="color:#a6e22e">couchdbUrl</span>, <span style="color:#a6e22e">doc</span>)
+</span></span><span style="display:flex;"><span>    <span style="color:#66d9ef">if</span> <span style="color:#a6e22e">err</span> <span style="color:#f92672">!=</span> <span style="color:#66d9ef">nil</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Error creating document:&#34;</span>, <span style="color:#a6e22e">err</span>)
+</span></span><span style="display:flex;"><span>    } <span style="color:#66d9ef">else</span> {
+</span></span><span style="display:flex;"><span>        <span style="color:#a6e22e">fmt</span>.<span style="color:#a6e22e">Println</span>(<span style="color:#e6db74">&#34;Document created successfully&#34;</span>)
+</span></span><span style="display:flex;"><span>    }
+</span></span><span style="display:flex;"><span>}
+</span></span></code></pre></div><p>In this code snippet: - CustomDocument has a my_meta field that holds your custom metadata. - createDocumentWithMetadata serializes the document and sends an HTTP POST request to the database URL.</p>
+<p>Remember to replace &quot; http://localhost:5984/mydb&quot; with the actual URL of your CouchDB database and update the data structure to reflect the fields that you want to include.</p>
+<p>It&rsquo;s important to design your metadata, keeping in mind that you should not start the keys with an underscore, and all the data included should be intentional and relevant for your application logic or for future queries and indexing.</p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

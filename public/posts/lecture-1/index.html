@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Missing Semester - Lecture 1 - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="The shell
+How does the shell know how to find the date or echo programs?" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/lecture-1/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Missing Semester - Lecture 1">
+  <meta property="og:description" content="The shell How does the shell know how to find the date or echo programs?">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-10-09T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-10-09T00:00:00+00:00">
+    <meta property="article:tag" content="Course">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Missing Semester - Lecture 1">
+  <meta name="twitter:description" content="The shell How does the shell know how to find the date or echo programs?">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Missing Semester - Lecture 1</h1>
+			<div class="meta">Posted on Oct 9, 2024</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h1 id="the-shell">The shell</h1>
+<p>How does the shell know how to find the <code>date</code> or <code>echo</code> programs?</p>
+<p>The shell is a programming environment, just like Python, and so it has variables,
+conditionals, loops, and functions.</p>
+<p>If the shell is asked to execute a command that doesn’t match one of its programming keywords,
+it consults an <em>environment variable</em> called <code>$PATH</code> that lists which directories
+the shell should search for programs when it is given a command</p>
+<h2 id="permissions">Permissions</h2>
+<p>Permissions for directories:</p>
+<ul>
+<li><strong>Read:</strong> Allows the user to list the contents of the directory.</li>
+<li><strong>Write:</strong> Allows the user to add, remove, or rename files and subdirectories within the directory.</li>
+<li><strong>Execute:</strong> Allows the user to enter (cd) the directory and access files and subdirectories within, even if they cannot list the directory&rsquo;s contents.</li>
+</ul>
+<p>Modifying Permissions:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod <span style="color:#f92672">[</span>who<span style="color:#f92672">][</span>operator<span style="color:#f92672">][</span>permissions<span style="color:#f92672">]</span> filename
+</span></span></code></pre></div><ul>
+<li><code>who</code>: u (user/owner), g (group), o (others), a (all)</li>
+<li><code>operator</code>: + (add), - (remove), = (set exactly)</li>
+<li><code>permissions</code>: r, w, x</li>
+</ul>
+<p>Example:</p>
+<p>Add execute permission for the owner:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod u+x script.sh
+</span></span></code></pre></div><p>Remove write permission for others:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>chmod o-w report.txt
+</span></span></code></pre></div><h2 id="connecting-programs">Connecting Programs</h2>
+<p>In the shell, programs have two primary “streams” associated with them: their input stream and their output stream.</p>
+<p>The simplest form of redirection is &lt; file and &gt; file. These let you rewire the input and output streams of a program to a file respectively:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>echo hello &gt; hello.txt
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>cat &lt; hello.txt &gt; hello2.txt
+</span></span></code></pre></div><blockquote>
+<p>When cat is not given any arguments, it prints contents from its input stream to its output stream (like in the second example above).
+You can also use <code>&gt;&gt;</code> to append to a file.</p>
+</blockquote>
+<p>The <code>|</code> operator lets you “chain” programs such that the output of one is the input of another:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span>ls -l / | tail -n1
+</span></span><span style="display:flex;"><span>
+</span></span><span style="display:flex;"><span>curl --head --silent google.com | grep --ignore-case content-length | cut --delimiter<span style="color:#f92672">=</span><span style="color:#e6db74">&#39; &#39;</span> -f2
+</span></span></code></pre></div><h2 id="exercises">Exercises</h2>
+<h3 id="5">5</h3>
+<ul>
+<li>Double-quoted strings can expand:
+<ul>
+<li>Variable Expansion: Integrating dynamic values into strings.</li>
+<li>Command Substitution: Embedding the output of commands within strings.</li>
+<li>Escape Sequences: Including special characters like newlines and tabs.</li>
+</ul>
+</li>
+<li>Single-quoted strings are just literal strings.</li>
+</ul>
+<p>Summary:</p>
+<ul>
+<li>Single-quoted string: When you need a literal string without any expansions.</li>
+<li>Double-quoted string: When you need to include variables or commands within a string.</li>
+</ul>
+<h3 id="67">6,7</h3>
+<p>When a script file is given <code>Execute</code> permission, then it can be invoked by <code>./script</code>.</p>
+<p><code>sh script</code> does not need the <code>Execute</code> permission, it needs <code>Read</code> permission.</p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/course">Course</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

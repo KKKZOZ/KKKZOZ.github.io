@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Designing a TPS for clouds will meet these challenges:
+
+Diverse functionality.
+
+The concept of translytics as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, &hellip; and ensures full transactional integrity and data consistency”.
+
+
+Scale
+
+Cloud-first data platforms are designed to scale well beyond the limits of a single application.
+
+
+Latency
+
+With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential.
+
+
+Multi-tenancy
+
+Maintaining access rights is therefore an important design consideration for TPSs.
+
+
+
+论文的工作集中于以下几点：" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/papers/distributed-transactions/taking-omid-to-the-clouds/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics">
+  <meta property="og:description" content="Designing a TPS for clouds will meet these challenges:
+Diverse functionality. The concept of translytics as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, … and ensures full transactional integrity and data consistency”. Scale Cloud-first data platforms are designed to scale well beyond the limits of a single application. Latency With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential. Multi-tenancy Maintaining access rights is therefore an important design consideration for TPSs. 论文的工作集中于以下几点：">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-03-25T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-03-25T00:00:00+00:00">
+    <meta property="article:tag" content="PaperNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics">
+  <meta name="twitter:description" content="Designing a TPS for clouds will meet these challenges:
+Diverse functionality. The concept of translytics as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, … and ensures full transactional integrity and data consistency”. Scale Cloud-first data platforms are designed to scale well beyond the limits of a single application. Latency With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential. Multi-tenancy Maintaining access rights is therefore an important design consideration for TPSs. 论文的工作集中于以下几点：">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics</h1>
+			<div class="meta">Posted on Mar 25, 2024</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<p>Designing a TPS for clouds will meet these challenges:</p>
+<ul>
+<li><strong>Diverse functionality</strong>.
+<ul>
+<li>The concept of <em>translytics</em> as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, &hellip; and ensures full transactional integrity and data consistency”.</li>
+</ul>
+</li>
+<li><strong>Scale</strong>
+<ul>
+<li>Cloud-first data platforms are designed to scale well beyond the limits of a single application.</li>
+</ul>
+</li>
+<li><strong>Latency</strong>
+<ul>
+<li>With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential.</li>
+</ul>
+</li>
+<li><strong>Multi-tenancy</strong>
+<ul>
+<li>Maintaining access rights is therefore an important design consideration for TPSs.</li>
+</ul>
+</li>
+</ul>
+<p>论文的工作集中于以下几点：</p>
+<ul>
+<li>重新设计了一个 Omid Low Latency (Omid LL) 协议，解决了 Omid2 中的性能瓶颈。</li>
+<li>对只涉及到单个记录的事务设计了一套新算法，Omid Fast Path (Omid FP)，能以原生 HBase 的性能运行单个记录的事务。</li>
+<li>为 Omid 增加了 SQL 支持。</li>
+</ul>
+<h2 id="omid-low-latency">Omid Low Latency</h2>
+<p>下表列出来相近的几个分布式事务协议在设计上的不同选择。</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240325171927065.png" alt="image-20240325171927065"></p>
+<p>这里解释一下<em>提交条目（Commit Entry）</em>：</p>
+<p>所有的事务实现本质上都体现了 <em><strong>downscale</strong></em> 的思想，将某个原子操作降级为对更小 scope（或临界区）的原子操作：</p>
+<ul>
+<li>分布式事务可以利用中心节点，降级为中心节点状态的单机事务。</li>
+<li>单机事务可以降级为某个mutex的原子操作。</li>
+<li>mutex的原子操作可以降级为一次CAS操作。</li>
+</ul>
+<p>执行这个原子操作的时间节点可以称为<em><strong>状态同步点</strong></em>，在此时间节点之前，事务的状态为 Pending，在此时间节点之后，该事务<strong>对外界的可见性</strong>要么为 Commit 要么为 Abort。</p>
+<p>在 Omid 中，提交条目的更新时间点就为这个事务的状态同步点。</p>
+<p>“Commit Entry Updates” 这一栏就是在说明提交条目的存在形式。</p>
+<p>Omid LL 采用了：</p>
+<ul>
+<li><strong>Centralized validation</strong>: 集中式的验证（在TM里集中进行冲突检测）避免了在数据存储中使用悲观锁，并且拥有良好的可扩展性。（在Omid 2017中已经得到验证）</li>
+<li><strong>Distributed commit entry updates with multi-tenancy</strong>:
+<ul>
+<li>Omid 2014 将提交条目复制到客户端中，显然在消耗高带宽的同时失去了更好的扩展性；为了降低 TM 写入的性能瓶颈，Omid 2014 以批量写入的方式增加吞吐量，同时也提高了延迟。</li>
+<li>Omid 2017 中，低延时是工作的一个重要目标。工作将写入提交条目的操作均分到了客户端上。</li>
+</ul>
+</li>
+<li><strong>Write intent resolution</strong>: 这涉及到的决策是：在执行事务读操作时，如果读到了一个事务状态不确定的记录，本事务是选择等待还是中止事务。Omid LL 选择了 “reads to force aborts”。</li>
+</ul>
+<p>OMid LL 的提交操作也分为两个阶段：</p>
+<ol>
+<li>客户端向 TM 发送写集和 $ts_r$，等待 TM 进行决策。如果结果为通过，则客户端向 CT(Commit Table) 中写入一条记录（同时检查自己是否被其他事务中止了），写入成功则代表提交操作成功。</li>
+<li>对于写集中的记录，事务将其 commit 字段修改为自身的 $ts_c$；全部完成后删除 CT 中的记录。</li>
+</ol>
+<p>高可用部分，Omid LL 使用了主从两个进程，并使用 epoch 来分块划分时间戳，保证后任 TM 所分配的时间戳一定大于前任 TM，并使用了一个 &ldquo;locally-checkable lease&rdquo; 来确保 &ldquo;no client will be able to commit a transaction in an old epoch after the new TM has started using a new one&rdquo;。</p>
+<h2 id="omid-fast-path">Omid Fast Path</h2>
+<blockquote>
+<p>The goal of our fast path is to forgo the overhead associated with communicating with the TM to begin and commit transactions.</p>
+</blockquote>
+<p>FP的优化策略聚焦于单键值的事务：</p>
+<ul>
+<li><code>brc(key)</code>：开启事务，读最新已提交的版本。
+<ul>
+<li>可能会忽略掉正在进行 post-commit 的事务，但论文中说这种行为是符合 FP 语义的。</li>
+</ul>
+</li>
+<li><code>bwc(key, val)</code>：直接写入一个新版本，要求其 $ts_c$ 大于已有版本。</li>
+<li><code>br(key)</code>：开启事务，读最新已提交的版本。</li>
+<li><code>wc(ver, key, val)</code>： 验证自返回 ver 的 br 调用以来未对 key 进行写操作，将 val 写入 key 的新版本，并提交。</li>
+</ul>
+<p><code>bwc</code> 和 <code>wc</code>操作需要产生一个新版本，需要保证以下性质</p>
+<ul>
+<li>新 version 大于所有旧 version，但小于未来 TM 产生的 version。</li>
+<li>能检测出与普通事务的冲突。</li>
+</ul>
+<p>为了在不访问 TM 的情况下产生一个新版本，Omid FP 采用了 HLC（Hybrid Logical Clock）。</p>
+<blockquote>
+<p>What is HLC?</p>
+<p>An HLC timestamp typically includes two parts:</p>
+<ol>
+<li>A physical component which is assigned by the TM.</li>
+<li>A logical component that behaves like a locally advancing sequence number.</li>
+</ol>
+</blockquote>
+<p>在 FP 中改变版本时只增加 logical ts 即可（通过 <code>putVersion</code> 函数）。</p>
+<p>现在考虑 FP 事务与普通事务写操作的冲突检测：</p>
+<ul>
+<li>如果普通事务早于 FP 事务写入，FP 事务会 abort。（如果 FP 事务在写入时发现存在一个暂时的版本，就会直接 abort）。</li>
+<li>如果 FP 事务在某个普通事务的读和提交之间完成了，如下图：</li>
+</ul>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240325202221348.png" alt="image-20240325202221348"></p>
+<p>FP 事务并没有记录在 CT 中，旧的检测机制失效了。为了能让T1提交时检测出冲突，Omid FP做了以下改动：</p>
+<ul>
+<li>每个 key 对应一个 maxVersion，保证 maxVersion <strong>大于等于</strong>这个 key 的任何已提交版本。</li>
+<li><code>putVersion</code> 会提升 maxVersion。</li>
+<li>普通事务的读会提升 maxVersion 到<strong>不小于</strong>事务的 $ts_r$。</li>
+<li>普通事务的写会检查 maxVersion <strong>不大于</strong>事务的 $ts_r$，检查未通过说明有 FP 事务与它发生了写冲突。</li>
+</ul>
+<p>这个改动增加了普通路径的开销，为每个记录都维护一个 maxVersion 字段开销非常大，所以 OMid 在每个 HBase 的 region server 上维护一个 Local Version Clock (LVC)，作为该区域所有记录的 maxVersion，以增加 false abortion 的代价降低了性能开销：“a transactional read modifies the LVC only if its tsr exceeds it”。</p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/papernote">PaperNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

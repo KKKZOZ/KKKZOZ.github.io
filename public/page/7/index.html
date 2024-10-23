@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>KKKZOZ-Blog | Home </title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="" />
+	<meta property="og:image" content=""/>
+	<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="KKKZOZ-Blog" />
+	<meta property="og:url" content="http://localhost:1313/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+</head>
+
+	<body>
+		<div class="content">
+			<header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+			
+			<main class="list">
+				<div class="site-description"><p>Minimal and Clean <a href="https://github.com/athul/archie">blog theme for Hugo</a></p></div>
+				
+				
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/talk-about-redlock/">Talk about Redlock</a></h1>
+					<time>Nov 2, 2023</time>
+					<br><div class="description">
+	
+	<p>最近看了下之前业界关于 Redlock 的争论，发现还是挺有意思的，正好把自己最近学的知识串了起来，这里就简单总结一下。</p>
+<h2 id="martin-的观点">Martin 的观点</h2>
+<h3 id="使用分布式锁的目的">使用分布式锁的目的</h3>
+<p>Martin 表示，你必须先清楚你在使用分布式锁的目的是什么？</p>
+<p>他认为有两个目的。</p>
+<p><strong>第一，效率。</strong></p>
+<p>使用分布式锁的互斥能力，是避免不必要地做同样的两次工作（例如一些昂贵的计算任务）。如果锁失效，并不会带来「恶性」的后果，例如发了 2 次邮件等，无伤大雅。</p>
+<p><strong>第二，正确性。</strong></p>
+<p>使用锁用来防止并发进程互相干扰。如果锁失效，会造成多个进程同时操作同一条数据，产生的后果是<strong>数据严重错误、永久性不一致、数据丢失</strong>等恶性问题，就像给患者服用了重复剂量的药物，后果很严重。</p>
+<p>他认为，如果你是为了前者——效率，那么使用单机版 Redis 就可以了，即使偶尔发生锁失效（宕机、主从切换），都不会产生严重的后果。而使用 Redlock 太重了，没必要。</p>
+<p><strong>而如果是为了正确性，Martin 认为 Redlock 根本达不到安全性的要求，也依旧存在锁失效的问题。</strong></p>
+<h3 id="npc-问题">NPC 问题</h3>
+<p>这些异常场景主要包括三大块，这也是分布式系统会遇到的三座大山：<strong>NPC</strong>。</p>
+<ul>
+<li>N：Network Delay，网络延迟</li>
+<li>P：Process Pause，进程暂停（GC）</li>
+<li>C：Clock Drift，时钟漂移</li>
+</ul>
+<p>Martin 用一个进程暂停（GC）的例子，指出了 Redlock 安全性问题：</p>
+<ol>
+<li>客户端 1 请求锁定节点 A、B、C、D、E</li>
+<li>客户端 1 的拿到锁后，进入 GC（时间比较久）</li>
+<li>所有 Redis 节点上的锁都过期了</li>
+<li>客户端 2 获取到了 A、B、C、D、E 上的锁</li>
+<li>客户端 1 GC 结束，认为成功获取锁</li>
+<li>客户端 2 也认为获取到了锁，发生「冲突」</li>
+</ol>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/unsafe-lock.png" alt="Unsafe access to a resource protected by a distributed lock"></p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/talk-about-redlock/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/summary/summary-of-october/">十月个人总结</a></h1>
+					<time>Nov 2, 2023</time>
+					<br><div class="description">
+	
+	<p>10 月份算是学习走上正轨的一个月吧，国庆假期时确定了会去到中科院软件研究所软工中心，国庆完了后不久就和那边的老师联系去实习的事情，结果本校的指导老师不放人，太离谱了。</p>
+<p>10 月中旬就开始系统地学习分布式理论了，主要就是 6.824 的网课和实验，还有就是看《Design Data-Intensive Applications》这本书。这本书的内容非常契合 6.824 的主题，我认为每个学了 6.824 的人都应该补充阅读这本书哈哈。</p>
+<p>在此期间，也看了许多前辈的博客，特别是<a href="https://tanxinyu.work">这位大佬</a>还有<a href="https://strikefreedom.top/">这位大佬</a>的，希望能以他们为榜样，自己以后也能做出一点不一样的事情来。</p>
+<p>毕竟还有六七年，未来可期哈哈。</p>
+<p>在看论文时，经常能感到庆幸自己没有随大流去学与深度学习相关的东西，毕竟自己对这方面没啥兴趣，而分布式这块，我是真的喜欢，相信不久后也会热爱上这一方面的。为自己喜欢的，为自己热爱的东西投入时间和精力，是一定不会后悔的一件事。</p>
+<p>十月底的时候开始看了一些论文，打算还是先从最基本的开始看，之前突然看 spanner 还是感觉有点太吃力了，现在才真的是哪里不懂就看哪里，时间充足的情况下就不怕栈溢出了，先把 Google 的三驾马车看了，然后重新读了读之前在 6.824 课程上看过的论文，感觉读完后还是得做点笔记才有感觉，要不然几个周后全忘了，根本留不住。By the way, 这个博客也算是正式开始营业啦，以后主要会记录自己在学习上的一些笔记和类似于月末总结之类的东西吧，希望自己能一直坚持下去。</p>
+<p>希望 11 月的自己能把每天的学习效率提上去，保持上午 3 小时，下午 3 小时，晚上 2 小时的学习时间。</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/summary/summary-of-october/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/chubby/">Paper Note: Chubby</a></h1>
+					<time>Oct 31, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>What is an advisory lock?</em></p>
+<p>An &ldquo;advisory lock&rdquo; is simply a tool/API provided by Postgres to create arbitrary locks that can be acquired by applications. These locks, however, are not enforced in any meaningful way by the database &ndash; it&rsquo;s up to application code to give them meaning (the same way any other non-database distributed lock would work).</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/chubby/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/bigtable/">Paper Note: BigTable</a></h1>
+					<time>Oct 30, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>What is a single-row transaction?</em></p>
+<p>在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。</p>
+<p>但是，Bigtable 支持某些需要在其他数据库中执行事务的写入操作。实际上，Bigtable 使用单行事务来完成这些操作。这些操作包括读取和写入操作，且所有读取和写入均以原子方式执行，但仍然只是在行级的原子操作：</p>
+<ul>
+<li><strong>读取-修改-写入 (Read-modify-write) 操作</strong>（包括增量和附加）。在读取-修改-写入 (read-modify-write) 操作中，Cloud Bigtable 会读取现有值，对现有值进行增量或附加操作，并将更新后的值写入表中。</li>
+<li><strong>检查并更改 (Check-and-mutate) 操作</strong>（也称为条件更改或条件写入）。在检查并更改 (check-and-mutate) 操作中，Bigtable 会对行进行检查以了解其是否符合指定条件。如果符合条件，Bigtable 则会将新值写入该行中。</li>
+</ul>
+<p><em>What is SSTable format?</em></p>
+<p>SSTable (Sorted Strings Table) is a file format used in Apache Cassandra, a popular NoSQL database. An SSTable is a data structure that provides a persistent, ordered immutable map from keys to values, where both keys and values are arbitrary byte streams. It contains a series of key-value pairs sorted by keys, which enables efficient lookup and range queries. It&rsquo;s used to store and retrieve data in a highly optimized manner. The SSTable also supports internal indexing, which makes accessing a particular data point faster.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/bigtable/">Read more ⟶</a>
+				</section>
+				
+				
+
+<ul class="pagination">
+	<span class="page-item page-prev">
+	
+    <a href="/page/6/" class="page-link" aria-label="Previous"><span aria-hidden="true">← Prev</span></a>
+	
+	</span>
+	<span class="page-item page-next">
+	
+    <a href="/page/8/" class="page-link" aria-label="Next"><span aria-hidden="true">Next →</span></a>
+	
+	</span>
+</ul>
+
+
+			</main>
+			<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script>
+		</div>
+		
+	</body>
+</html>

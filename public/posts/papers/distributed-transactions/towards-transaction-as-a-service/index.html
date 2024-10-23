@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Paper Note: Towards Transaction as a Service - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Background
+Database systems have evolved to be with a cloud-native architecture,i.e., disaggregation of compute and storage architecture, which decouples the storage from the compute nodes, then connects the compute nodes to shared storage through a high-speed network." />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/papers/distributed-transactions/towards-transaction-as-a-service/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Paper Note: Towards Transaction as a Service">
+  <meta property="og:description" content="Background Database systems have evolved to be with a cloud-native architecture,i.e., disaggregation of compute and storage architecture, which decouples the storage from the compute nodes, then connects the compute nodes to shared storage through a high-speed network.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2024-01-22T00:00:00+00:00">
+    <meta property="article:modified_time" content="2024-01-22T00:00:00+00:00">
+    <meta property="article:tag" content="PaperNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Paper Note: Towards Transaction as a Service">
+  <meta name="twitter:description" content="Background Database systems have evolved to be with a cloud-native architecture,i.e., disaggregation of compute and storage architecture, which decouples the storage from the compute nodes, then connects the compute nodes to shared storage through a high-speed network.">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Paper Note: Towards Transaction as a Service</h1>
+			<div class="meta">Posted on Jan 22, 2024</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="background">Background</h2>
+<p>Database systems have evolved to be with a cloud-native architecture,i.e., disaggregation of compute and storage architecture, which decouples the storage from the compute nodes, then connects the compute nodes to shared storage through a high-speed network.</p>
+<blockquote>
+<p>The principle of cloud-native architecture is decoupling. (decoupled functions to make good use of disaggregated resources)</p>
+</blockquote>
+<p>Most existing cloud-native databases couple TP either with storage layer or with execution layer.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240122102851365.png" alt="image-20240122102851365"></p>
+<ul>
+<li><strong>Coupling TP with Storage Layer</strong></li>
+</ul>
+<blockquote>
+<p>TiDB adopts a distributed transactional key-value store TiKV as the storage layer.</p>
+</blockquote>
+<p>Coupling TP with storage has two limitations:</p>
+<ul>
+<li>
+<p>Storage servers are usually configured with high-volume SSDs/disks but relatively low compute resources, while TP requires high parallelism.</p>
+<ul>
+<li>This causes a contradiction and will impact cost efficiency, violating the purpose of cloud-native design.</li>
+</ul>
+</li>
+<li>
+<p>The storage is not commonly elastically scaled, while the TP should be elastically scaled according to varying loads.</p>
+</li>
+<li>
+<p><strong>Coupling TP with Execution Layer.</strong></p>
+</li>
+</ul>
+<blockquote>
+<p>Amazon Aurora leverages MySQL or PostgreSQL as the SQL execution instance, which handles TP in the execution layer.</p>
+</blockquote>
+<ul>
+<li>Bundling TP and the execution layer together would incur redevelopment costs for resolving transaction conflicts.</li>
+</ul>
+<p>根据上文的分析，论文提出了：</p>
+<blockquote>
+<p>It is desirable to decouple TP from the database architecture and make it work as an independent transaction service that allows different execution engines with various data models to connect.</p>
+</blockquote>
+<p>As shown in Figure 1c, the execution layer executes the transaction queries and generates the readset and writeset which are posted to the TaaS layer.</p>
+<h3 id="the-three-tier-layer-design">The three-tier layer design</h3>
+<p>The three-tier layer design brings some advantages:</p>
+<ul>
+<li>By connecting existing NoSQL databases to TaaS, <em><strong>the NoSQL databases can be empowered with ACID TP capability</strong></em>.</li>
+<li>By connecting multiple existing standalone TP engine instances to TaaS, <em><strong>a multimaster distributed TP can be realized to improve the TP’s horizontal scalability</strong></em>.</li>
+<li>By connecting multiple execution engines with different data models to TaaS, <em><strong>multi-model transactions are supported</strong></em>.</li>
+<li>The TaaS layer can be optimized and upgraded independently for high performance.</li>
+</ul>
+<h2 id="taas-architecture">TaaS Architecture</h2>
+<p>An execution-transaction-storage three-layer database architecture can be constructed:</p>
+<ul>
+<li><strong>The execution layer</strong> consists of multiple stateless execution engine instances.
+<ul>
+<li>Each of which accepts users’ transaction requests in the format of SQL or other query languages.</li>
+</ul>
+</li>
+<li><strong>The transaction layer</strong> consists of multiple TaaS nodes.
+<ul>
+<li>Each of which accepts multiple concurrent updates from different execution engines and performing concurrency conflict resolution.</li>
+</ul>
+</li>
+<li><strong>The storage layer</strong> stores sharding data tables and metadata.</li>
+</ul>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240122104831715.png" alt="image-20240122104831715"></p>
+<ul>
+<li><strong>Execution Layer (From Txn to Writeset)</strong></li>
+</ul>
+<blockquote>
+<p>The design of the execution layer is similar to TiDB Server.</p>
+</blockquote>
+<p>The transaction request will be parsed into a physical execution plan, then the executor <em><strong>optimistically</strong></em> executes the plan and outputs the readset and writeset of each transaction.</p>
+<p>Once the user commits the transaction, the cached readset and writeset are posted to the TaaS layer.</p>
+<ul>
+<li><strong>Transaction Layer (From Writesets to Log)</strong></li>
+</ul>
+<p>Any TaaS node can accept readsets and writesets from the execution layer, which forms <em><strong>a multi-master architecture</strong></em>.</p>
+<p>Since only the read and write operations are transferred to the TaaS layer, <strong>the concurrency control problem of transaction processing becomes a read-write or write-write conflict resolution problem.</strong></p>
+<p>The conflict resolution results that indicate the transaction commit or abort are logged.</p>
+<ul>
+<li>
+<p>The transaction commit or abort notifications are <em><strong>synchronously</strong></em> returned to the execution layer and users for low latency.</p>
+</li>
+<li>
+<p>The logs are <em><strong>asynchronously</strong></em> pushed to the storage layer.</p>
+</li>
+<li>
+<p><strong>Storage Layer (From Log to Data)</strong></p>
+</li>
+</ul>
+<p><strong>A storage adaptor needs to be implemented by developers</strong> to specify how to update data stores based on the received logs.</p>
+<h2 id="conflict-handling-in-transaction-layer">Conflict Handling in Transaction Layer</h2>
+<blockquote>
+<p>The core of concurrency control (CC) is conflict handling.
+“就是为了这点醋，我才包的这顿饺子。”</p>
+</blockquote>
+<p>The conflict handling algorithm used in TaaS should satisfy a set of specific requirements:</p>
+<ul>
+<li>First, the conflict handling should follow multi-master architecture.
+<ul>
+<li>The readsets/writesets are naturally sent from different execution engine instances, only allowing single-write would incur a single node bottleneck.</li>
+<li>transaction service should be independently scaled, any node can be shutdown or a new node can join at any time.</li>
+</ul>
+</li>
+<li>Second, the conflict handling algorithm should be <em><strong>optimistic</strong></em>.
+<ul>
+<li>Due to the lazy update of the data in the storage layer, the execution layer could read stale data, and a transaction is optimistically executed in the execution layer.</li>
+</ul>
+</li>
+<li>Third, to improve the efficiency of conflict handling, the writes of transactions are usually batched and exchanged with other TaaS nodes in batches.</li>
+</ul>
+<p><strong>We leverage the epoch-based multi-master OCC as the default conflict handling algorithm：</strong></p>
+<ul>
+<li>The readsets and writesets cached by each TaaS node are exchanged with every other TaaS node at the end of epoch.</li>
+<li>Each TaaS node merges these writesets in terms of a deterministic rule (e.g., first-writer-win).</li>
+</ul>
+<p>There are some implementation details:</p>
+<ul>
+<li><strong>Isolation</strong>
+<ul>
+<li>The epoch-based conflict resolution mechanism can provide multiple isolation levels.</li>
+</ul>
+</li>
+<li><strong>Read Consistency</strong>
+<ul>
+<li>Since the logs in the TaaS layer are asynchronously pushed to the storage layer, the execution layer might read the stale data.</li>
+<li>We address this problem by associating a version number of the storage data and checking whether the read data is the most recent one according to the latest commit version in the TaaS layer. If not, it means that the read data is stale, and the transaction will be aborted.</li>
+</ul>
+</li>
+<li><strong>Durability</strong>
+<ul>
+<li>During the exchange of writesets, the Raft consensus protocol is used to ensure the writesets are received by most of the peer nodes.</li>
+</ul>
+</li>
+<li><strong>Fault Recovery</strong>
+<ul>
+<li>The execution layer is stateless.</li>
+<li>The storage layer usually leverages cloud storage.</li>
+<li>A TaaS node in the transaction layer could fail. Since the Raft consensus is used to ensure the successful transferring of writesets, the updates will not be lost.</li>
+</ul>
+</li>
+</ul>
+<h2 id="advantages-and-case-studies">Advantages and Case studies</h2>
+<h3 id="empowering-nosql-dbs-with-tp-capability">Empowering NoSQL DBs with TP Capability</h3>
+<p><em><strong>By connecting existing NoSQL databases to TaaS, they can be empowered with TP capability.</strong></em></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240122111742188.png" alt="image-20240122111742188"></p>
+<p>By connecting to TaaS, these NoSQL databases show higher operation throughput and lower latency due to concurrent execution supported by TaaS.</p>
+<h3 id="making-standalone-tp-engine-distributed">Making Standalone TP Engine Distributed</h3>
+<p><em><strong>By connecting multiple standalone TP engine instances to TaaS, we can achieve distributed TP easily.</strong></em></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240122111817112.png" alt="image-20240122111817112"></p>
+<ul>
+<li>OpenGauss is slightly modified to post the readset and writeset to the TaaS layer.</li>
+<li>Each TaaS node tags the writeset with a local timestamp and performs a readset validation to check whether a certain isolation requirement is violated (read-write conflict).</li>
+<li>Suppose a transaction passes the readset validation, the writeset of this transaction is exchanged with other TaaS nodes at the end of each epoch. Then a writeset merge operation is performed to check the write-write conflicts.</li>
+</ul>
+<h3 id="supporting-multi-model-transactions">Supporting Multi-Model Transactions</h3>
+<p>By connecting multiple execution engines with different data models to TaaS, we can create a unified query proxy to <em><strong>decompose a multi-model transaction into multiple sub-transactions (each corresponding to a data model) and distribute these subtransactions to different execution engines</strong></em>.</p>
+<p>Furthermore, the TaaS layer can be thought of as a data consistency ensurance layer. The data consistency problems across separate data stores are resolved by TaaS.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240122112408512.png" alt="image-20240122112408512"></p>
+<p>It is noticeable that the readsets/writesets of the sub-transactions that belong to the same multi-model transaction should be routed to the same TaaS node, which is essential for guaranteeing atomicity, i.e., the TaaS node should know the commit or abort information of each sub-transaction.</p>
+<h2 id="challenges-and-opportunities">Challenges and Opportunities</h2>
+<p><em><strong>The key benefit that attracts users using TaaS is the powers and functions that the TP service itself can provide.</strong></em></p>
+<ul>
+<li><strong>NVM-Native TaaS.</strong>
+<ul>
+<li>Non-volatile memory (NVM) with near DRAM speed, lower power consumption, large memory capacity, and nonvolatility in light of power failure, promises signifcant performance potential for TP.</li>
+</ul>
+</li>
+<li><strong>Rich Isolation and Consistency Choices.</strong>
+<ul>
+<li>The consistency of transactions among TaaS nodes and the consistency across the TaaS layer and storage layer should also be further studied.</li>
+</ul>
+</li>
+<li><strong>Cross-Region TP and Global Data Consistency Layer.</strong>
+<ul>
+<li>If TaaS supports cross-region TP, any node in any continent can connect to TaaS to solve the data consistency problem across regional servers.</li>
+</ul>
+</li>
+</ul>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/papernote">PaperNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

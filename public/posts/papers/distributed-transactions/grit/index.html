@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Paper Note: GRIT: Consistent Distributed Transactions across Polyglot Microservices with Multiple Databases - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="FAQ
+What is a deterministic database?
+A deterministic database is a system where the outcomes of any database operations are guaranteed to be the same every time they are executed, provided that the operations are started from the same database state.
+This concept implies a level of reliability and predictability in the behavior of the database system." />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/papers/distributed-transactions/grit/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Paper Note: GRIT: Consistent Distributed Transactions across Polyglot Microservices with Multiple Databases">
+  <meta property="og:description" content="FAQ What is a deterministic database? A deterministic database is a system where the outcomes of any database operations are guaranteed to be the same every time they are executed, provided that the operations are started from the same database state. This concept implies a level of reliability and predictability in the behavior of the database system.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2023-12-08T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-12-08T00:00:00+00:00">
+    <meta property="article:tag" content="PaperNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Paper Note: GRIT: Consistent Distributed Transactions across Polyglot Microservices with Multiple Databases">
+  <meta name="twitter:description" content="FAQ What is a deterministic database? A deterministic database is a system where the outcomes of any database operations are guaranteed to be the same every time they are executed, provided that the operations are started from the same database state. This concept implies a level of reliability and predictability in the behavior of the database system.">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Paper Note: GRIT: Consistent Distributed Transactions across Polyglot Microservices with Multiple Databases</h1>
+			<div class="meta">Posted on Dec 8, 2023</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="faq">FAQ</h2>
+<h3 id="what-is-a-deterministic-database"><em>What is a deterministic database?</em></h3>
+<p><strong>A deterministic database is a system where the outcomes of any database operations are guaranteed to be the same every time they are executed, provided that the operations are started from the same database state.</strong>
+This concept implies a level of reliability and predictability in the behavior of the database system.</p>
+<p>Deterministic behavior is essential in many contexts, especially in distributed databases, where operations might need to be coordinated across multiple nodes, or in any system where replication, fault tolerance, and consistency are important. If a database operation is deterministic, it means the following:</p>
+<ul>
+<li><strong>Consistency</strong>: The same operation will always result in the same state change and the same output when applied to the same initial state.</li>
+<li><strong>Repeatability</strong>: If an operation is performed multiple times with the same input, it will produce the same result each time.</li>
+<li><strong>Concurrency Control</strong>: Determinism can simplify concurrency control, as the outcome of transaction execution is predictable. This reduces the likelihood of conflicts between transactions and can help ensure serializability.</li>
+<li><strong>Fault Tolerance</strong>: In systems that require fault tolerance, such as distributed databases, deterministic operations can make it easier to replicate data across multiple nodes. If a node fails, another node can recreate the exact sequence of operations to reach the current state, ensuring data integrity.</li>
+</ul>
+<p>Determinism in database systems is usually achieved by using strictly defined schemas, stored procedures, constraints, triggers, and transaction isolation levels that enforce the ACID properties (Atomicity, Consistency, Isolation, Durability) of database transactions.</p>
+<h3 id="can-you-give-some-examples-of-deterministic-database-systems"><em>Can you give some examples of deterministic database systems?</em></h3>
+<p>Deterministic database systems are typically not advertised with &ldquo;deterministic&rdquo; as a defining feature, as most traditional relational database management systems (RDBMS) aim for consistency and determinism in their operation. A few databases (including NewSQL databases) and distributed systems, however, emphasize determinism as a core component of their design to ensure data consistency and fault tolerance, especially in a distributed environment.</p>
+<h2 id="introduction">Introduction</h2>
+<h3 id="background">Background</h3>
+<ul>
+<li>How to support consistent distributed transactions in scale-out databases is a well-known challenge, and is even more challenging in a microservice architecture.</li>
+<li>2PC does not work well in large-scale high-throughput systems. The reason is that locks are held during the entire 2PC process that significantly increase the transaction conflicts and latency.</li>
+</ul>
+<p>GRIT leverages some deterministic ideas, such as ordering transactions in Paxos-based logs before execution.</p>
+<h2 id="structure">Structure</h2>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231209201808172.png" alt="image-20231209201808172"></p>
+<p>Components:</p>
+<ul>
+<li>GTM: Global Transaction Manager</li>
+<li>GTL: Global Transaction Log</li>
+<li>DBTM: Database Transaction Manager</li>
+<li>DBTL: Database Transaction Commit Log</li>
+<li>Log Player: Push commit log entries to database</li>
+<li>DB Shard Server</li>
+<li>DB Service: caches read/write set, send them to DBTM</li>
+</ul>
+<h2 id="implementation">Implementation</h2>
+<blockquote>
+<p>&ldquo;We do not expand this flow here.&rdquo;</p>
+<p>The GRIT system is in production in eBay, so I guess some of the implementations might involve the company&rsquo;s insterests, many detais are missing.</p>
+</blockquote>
+<h3 id="transaction">Transaction</h3>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231209202308522.png" alt="image-20231209202308522"></p>
+<p>Three Phases:</p>
+<ul>
+<li>Optimistic Execution Phase:
+<ul>
+<li>Do business logic, while DB Service captures read/write sets (with version info)</li>
+</ul>
+</li>
+<li>Logical Commit Phase:
+<ul>
+<li>At a DB Level:
+<ul>
+<li>Conflict Resolution</li>
+<li>If the transaction involves more than one database, commit decision should be made globally</li>
+</ul>
+</li>
+<li>At Global Level: Make the global commit decision</li>
+</ul>
+</li>
+<li>Physical materialization Phase:
+<ul>
+<li>Log player will steam log entries sequentially to target database, and transaction writes are deterministically executed following the transaction order in the DB level transactions logs (DBTLs).</li>
+<li>This process is done asynchronously.</li>
+</ul>
+</li>
+</ul>
+<h4 id="details">Details</h4>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231209202830615.png" alt="image-20231209202830615"></p>
+<p>Details:</p>
+<ul>
+<li>Use snapshot to solve wr-conflicts.</li>
+<li>Use version info to solve ww-conflicts.</li>
+<li>Use DBTM’s conflict resolution to solve rw-conflicts.</li>
+<li>The log player <strong>asynchronously</strong> sends DBTL entries to backend storage servers.</li>
+<li>Avoid pessimistic locking during both execution and commit process and avoid waiting for physical commit.</li>
+</ul>
+<p>Conflict resolution:</p>
+<p><em><strong>The goal of conflict checking is to see if there is any other transaction that has changed an entry since the transaction read it.</strong></em></p>
+<p>So basically it iterates the write set to see any of them has been changed.</p>
+<p>Conflict checking at a DBTM is sufficient with the cache of w-sets from all the recently committed transactions, as long as all the updates go through the same DBTM for the covered scope of the database.</p>
+<h2 id="conclusions">Conclusions</h2>
+<h3 id="highlights">Highlights</h3>
+<ul>
+<li>A mechanism similar to 2PC but apply at logical commit phase, which avoids longer duration.</li>
+<li>The key for the scalability and performance is the techniques to avoid coordination during execution phase as well as transaction materialization (physical commit) that are of relatively longer duration.</li>
+<li><em><strong>Take advantage of deterministic database engines.</strong></em></li>
+</ul>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/papernote">PaperNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

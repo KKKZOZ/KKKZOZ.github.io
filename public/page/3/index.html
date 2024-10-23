@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>KKKZOZ-Blog | Home </title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="" />
+	<meta property="og:image" content=""/>
+	<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="KKKZOZ-Blog" />
+	<meta property="og:url" content="http://localhost:1313/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+
+	<body>
+		<div class="content">
+			<header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+			
+			<main class="list">
+				<div class="site-description"><p></p></div>
+				
+				
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-9-consistency-and-consensus/">DDIA: Chapter 9 Consistency and Consensus</a></h1>
+					<time>Nov 13, 2023</time>
+					<br><div class="description">
+	
+	<blockquote>
+<p>本章是这本书最酣畅淋漓的一章，涉及到了一致性和共识问题的方方面面，知识点多而不失条理。第一部分先讲了 Linearizability, 为后面的知识点做铺垫。到了 &ldquo;Ordering Guarantees&rdquo; 这一小节，从因果关系的带来的 &ldquo;Happened Before&rdquo; 的关系开始讲起，讲到了序列号和 Lamport Timestamp，提出来 Lamport Timestamp 的一个缺点：无法在某事件发生时判断是否有冲突，然后引出了全序关系广播，在全序关系广播中又讲到了和 Linearizable 之间的等价关系，最后引出共识算法。太精彩了，值得反复阅读！</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-9-consistency-and-consensus/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/cap-twelve-years-later/">Paper Note: CAP Twelve Years Later: How the &#34;Rules&#34; have Changed</a></h1>
+					<time>Nov 12, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>what is a version vector?</em></p>
+<p>A version vector is a construct used in distributed systems to track the version of data across different nodes in a network, ensuring consistency and helping to resolve conflicts. Version vectors are particularly useful in systems where multiple nodes may independently modify data and then need to synchronize with each other without relying on a central authority. This concept is fundamental in the context of eventual consistency and conflict resolution in distributed databases, file systems, and data replication scenarios.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/cap-twelve-years-later/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/6.824-lab2b-research/">Research: 6.824 Lab2B 中异常情况的分析</a></h1>
+					<time>Nov 8, 2023</time>
+					<br><div class="description">
+	
+	<p>写这篇文章的原因是之前在测试 6.824 Lab2B 时总是会出现几个错误，去提了 <a href="https://github.com/OneSizeFitsQuorum/MIT6.824-2021/issues/35">issue</a> 后也没有得到令人信服的结果，自己有一点头绪但是没验证，这事就这么放着了。</p>
+<p>然后最近有个同样做 6.824 的同学给我发了邮件，说他也遇到了同样的问题，重新分析了一下后，本来想简单回复一下的，结果回复的内容越写越多，就干脆直接整理为一篇文章，供大家参考。</p>
+<h2 id="异常情况">异常情况</h2>
+<p>我之前在对 Lab2B 进行测试时，总是有几个简单的测试点过不了，仿佛代码即使正确，也总是可能出错。我经过分析后发现，都遵循以下这种错误模式：</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/6.824-lab2b-research/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/talk-about-consistency-and-consensus/">Talk about Consistency and Consensus</a></h1>
+					<time>Nov 7, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="acid-中的一致性">ACID 中的一致性</h2>
+<p>我们现在关注的是其中的 C，即一致性 <em>Consistency</em>。它是什么意思呢？通俗地说，它指的是任何一个数据库事务的执行，都应该让整个数据库保持在「一致」的状态：</p>
+<ul>
+<li>ACID 中的「一致性」，是对于整个数据库的「一致」状态的维持。抽象来看，对数据库每进行一次事务操作，它的状态就发生一次变化。这相当于把数据库看成了状态机，只要数据库的起始状态是「一致」的，并且每次事务操作都能保持「一致性」，那么数据库就能始终保持在「一致」的状态上 (Consistency Preservation)。</li>
+<li>所谓状态是不是「一致」，其实是由业务层规定的。比如转账的例子，“转账前后账户总额保持不变”，这个规定只对于「转账」这个特定的业务场景有效。如果换一个业务场景，「一致」的概念就不是这样规定了。所以说，ACID 中的「一致性」，其实是体现了业务逻辑上的合理性，并不是由数据库本身的技术特性所决定的。</li>
+</ul>
+<p>为了让事务总是能保持 ACID 的一致性，我们需要在实现上考虑哪些因素呢？</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/talk-about-consistency-and-consensus/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/about-cap/">About CAP</a></h1>
+					<time>Nov 6, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="what-is-cap">What is CAP</h2>
+<ul>
+<li>Consistency: 数据一致性</li>
+<li>Availability: 可用性</li>
+<li>Partition Tolerance: 分区容忍性</li>
+</ul>
+<h3 id="consistency">Consistency</h3>
+<blockquote>
+<p>指的是系统能够返回一致性的数据。</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/about-cap/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/chain-replication/">Paper Note: Chain Replication</a></h1>
+					<time>Nov 6, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>Is chain replication used in practice over other things like Raft or Paxos?</em></p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/chain-replication/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/time-clocks-and-the-ordering/">Paper Note: Time, clocks, and the ordering</a></h1>
+					<time>Nov 4, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="happened-before-关系">Happened Before 关系</h2>
+<p>论文先从事件之间的 Happened Before 关系开始讲起</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231105150635534.png" alt="image-20231105150635534"></p>
+<p>结合上图我们举例解释一下「Happened Before」关系：</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/time-clocks-and-the-ordering/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-8-the-trouble-with-distributed-systems/">DDIA: Chapter 8 The Trouble with Distributed Systems</a></h1>
+					<time>Nov 2, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faults-and-partial-failures">Faults and Partial Failures</h2>
+<p>An individual computer with good software is usually either fully functional or entirely broken, but not something in between. Thus, computers hide the fuzzy physical reality on which they are implemented and present <strong>an idealized system model</strong> that operates with mathematical perfection.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-8-the-trouble-with-distributed-systems/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/talk-about-redlock/">Talk about Redlock</a></h1>
+					<time>Nov 2, 2023</time>
+					<br><div class="description">
+	
+	<p>最近看了下之前业界关于 Redlock 的争论，发现还是挺有意思的，正好把自己最近学的知识串了起来，这里就简单总结一下。</p>
+<h2 id="martin-的观点">Martin 的观点</h2>
+<h3 id="使用分布式锁的目的">使用分布式锁的目的</h3>
+<p>Martin 表示，你必须先清楚你在使用分布式锁的目的是什么？</p>
+<p>他认为有两个目的。</p>
+<p><strong>第一，效率。</strong></p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/talk-about-redlock/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/summary/summary-of-october/">十月个人总结</a></h1>
+					<time>Nov 2, 2023</time>
+					<br><div class="description">
+	
+	<p>10 月份算是学习走上正轨的一个月吧，国庆假期时确定了会去到中科院软件研究所软工中心，国庆完了后不久就和那边的老师联系去实习的事情，结果本校的指导老师不放人，太离谱了。</p>
+<p>10 月中旬就开始系统地学习分布式理论了，主要就是 6.824 的网课和实验，还有就是看《Design Data-Intensive Applications》这本书。这本书的内容非常契合 6.824 的主题，我认为每个学了 6.824 的人都应该补充阅读这本书哈哈。</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/summary/summary-of-october/">Read more ⟶</a>
+				</section>
+				
+				
+
+<ul class="pagination">
+	<span class="page-item page-prev">
+	
+    <a href="/page/2/" class="page-link" aria-label="Previous"><span aria-hidden="true">← Prev</span></a>
+	
+	</span>
+	<span class="page-item page-next">
+	
+    <a href="/page/4/" class="page-link" aria-label="Next"><span aria-hidden="true">Next →</span></a>
+	
+	</span>
+</ul>
+
+
+			</main>
+			<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script>
+		</div>
+		
+	</body>
+</html>

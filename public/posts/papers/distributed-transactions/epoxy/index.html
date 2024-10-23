@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Summary
+一句话总结，就是：Re-implement the multi-version concurrency control mechanism of Postgres on shim layers." />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/papers/distributed-transactions/epoxy/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores">
+  <meta property="og:description" content="Summary 一句话总结，就是：Re-implement the multi-version concurrency control mechanism of Postgres on shim layers.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2023-11-22T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-11-22T00:00:00+00:00">
+    <meta property="article:tag" content="PaperNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores">
+  <meta name="twitter:description" content="Summary 一句话总结，就是：Re-implement the multi-version concurrency control mechanism of Postgres on shim layers.">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores</h1>
+			<div class="meta">Posted on Nov 22, 2023</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="summary">Summary</h2>
+<p>一句话总结，就是：<strong>Re-implement the multi-version concurrency control mechanism of Postgres on shim layers.</strong></p>
+<p>因为这篇文章在组会上做了汇报，所以我就直接贴 PPT 了。</p>
+<h2 id="content">Content</h2>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%873.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%874.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%875.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%876.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%877.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%878.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%879.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8710.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8711.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8712.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8713.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8714.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8715.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8716.png" alt=""></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8717.png" alt="幻灯片17"></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8718.png" alt="幻灯片18"></p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%8719.png" alt="幻灯片19"></p>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/papernote">PaperNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

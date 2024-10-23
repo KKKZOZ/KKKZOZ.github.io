@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>6.824 on KKKZOZ-Blog</title>
+    <link>http://localhost:1313/tags/6.824/</link>
+    <description>Recent content in 6.824 on KKKZOZ-Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Wed, 08 Nov 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/6.824/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Research: 6.824 Lab2B 中异常情况的分析</title>
+      <link>http://localhost:1313/posts/talks/6.824-lab2b-research/</link>
+      <pubDate>Wed, 08 Nov 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/talks/6.824-lab2b-research/</guid>
+      <description>&lt;p&gt;写这篇文章的原因是之前在测试 6.824 Lab2B 时总是会出现几个错误，去提了 &lt;a href=&#34;https://github.com/OneSizeFitsQuorum/MIT6.824-2021/issues/35&#34;&gt;issue&lt;/a&gt; 后也没有得到令人信服的结果，自己有一点头绪但是没验证，这事就这么放着了。&lt;/p&gt;&#xA;&lt;p&gt;然后最近有个同样做 6.824 的同学给我发了邮件，说他也遇到了同样的问题，重新分析了一下后，本来想简单回复一下的，结果回复的内容越写越多，就干脆直接整理为一篇文章，供大家参考。&lt;/p&gt;&#xA;&lt;h2 id=&#34;异常情况&#34;&gt;异常情况&lt;/h2&gt;&#xA;&lt;p&gt;我之前在对 Lab2B 进行测试时，总是有几个简单的测试点过不了，仿佛代码即使正确，也总是可能出错。我经过分析后发现，都遵循以下这种错误模式：&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title> - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="Related Work
+Percolator:
+
+Ways to reduce RPC calls.
+Cache writes, two-phase commit to apply the writes
+
+2PC 的协调者并不持久化状态,而是引入了 primary record 的概念,如果协调者挂了,那么其他参与者可以根据查询 primary lock 中的事务状态来决定 roll back or roll forward.
+
+
+
+Cherry Garcia:" />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/transaction-protocol-design/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:description" content="Related Work Percolator:
+Ways to reduce RPC calls. Cache writes, two-phase commit to apply the writes 2PC 的协调者并不持久化状态,而是引入了 primary record 的概念,如果协调者挂了,那么其他参与者可以根据查询 primary lock 中的事务状态来决定 roll back or roll forward. Cherry Garcia:">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+  <meta name="twitter:description" content="Related Work Percolator:
+Ways to reduce RPC calls. Cache writes, two-phase commit to apply the writes 2PC 的协调者并不持久化状态,而是引入了 primary record 的概念,如果协调者挂了,那么其他参与者可以根据查询 primary lock 中的事务状态来决定 roll back or roll forward. Cherry Garcia:">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title"></h1>
+			<div class="meta">Posted on Jan 1, 1</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<h2 id="related-work">Related Work</h2>
+<p>Percolator:</p>
+<ul>
+<li>Ways to reduce RPC calls.</li>
+<li>Cache writes, two-phase commit to apply the writes
+<ul>
+<li>2PC 的协调者并不持久化状态,而是引入了 primary record 的概念,如果协调者挂了,那么其他参与者可以根据查询 primary lock 中的事务状态来决定 roll back or roll forward.</li>
+</ul>
+</li>
+</ul>
+<p>Cherry Garcia:</p>
+<ul>
+<li>Use cache to store the intermediate state.</li>
+<li>Use a consistent hash to avoid deadlock.</li>
+<li>A client protocol.</li>
+<li>Use TSR as a synchronizing point</li>
+</ul>
+<h2 id="features">Features</h2>
+<ul>
+<li>Support different kinds of data source.
+<ul>
+<li>RDBMS</li>
+<li>KV Stores</li>
+</ul>
+</li>
+<li>Support at least snapshot isolation</li>
+<li>As a middleware</li>
+</ul>
+<h3 id="middleware">Middleware</h3>
+<p>How to provide interfaces?</p>
+<p>Two approaches:</p>
+<ul>
+<li></li>
+</ul>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

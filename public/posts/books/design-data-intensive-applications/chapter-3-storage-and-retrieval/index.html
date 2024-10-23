@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html><head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>DDIA: Chapter 3 Storage and Retrieval - KKKZOZ-Blog</title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="这一章主要讲的是数据库更底层的一些东西。
+In order to tune a storage engine to perform well on your kind of workload, you need to have a rough idea of what the storage engine is doing under the hood." />
+	<meta property="og:image" content=""/>
+	<meta property="og:url" content="http://localhost:1313/posts/books/design-data-intensive-applications/chapter-3-storage-and-retrieval/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="DDIA: Chapter 3 Storage and Retrieval">
+  <meta property="og:description" content="这一章主要讲的是数据库更底层的一些东西。
+In order to tune a storage engine to perform well on your kind of workload, you need to have a rough idea of what the storage engine is doing under the hood.">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="article">
+    <meta property="article:section" content="posts">
+    <meta property="article:published_time" content="2023-10-20T00:00:00+00:00">
+    <meta property="article:modified_time" content="2023-10-20T00:00:00+00:00">
+    <meta property="article:tag" content="BookNote">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="DDIA: Chapter 3 Storage and Retrieval">
+  <meta name="twitter:description" content="这一章主要讲的是数据库更底层的一些东西。
+In order to tune a storage engine to perform well on your kind of workload, you need to have a rough idea of what the storage engine is doing under the hood.">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+<body>
+        <div class="content"><header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+<main>
+	<article>
+		<div class="title">
+			<h1 class="title">DDIA: Chapter 3 Storage and Retrieval</h1>
+			<div class="meta">Posted on Oct 20, 2023</div>
+		</div>
+		
+
+		
+
+		<section class="body">
+			<p>这一章主要讲的是数据库更底层的一些东西。</p>
+<p>In order to tune a storage engine to perform well on your kind of workload, you need to have a rough idea of what the storage engine is doing under the hood.</p>
+<h2 id="data-structures-that-power-your-database">Data Structures That Power Your Database</h2>
+<h3 id="index">Index</h3>
+<p>Any kind of index usually slows down writes, because the index also needs to be updated every time data is written.</p>
+<p>This is an important trade-off in storage systems: <strong>well-chosen indexes speed up read queries, but every index slows down writes.</strong></p>
+<p>所以在默认情况下，数据库不会对所有 key 都建立索引，一般都由应用的开发者来确定。</p>
+<h4 id="hash-index">Hash Index</h4>
+<p>以最简单的方式实现一个 key-value store, 每次 Put 就是在数据文件后面追加，每次 Get 就依次遍历数据文件寻找对应数据。</p>
+<p>遍历寻找数据太慢了，所以我们可以为这个简单的数据库增加索引，即在内存中维护一个 Hashmap，key 为键值对的键，value 为该键值对在数据文件中的字节偏移值。</p>
+<p>Whenever you append a new key-value pair to the file, you also update the hash map to reflect the offset of the data you just wrote (this works both for inserting new keys and for updating existing keys).</p>
+<p>在这种情况下，无论新增还是修改，都是在文件末尾追加。</p>
+<p>A storage engine like Bitcask is well suited to situations where the value for each key is updated frequently.</p>
+<p>文件太大后自然需要压缩：</p>
+<blockquote>
+<p>Compaction means throwing away duplicate keys in the log, and keeping only the most recent update for each key.</p>
+</blockquote>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020212531910.png" alt="image-20231020212531910"></p>
+<p>我们自然地可以将整个数据文件分为一个个大小固定的文件，当一个文件写满之后，就去写下一个文件，如果文件数量过多，就可以另起一个线程去压缩合并。由于只是在生成新文件，所以压缩合并的同时也可以依旧进行查询，压缩完成后，再用新文件去替换旧文件。</p>
+<p>在实现这个简单的 key-value store 时有几点需要注意：</p>
+<ul>
+<li><em>Crash recovery</em>
+<ul>
+<li>If the database is restarted, the in-memory hash maps are lost. Bitcask speeds up recovery by storing a snapshot of each segment’s hash map on disk, which can be loaded into memory more quickly.</li>
+</ul>
+</li>
+<li><em>Partially written records</em>
+<ul>
+<li>The database may crash at any time, including halfway through appending a record to the log. Bitcask files include checksums, allowing such corrupted parts of the log to be detected and ignored.</li>
+</ul>
+</li>
+<li><em>Concurrency control</em>
+<ul>
+<li>As writes are appended to the log in a strictly sequential order, a common implementation choice is to have only one writer thread.</li>
+</ul>
+</li>
+</ul>
+<p>Append-only 模式也有自己的优点：</p>
+<ul>
+<li>Appending and segment merging are sequential write operations, which are generally <strong>much faster than random writes</strong>, especially on magnetic spinning-disk hard drives.</li>
+<li>Concurrency and crash recovery are <strong>much simpler</strong> if segment files are appendonly or immutable.</li>
+<li>Merging old segments avoids the problem of data files getting fragmented over time.</li>
+</ul>
+<p>缺点也有：</p>
+<ul>
+<li>The hash table must fit in memory.</li>
+<li>Range queries are not efficient.
+<ul>
+<li>只能遍历整个 Hashmap</li>
+</ul>
+</li>
+</ul>
+<h4 id="sstables-and-lsm-trees">SSTables and LSM-Trees</h4>
+<p>我们对上文提到的数据文件做一点小小的改进：要求所有的键值对都以键来排序，这种格式就是 Sorted String Table (SSTable).</p>
+<p>SSTable&rsquo;s advantages over log segments with hash index:</p>
+<ul>
+<li>Merging segments is simple and efficient, even if the files are bigger than the available memory.
+<ul>
+<li>合并两个有序的列表只需要 $O(n)$ 的时间复杂度</li>
+<li>并且可以在外部使用归并排序</li>
+</ul>
+</li>
+<li>In order to find a particular key in the file, you no longer need to keep an index of all the keys in memory. This is called a <em>sparse-index</em>, which will significantly reduce the table size.
+<ul>
+<li>由于记录的键是有序的，我们可以每隔一定间隔记录一个，寻找某个记录时，根据它的键去遍历一个小区间就行</li>
+<li><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020214252490.png" alt="image-20231020214252490"></li>
+<li>Since read requests need to scan over several key-value pairs in the requested range anyway, it is possible to group those records into a block and compress it before writing it to disk.</li>
+</ul>
+</li>
+</ul>
+<p>数据文件中的记录是有序的，在写入数据时，我们肯定不能每次直接往文件中写入，而是应该先在内存中处理，到达一定大小后再写入到文件中。</p>
+<p>We can now make our storage engine work as follows:</p>
+<ul>
+<li>When a write comes in, add it to an in-memory balanced tree data structure (for example, a red-black tree). This in-memory tree is sometimes called a <em>memtable</em>.</li>
+<li>When the memtable gets bigger than some threshold—typically a few megabytes — write it out to disk as an SSTable file. This can be done efficiently because the tree already maintains the key-value pairs sorted by key. The new SSTable file becomes the most recent segment of the database. While the SSTable is being written out to disk, writes can continue to a new memtable instance.</li>
+<li>In order to serve a read request, first try to find the key in the memtable, then in the most recent on-disk segment, then in the next-older segment, etc.</li>
+<li>From time to time, run a merging and compaction process in the background to combine segment files and to discard overwritten or deleted values.</li>
+</ul>
+<p>注意，这样只能保证单个文件内的记录是有序的，而不能在多个文件之间来保证有序性。</p>
+<p>当数据库崩溃时，memtable 中的记录也会消失，所以我们可以在磁盘上维护一个 WAL日志，用来记录这个 memtable 的写入情况。</p>
+<p>这种算法即是 LSM-Tree 的原型。</p>
+<p>The LSM-tree algorithm can be slow when looking up keys that do not exist in the database. In order to optimize this kind of access, storage engines often use additional Bloom filters.</p>
+<p>There are also different strategies to determine the order and timing of how SSTables are compacted and merged. The most common options are size-tiered and leveled compaction.</p>
+<p>Because the disk writes are sequential the LSM-tree can support remarkably high write throughput.</p>
+<h5 id="summary">Summary</h5>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/dmlWriteProcess.png" alt="Memtable &amp; SSTable (Sorted String Table)"></p>
+<p>Some conventions:</p>
+<ul>
+<li><strong>On-disk <code>SSTable</code> indexes are always loaded into memory</strong></li>
+<li><strong>All writes go directly to the <code>MemTable</code> index</strong></li>
+<li><strong>Reads check the MemTable first and then the SSTable indexes</strong></li>
+<li>Periodically, the MemTable is flushed to disk as an SSTable</li>
+<li>Periodically, on-disk SSTables are &ldquo;collapsed together&rdquo;</li>
+</ul>
+<p>对于一个写操作：</p>
+<ul>
+<li>先向 WAL 日志中写入，再向 memtable 中写入数据。</li>
+<li>当 memtable 的大小达到一个阈值时，就把整个 memtable 写入到磁盘并清空日志，重新初始化一个 memtable 用于处理后续的写操作。</li>
+</ul>
+<p>对于一个读操作：</p>
+<ul>
+<li>先在 memtable 中查找</li>
+<li>如果未找到，就按照从新到旧的顺序在 SSTable 文件中查找
+<ul>
+<li>每个 SSTable 在内存中都有对应的索引，通过索引去找对应的一个小范围，然后遍历磁盘中文件的对应范围，确定数据是否存在</li>
+<li>如果不存在，就去查找下一个比较旧的 SSTable</li>
+</ul>
+</li>
+</ul>
+<p>分析之后可以发现，由于 key 可能不存在，就会查找多个 SSTable，造成大量极慢的读磁盘的操作。针对每一个 SSTable，除了在内存中维护它的 sparse index, 我们还可以在内存中维护一个 bloom filter, 用于快速确定该 SSTable 中是否包含此数据。</p>
+<p>引入此优化后，理想情况下一个读操作只需要一次磁盘读写即可完成。</p>
+<h3 id="b-trees">B-Trees</h3>
+<p>The most widely used indexing structure is quite different: the B-tree.</p>
+<p>By contrast, B-trees break the database down into fixed-size blocks or pages, traditionally 4 KB in size (sometimes bigger), and read or write one page at a time.</p>
+<p>In order to make the database resilient to crashes, it is common for B-tree implementations to include an additional data structure on disk: a write-ahead log (WAL, also known as a redo log). This is an append-only file to which <strong>every B-tree modification must be written before it can be applied to the pages</strong> of the tree itself. When the database comes back up after a crash, this log is used to restore the B-tree back to a consistent state.</p>
+<h3 id="comparing-b-trees-and-lsm-trees">Comparing B-Trees and LSM-Trees</h3>
+<p>As a rule of thumb, <strong>LSM-trees are typically faster for writes, whereas B-trees are thought to be faster for reads</strong>.
+Reads are typically slower on LSM-trees because they have to check several different data structures and SSTables at different stages of compaction.</p>
+<h4 id="advantages-of-lsm-trees">Advantages of LSM-trees</h4>
+<p>A B-tree index must write every piece of data at least twice: once to the write-ahead log, and once to the tree page itself (and perhaps again as pages are split).</p>
+<p>Log-structured indexes also rewrite data multiple times due to repeated compaction and merging of SSTables. This effect — one write to the database resulting in multiple writes to the disk over the course of the database’s lifetime — is known as <em>write amplification</em>. It is of particular concern on SSDs, which can only overwrite blocks a limited number of times before wearing out.</p>
+<p>Moreover, LSM-trees are typically able to sustain higher write throughput than B-trees, partly because they sometimes have <strong>lower write amplification</strong>, and partly because they <strong>sequentially write</strong> compact SSTable files rather than having to overwrite several pages in the tree.</p>
+<p>Since LSM-trees are not page-oriented and periodically rewrite SSTables to remove fragmentation, they have lower storage overheads, especially when using leveled compaction</p>
+<h4 id="downsides-of-lsm-trees">Downsides of LSM-trees</h4>
+<p>A downside of log-structured storage is that the compaction process can sometimes interfere with the performance of ongoing reads and writes.</p>
+<p>The impact on throughput and average response time is usually small, but at higher percentiles the response time of queries to log-structured storage engines can sometimes be quite high, and B-trees can be more predictable.</p>
+<p>If write throughput is high and compaction is not configured carefully, it can happen that compaction cannot keep up with the rate of incoming writes. In this case, the number of unmerged segments on disk keeps growing until you run out of disk space, and reads also slow down because they need to check more segment files.</p>
+<h3 id="keeping-everything-in-memory">Keeping everything in memory</h3>
+<p>Counterintuitively, the performance advantage of in-memory databases is not due to the fact that they don’t need to read from disk. Even a disk-based storage engine may never need to read from disk if you have enough memory, because the operating system caches recently used disk blocks in memory anyway. Rather, they can be faster because they can <strong>avoid the overheads of encoding in-memory data structures in a form that can be written to disk.</strong></p>
+<p>Besides performance, another interesting area for in-memory databases is providing data models that are difficult to implement with disk-based indexes. For example, Redis offers a database-like interface to various data structures such as priority queues and sets. Because it keeps all data in memory, its implementation is comparatively simple.</p>
+<h2 id="transaction-processing-or-analytics">Transaction Processing or Analytics?</h2>
+<p>这一节也很有意思，数据库大体上可以分为两种用途：transaction processing and data analytics.</p>
+<blockquote>
+<p>Transaction processing just means allowing clients to make low-latency reads and writesas opposed to batch processing jobs, which only run periodically (for example, once per day).</p>
+</blockquote>
+<p>An application typically looks up a small number of records by some key, using an index. Records are inserted or updated based on the user’s input. Because these applications are interactive, the access pattern became known as online transaction processing (OLTP).</p>
+<p>However, databases also started being increasingly used for data analytics, which has very different access patterns. Usually an analytic query needs to scan over a huge number of records, only reading a few columns per record, and calculates aggregate statistics (such as count, sum, or average) rather than returning the raw data to the user.</p>
+<p>In order to differentiate this pattern of using databases from transaction processing, it has been called online analytic processing (OLAP).</p>
+<p>两者还是有很大不同的：</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020221030359.png" alt="image-20231020221030359"></p>
+<h3 id="data-warehousing">Data Warehousing</h3>
+<p>专门针对数据分析的数据库被叫做数据仓库。</p>
+<p>A data warehouse, by contrast, is a separate database that analysts can query to their hearts’ content, without affecting OLTP operations. The data warehouse contains a read-only copy of the data in all the various OLTP systems in the company.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020221221532.png" alt="image-20231020221221532"></p>
+<p>Many data warehouses are used in a fairly formulaic style, known as a star schema (also known as dimensional modeling).</p>
+<p>Example:</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020221306520.png" alt="image-20231020221306520"></p>
+<p>As each row in the fact table represents an event, the dimensions represent the <em>who</em>, <em>what</em>, <em>where</em>, <em>when</em>, <em>how</em>, and <em>why</em> of the event.</p>
+<p>The name “star schema” comes from the fact that when the table relationships are visualized, the fact table is in the middle, surrounded by its dimension tables; the connections to these tables are like the rays of a star.</p>
+<h3 id="column-oriented-storage">Column-Oriented Storage</h3>
+<p>数据仓库存储的数据有以下特点：</p>
+<ul>
+<li>数量多</li>
+<li>Fact table 的列非常多</li>
+</ul>
+<p>查询的特点是：</p>
+<ul>
+<li>查询所有数据</li>
+<li>只访问其中的几列</li>
+</ul>
+<p>In most OLTP databases, storage is laid out in a row-oriented fashion: all the values from one row of a table are stored next to each other. Document databases are similar: an entire document is typically stored as one contiguous sequence of bytes.</p>
+<p>The idea behind column-oriented storage is simple: don’t store all the values from one row together, but store all the values from each column together instead. If each column is stored in a separate file, a query only needs to read and parse those columns that are used in that query, which can save a lot of work.</p>
+<p><img src="https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20231020222218346.png" alt="image-20231020222218346"></p>
+<h3 id="summary-1">Summary</h3>
+<p>There are big differences between the access patterns in those use cases:</p>
+<ul>
+<li>OLTP systems are typically user-facing, which means that they may see a huge volume of requests. In order to handle the load, applications usually only touch a small number of records in each query. The application requests records using some kind of key, and the storage engine uses an index to find the data for the requested key. Disk seek time is often the bottleneck here.</li>
+<li>Data warehouses and similar analytic systems are less well known, because they are primarily used by business analysts, not by end users. They handle a much lower volume of queries than OLTP systems, but each query is typically very demanding, requiring many millions of records to be scanned in a short time. Disk bandwidth (not seek time) is often the bottleneck here, and columnoriented storage is an increasingly popular solution for this kind of workload.</li>
+</ul>
+
+		</section>
+
+		<div class="post-tags">
+			
+			
+			<nav class="nav tags">
+				<ul class="tags">
+					
+					<li><a href="/tags/booknote">BookNote</a></li>
+					
+				</ul>
+			</nav>
+			
+			
+		</div>
+		</article>
+</main>
+<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script></div>
+    </body>
+</html>

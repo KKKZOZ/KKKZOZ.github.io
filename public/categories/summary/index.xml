@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Summary on KKKZOZ-Blog</title>
+    <link>http://localhost:1313/categories/summary/</link>
+    <description>Recent content in Summary on KKKZOZ-Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 02 Nov 2023 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/categories/summary/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>十月个人总结</title>
+      <link>http://localhost:1313/posts/summary/summary-of-october/</link>
+      <pubDate>Thu, 02 Nov 2023 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/summary/summary-of-october/</guid>
+      <description>&lt;p&gt;10 月份算是学习走上正轨的一个月吧，国庆假期时确定了会去到中科院软件研究所软工中心，国庆完了后不久就和那边的老师联系去实习的事情，结果本校的指导老师不放人，太离谱了。&lt;/p&gt;&#xA;&lt;p&gt;10 月中旬就开始系统地学习分布式理论了，主要就是 6.824 的网课和实验，还有就是看《Design Data-Intensive Applications》这本书。这本书的内容非常契合 6.824 的主题，我认为每个学了 6.824 的人都应该补充阅读这本书哈哈。&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

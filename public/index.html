@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>KKKZOZ-Blog | Home </title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="" />
+	<meta property="og:image" content=""/>
+	<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="KKKZOZ-Blog" />
+	<meta property="og:url" content="http://localhost:1313/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+
+	<body>
+		<div class="content">
+			<header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+			
+			<main class="list">
+				<div class="site-description"><p></p></div>
+				
+				
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/lecture-5/">Missing Semester - Lecture 5</a></h1>
+					<time>Oct 17, 2024</time>
+					<br><div class="description">
+	
+	<h2 id="job-control">Job Control</h2>
+<p>Signals can do other things beyond killing a process. For instance, SIGSTOP pauses a process. In the terminal, typing Ctrl-Z will prompt the shell to send a SIGTSTP signal, short for Terminal Stop.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/lecture-5/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/lecture-4/">Missing Semester - Lecture 4</a></h1>
+					<time>Oct 15, 2024</time>
+					<br><div class="description">
+	
+	<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-bash" data-lang="bash"><span style="display:flex;"><span><span style="color:#75715e"># journalctl run remotely, grep run locally</span>
+</span></span><span style="display:flex;"><span>ssh myserver journalctl | grep sshd
+</span></span><span style="display:flex;"><span><span style="color:#75715e"># both commands run remotely</span>
+</span></span><span style="display:flex;"><span>ssh myserver <span style="color:#e6db74">&#34;journalctl | grep sshd&#34;</span>
+</span></span></code></pre></div><h2 id="sed"><code>sed</code></h2>
+<p><code>sed</code> (Stream Editor) is a powerful command-line tool in Unix/Linux that is used for parsing and transforming text, typically used for finding, replacing, or deleting content in a file or input stream.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/lecture-4/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/lecture-2/">Missing Semester - Lecture 2</a></h1>
+					<time>Oct 11, 2024</time>
+					<br><div class="description">
+	
+	<h1 id="shell-tools-and-scripting">Shell Tools and Scripting</h1>
+<h2 id="shell-scripting">Shell Scripting</h2>
+<p>To assign variables in bash, use the syntax <code>foo=bar</code> and access the value of the variable with <code>$foo</code>.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/lecture-2/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/lecture-1/">Missing Semester - Lecture 1</a></h1>
+					<time>Oct 9, 2024</time>
+					<br><div class="description">
+	
+	<h1 id="the-shell">The shell</h1>
+<p>How does the shell know how to find the <code>date</code> or <code>echo</code> programs?</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/lecture-1/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/talks/transaction-anomalies/">Transaction Anomalies</a></h1>
+					<time>Mar 31, 2024</time>
+					<br><div class="description">
+	
+	<h2 id="non-repeatable-read">Non-Repeatable Read</h2>
+<p>A non-repeatable read occurs, when during the course of a transaction, a row is retrieved twice and the values within the row differ between reads.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/talks/transaction-anomalies/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/distributed-transactions/taking-omid-to-the-clouds/">Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics</a></h1>
+					<time>Mar 25, 2024</time>
+					<br><div class="description">
+	
+	<p>Designing a TPS for clouds will meet these challenges:</p>
+<ul>
+<li><strong>Diverse functionality</strong>.
+<ul>
+<li>The concept of <em>translytics</em> as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, &hellip; and ensures full transactional integrity and data consistency”.</li>
+</ul>
+</li>
+<li><strong>Scale</strong>
+<ul>
+<li>Cloud-first data platforms are designed to scale well beyond the limits of a single application.</li>
+</ul>
+</li>
+<li><strong>Latency</strong>
+<ul>
+<li>With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential.</li>
+</ul>
+</li>
+<li><strong>Multi-tenancy</strong>
+<ul>
+<li>Maintaining access rights is therefore an important design consideration for TPSs.</li>
+</ul>
+</li>
+</ul>
+<p>论文的工作集中于以下几点：</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/distributed-transactions/taking-omid-to-the-clouds/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/distributed-transactions/omid-reloaded/">Paper Note: Omid, Reloaded: Scalable and Highly-Available Transaction Processing</a></h1>
+					<time>Mar 22, 2024</time>
+					<br><div class="description">
+	
+	<p>An entirely re-designed version of Omid1.</p>
+<p>Omid&rsquo;s job is to manage the transaction control plane.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/distributed-transactions/omid-reloaded/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/learning/explore_rust/">Rust Learning Note</a></h1>
+					<time>Feb 10, 2024</time>
+					<br><div class="description">
+	
+	<h1 id="explore-rust">Explore Rust</h1>
+<h2 id="chapter-3-types">Chapter 3 Types</h2>
+<h3 id="arrays">Arrays</h3>
+<p>不支持动态开数组：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#75715e">// an array of 100 int32 elements, all set to 1
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> arr1 <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>;<span style="color:#ae81ff">100</span>]; <span style="color:#75715e">// correct
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span><span style="color:#66d9ef">let</span> n <span style="color:#f92672">=</span> <span style="color:#ae81ff">100</span>;
+</span></span><span style="display:flex;"><span><span style="color:#66d9ef">let</span> mur arr2 <span style="color:#f92672">=</span> [<span style="color:#ae81ff">1</span>;c]; <span style="color:#75715e">// error
+</span></span></span></code></pre></div><h3 id="vectors">Vectors</h3>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;"><code class="language-rust" data-lang="rust"><span style="display:flex;"><span><span style="color:#66d9ef">let</span> <span style="color:#66d9ef">mut</span> arr <span style="color:#f92672">=</span> vec![<span style="color:#ae81ff">0</span>,<span style="color:#ae81ff">6</span>,<span style="color:#ae81ff">4</span>,<span style="color:#ae81ff">8</span>,<span style="color:#ae81ff">1</span>];
+</span></span><span style="display:flex;"><span>arr.sort() <span style="color:#75715e">// increasing order
+</span></span></span><span style="display:flex;"><span><span style="color:#75715e"></span>arr.sort_by(<span style="color:#f92672">|</span>a,b<span style="color:#f92672">|</span> b.cmp(a)) <span style="color:#75715e">// decreasing order
+</span></span></span></code></pre></div><p>If you know the number of elements a vector will need in advance, instead of <code>Vec::new</code> you can call <code>Vec::with_capacity</code> to create a vector with a buffer large enough to hold them all, right from the start.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/learning/explore_rust/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/distributed-transactions/towards-transaction-as-a-service/">Paper Note: Towards Transaction as a Service</a></h1>
+					<time>Jan 22, 2024</time>
+					<br><div class="description">
+	
+	<h2 id="background">Background</h2>
+<p>Database systems have evolved to be with a cloud-native architecture,i.e., disaggregation of compute and storage architecture, which decouples the storage from the compute nodes, then connects the compute nodes to shared storage through a high-speed network.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/distributed-transactions/towards-transaction-as-a-service/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/pieces/a-piece-of-go-test/">A Piece Of: Go Tests</a></h1>
+					<time>Jan 21, 2024</time>
+					<br><div class="description">
+	
+	<p>最近在写毕设项目时，总是发现有些单元测试在 VSCode 的 Testing Panel 连续运行测试时无法通过，但是单独运行时能正常通过，困扰了我好长一段时间。</p>
+<p>有一次我发现了一个盲点：</p>
+<p>在我写的框架中，有一个 <code>config.go</code> 文件：</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/pieces/a-piece-of-go-test/">Read more ⟶</a>
+				</section>
+				
+				
+
+<ul class="pagination">
+	<span class="page-item page-prev">
+	
+	</span>
+	<span class="page-item page-next">
+	
+    <a href="/page/2/" class="page-link" aria-label="Next"><span aria-hidden="true">Next →</span></a>
+	
+	</span>
+</ul>
+
+
+			</main>
+			<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script>
+		</div>
+		
+	</body>
+</html>

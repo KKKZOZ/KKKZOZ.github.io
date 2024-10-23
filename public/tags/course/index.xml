@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Course on KKKZOZ-Blog</title>
+    <link>http://localhost:1313/tags/course/</link>
+    <description>Recent content in Course on KKKZOZ-Blog</description>
+    <generator>Hugo</generator>
+    <language>en-us</language>
+    <lastBuildDate>Thu, 17 Oct 2024 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://localhost:1313/tags/course/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Missing Semester - Lecture 5</title>
+      <link>http://localhost:1313/posts/lecture-5/</link>
+      <pubDate>Thu, 17 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/lecture-5/</guid>
+      <description>&lt;h2 id=&#34;job-control&#34;&gt;Job Control&lt;/h2&gt;&#xA;&lt;p&gt;Signals can do other things beyond killing a process. For instance, SIGSTOP pauses a process. In the terminal, typing Ctrl-Z will prompt the shell to send a SIGTSTP signal, short for Terminal Stop.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Missing Semester - Lecture 4</title>
+      <link>http://localhost:1313/posts/lecture-4/</link>
+      <pubDate>Tue, 15 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/lecture-4/</guid>
+      <description>&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4;&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# journalctl run remotely, grep run locally&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ssh myserver journalctl | grep sshd&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# both commands run remotely&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;span style=&#34;display:flex;&#34;&gt;&lt;span&gt;ssh myserver &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;journalctl | grep sshd&amp;#34;&lt;/span&gt;&#xA;&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;h2 id=&#34;sed&#34;&gt;&lt;code&gt;sed&lt;/code&gt;&lt;/h2&gt;&#xA;&lt;p&gt;&lt;code&gt;sed&lt;/code&gt; (Stream Editor) is a powerful command-line tool in Unix/Linux that is used for parsing and transforming text, typically used for finding, replacing, or deleting content in a file or input stream.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Missing Semester - Lecture 2</title>
+      <link>http://localhost:1313/posts/lecture-2/</link>
+      <pubDate>Fri, 11 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/lecture-2/</guid>
+      <description>&lt;h1 id=&#34;shell-tools-and-scripting&#34;&gt;Shell Tools and Scripting&lt;/h1&gt;&#xA;&lt;h2 id=&#34;shell-scripting&#34;&gt;Shell Scripting&lt;/h2&gt;&#xA;&lt;p&gt;To assign variables in bash, use the syntax &lt;code&gt;foo=bar&lt;/code&gt; and access the value of the variable with &lt;code&gt;$foo&lt;/code&gt;.&lt;/p&gt;</description>
+    </item>
+    <item>
+      <title>Missing Semester - Lecture 1</title>
+      <link>http://localhost:1313/posts/lecture-1/</link>
+      <pubDate>Wed, 09 Oct 2024 00:00:00 +0000</pubDate>
+      <guid>http://localhost:1313/posts/lecture-1/</guid>
+      <description>&lt;h1 id=&#34;the-shell&#34;&gt;The shell&lt;/h1&gt;&#xA;&lt;p&gt;How does the shell know how to find the &lt;code&gt;date&lt;/code&gt; or &lt;code&gt;echo&lt;/code&gt; programs?&lt;/p&gt;</description>
+    </item>
+  </channel>
+</rss>

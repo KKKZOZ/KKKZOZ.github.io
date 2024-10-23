@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html>
+	<head lang="en"><script src="/livereload.js?mindelay=10&amp;v=2&amp;port=1313&amp;path=livereload" data-no-instant defer></script>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge"><title>KKKZOZ-Blog | Home </title><meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta name="description" content="" />
+	<meta property="og:image" content=""/>
+	<link rel="alternate" type="application/rss+xml" href="http://localhost:1313/index.xml" title="KKKZOZ-Blog" />
+	<meta property="og:url" content="http://localhost:1313/">
+  <meta property="og:site_name" content="KKKZOZ-Blog">
+  <meta property="og:title" content="KKKZOZ-Blog">
+  <meta property="og:locale" content="en_us">
+  <meta property="og:type" content="website">
+
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="KKKZOZ-Blog">
+<script src="http://localhost:1313/js/feather.min.js"></script>
+	
+	
+        <link href="http://localhost:1313/css/fonts.2c2227b81b1970a03e760aa2e6121cd01f87c88586803cbb282aa224720a765f.css" rel="stylesheet">
+	
+
+	
+	<link rel="stylesheet" type="text/css" media="screen" href="http://localhost:1313/css/main.5cebd7d4fb2b97856af8d32a6def16164fcf7d844e98e236fcb3559655020373.css" />
+		<link id="darkModeStyle" rel="stylesheet" type="text/css" href="http://localhost:1313/css/dark.d22e2a2879d933a4b781535fc4c4c716e9f9d35ea4986dd0cbabda82effc4bdd.css" media="(prefers-color-scheme: dark)"  />
+	
+
+	
+	
+		<script type="text/javascript"
+		src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+		</script>
+
+		
+		<script type="text/x-mathjax-config">
+		MathJax.Hub.Config({
+			tex2jax: {
+				inlineMath: [['$','$'], ['\\(','\\)']],
+				displayMath: [['$$','$$'], ['\[','\]']],
+				processEscapes: true,
+				processEnvironments: true,
+				skipTags: ['script', 'noscript', 'style', 'textarea', 'pre'],
+				TeX: { equationNumbers: { autoNumber: "AMS" },
+						 extensions: ["AMSmath.js", "AMSsymbols.js"] }
+			}
+		});
+		</script>
+	
+
+	
+	
+		<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.css">
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/katex.min.js"></script>
+		<script defer src="https://cdn.jsdelivr.net/npm/katex@0.15.2/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body);"></script>
+
+		
+		<script>
+			document.addEventListener("DOMContentLoaded", function() {
+					renderMathInElement(document.body, {
+							delimiters: [
+									{left: "$$", right: "$$", display: true},
+									{left: "$", right: "$", display: false}
+							]
+					});
+			});
+			</script>
+	
+
+	
+		
+		
+		<link rel="stylesheet" type="text/css" href="http://localhost:1313/main.7216b5b9673a44ce4c781e7421f5cbf29e24e4fdeca4e602473e2931225c05a7.css">
+		
+</head>
+
+	<body>
+		<div class="content">
+			<header>
+	<div class="main">
+		<a href="http://localhost:1313/">KKKZOZ-Blog</a>
+	</div>
+	<nav>
+		
+		<a href="/">Home</a>
+		
+		<a href="/posts">All posts</a>
+		
+		<a href="/about">About</a>
+		
+		<a href="/tags">Tags</a>
+		
+		
+	</nav>
+</header>
+
+			
+			<main class="list">
+				<div class="site-description"><p></p></div>
+				
+				
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/chubby/">Paper Note: Chubby</a></h1>
+					<time>Oct 31, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>What is an advisory lock?</em></p>
+<p>An &ldquo;advisory lock&rdquo; is simply a tool/API provided by Postgres to create arbitrary locks that can be acquired by applications. These locks, however, are not enforced in any meaningful way by the database &ndash; it&rsquo;s up to application code to give them meaning (the same way any other non-database distributed lock would work).</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/chubby/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/bigtable/">Paper Note: BigTable</a></h1>
+					<time>Oct 30, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="faq">FAQ</h2>
+<p><em>What is a single-row transaction?</em></p>
+<p>在 Bigtable 变更（例如读取、写入和删除请求）中，行级更改始终属于原子操作。这包括对单行中的多个列进行的变更，前提是它们包含在同一变更操作中。Bigtable 不支持以原子方式更新多个行的事务。</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/bigtable/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/mapreduce/">Paper Note: MapReduce</a></h1>
+					<time>Oct 30, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="analyze">Analyze</h2>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li>Processing and generating large data sets.</li>
+<li>Exploits a restricted programming model to parallelize the user program automatically and to provide transparent fault-tolerance.</li>
+</ul>
+<h4 id="details">Details</h4>
+<p>By distributing the workload to many machines and let them execute the tasks in parallel.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/mapreduce/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/papers/zookeeper/">Paper Note: ZooKeeper</a></h1>
+					<time>Oct 30, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="analyze">Analyze</h2>
+<h3 id="key-features">Key Features</h3>
+<ul>
+<li>Coordination in large-scale distributed systems by providing general &ldquo;coordination kernel&rdquo; APIs that support a lot of use cases.</li>
+<li>Good performance</li>
+<li>Fault tolerance / high availability</li>
+</ul>
+<h4 id="details">Details</h4>
+<p>ZooKeeper can be used for group messaging, shared registers, and distributed lock services.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/papers/zookeeper/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-7-transactions/">DDIA: Chapter 7 Transactions</a></h1>
+					<time>Oct 29, 2023</time>
+					<br><div class="description">
+	
+	<p>A transaction is a way for an application to group several reads and writes together into a logical unit.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-7-transactions/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-6-partioning/">DDIA: Chapter 6 Partioning</a></h1>
+					<time>Oct 24, 2023</time>
+					<br><div class="description">
+	
+	<p>The main reason for wanting to partition data is <em>scalability</em>.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-6-partioning/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-5-replication/">DDIA: Chapter 5 Replication</a></h1>
+					<time>Oct 23, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="replication-versus-partitioning">Replication Versus Partitioning</h2>
+<p>There are two common ways data is distributed across multiple nodes:</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-5-replication/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-4-encoding-and-evolution/">DDIA: Chapter 4 Encoding and Evolution</a></h1>
+					<time>Oct 21, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="formats-for-encoding-data">Formats for Encoding Data</h2>
+<p>这里提到了两种兼容性，后面分析数据编码格式时都会用到：</p>
+<p>In order for the system to continue running smoothly, we need to maintain compatibility in both directions:</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-4-encoding-and-evolution/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-2-data-models-and-query-languages/">DDIA: Chapter 2 Data Models and Query Languages</a></h1>
+					<time>Oct 20, 2023</time>
+					<br><div class="description">
+	
+	<h2 id="relational-model-versus-document-model">Relational Model Versus Document Model</h2>
+<p>首先谈到了 NoSQL 的诞生：</p>
+<p>There are several driving forces behind the adoption of NoSQL databases, including:</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-2-data-models-and-query-languages/">Read more ⟶</a>
+				</section>
+				
+				<section class="list-item">
+					<h1 class="title"><a href="/posts/books/design-data-intensive-applications/chapter-3-storage-and-retrieval/">DDIA: Chapter 3 Storage and Retrieval</a></h1>
+					<time>Oct 20, 2023</time>
+					<br><div class="description">
+	
+	<p>这一章主要讲的是数据库更底层的一些东西。</p>
+<p>In order to tune a storage engine to perform well on your kind of workload, you need to have a rough idea of what the storage engine is doing under the hood.</p>&hellip;
+	
+</div>
+					<a class="readmore" href="/posts/books/design-data-intensive-applications/chapter-3-storage-and-retrieval/">Read more ⟶</a>
+				</section>
+				
+				
+
+<ul class="pagination">
+	<span class="page-item page-prev">
+	
+    <a href="/page/3/" class="page-link" aria-label="Previous"><span aria-hidden="true">← Prev</span></a>
+	
+	</span>
+	<span class="page-item page-next">
+	
+    <a href="/page/5/" class="page-link" aria-label="Next"><span aria-hidden="true">Next →</span></a>
+	
+	</span>
+</ul>
+
+
+			</main>
+			<footer>
+  <div style="display:flex"><a class="soc" href="https://github.com/kkkzoz" rel="me" title="GitHub"><i data-feather="github"></i></a>
+    <a class="border"></a></div>
+  <div class="footer-info">
+    2024  <a
+      href="https://github.com/athul/archie">Archie Theme</a> | Built with <a href="https://gohugo.io">Hugo</a>
+  </div>
+</footer>
+<script>
+  feather.replace()
+</script>
+		</div>
+		
+	</body>
+</html>
