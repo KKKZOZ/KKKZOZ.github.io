@@ -1,4 +1,4 @@
-baseURL = 'https://example.org/'
+baseURL = 'http://blog.kkkzoz.top/'
 languageCode = 'en-us'
 title = 'KKKZOZ-Blog'
 theme="archie"
@@ -10,11 +10,14 @@ pygmentsstyle = "monokai"
 pygmentscodefences = true
 pygmentscodefencesguesssyntax = true
 
+[markup.goldmark.renderer]
+  unsafe = true # Allow HTML in md files
+
 
 [params]
-	mode="auto" # color-mode → light,dark,toggle or auto
+	mode="toggle" # color-mode → light,dark,toggle or auto
 	useCDN=false # don't use CDNs for fonts and icons, instead serve them locally.
-  customcss = ["main.css"]
+  	customcss = ["main.css"]
 	subtitle = ""
 	mathjax = true # enable MathJax support
 	katex = true # enable KaTeX support

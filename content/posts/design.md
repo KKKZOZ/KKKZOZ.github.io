@@ -1,19 +1,18 @@
 ---
-hide: true
+draft: true
 ---
-
 
 ## Name
 
 Oreo
-## Database 
+
+## Database
 
 Assumptions on the platforms:
 
-+ The option when reading for single-item strong consistency
-+ Atomic conditional update and delete on single items, similar to Test-and-Set.
-+ Ability to include user-defined meta-data along with the content of a data item.
-
+- The option when reading for single-item strong consistency
+- Atomic conditional update and delete on single items, similar to Test-and-Set.
+- Ability to include user-defined meta-data along with the content of a data item.
 
 ### Redis
 
@@ -30,7 +29,7 @@ if lts < nts then
 end
 ```
 
-Or 
+Or
 
 ```lua
 EVAL "if redis.call('get', 'myKey') == 'expectedVal' then return redis.call('set', 'myKey', 'newVal') else return redis.error_reply('myKey has changed!') end" 0
@@ -43,10 +42,10 @@ However, if you want to perform atomic updates conditionally, you can use Lua sc
 Here's a basic example of how you could perform a conditional set in Redis using Lua scripting with the go-redis library:
 
 Firstly, install the go-redis package if you haven't:
+
 ```shell
 go get github. Com/go-redis/redis/v8
 ```
- 
 
 Now here's an example of doing a conditional set in Redis:
 
@@ -121,13 +120,11 @@ redis> HGET myhash field3
 In Go (Golang), you use the MongoDB Go Driver to interact with MongoDB. To perform a conditional update, you build a filter to match the documents you want to update based on your conditions, and then use the update operators to change the data accordingly.
 
 First, ensure you have the MongoDB Go Driver installed:
+
 ```shell
 go get go.Mongodb.org/mongo-driver/mongo
 go get go.Mongodb.org/mongo-driver/mongo/options
 ```
-
-
- 
 
 Here is an example of how to perform a conditional update using the MongoDB Go Driver in Golang:
 
@@ -192,12 +189,9 @@ func main() {
 }
 ```
 
-
 In the above example, replace your-mongodb-uri, your-db-name, and your-collection-name with your MongoDB connection string, database name, and collection name, respectively.
 
 The key points in this program are: - Establishing a connection to the MongoDB server using mongo. Connect. - Creating a filter with the condition (bson. M{"reviewCount": bson. M{"$gt": 10}}) which matches documents where the field reviewCount is greater than 10. - Defining the update using the $set operator to change the status field to "approved" for documents that match the filter. - Calling collection. UpdateMany with the context, the filter, and the update definition to perform the update operation.
-
-
 
 #### Meta-data
 
@@ -218,12 +212,9 @@ For example:
 }
 ```
 
-
 ### Couchdb
 
-
 #### Conditional Update
-
 
 To perform a conditional update in CouchDB using Golang, you would typically use the CouchDB REST API with a HTTP library in Golang, such as net/http or higher-level libraries like resty.
 
@@ -320,7 +311,6 @@ func main() {
     }
 }
 ```
- 
 
 In this code sample:
 
@@ -330,10 +320,9 @@ The main function is an example of how to retrieve a document, modify it, and tr
 
 Please note that you will need to modify the Document struct to include the actual fields present in your documents and handle additional error cases or HTTP response statuses as appropriate for your application's requirements.
 
-
 #### Meta-data
 
-CouchDB allows you to add user-defined (custom) metadata fields to any document. Generally, custom metadata fields are just like any other fields in a document, and you can include them as needed. However, you should avoid using field names that begin with an underscore (\_) because those are reserved for CouchDB's own metadata (like _id, _rev, etc.).
+CouchDB allows you to add user-defined (custom) metadata fields to any document. Generally, custom metadata fields are just like any other fields in a document, and you can include them as needed. However, you should avoid using field names that begin with an underscore (\_) because those are reserved for CouchDB's own metadata (like \_id, \_rev, etc.).
 
 Here's an example of how you might add custom metadata to a CouchDB document using Golang:
 
@@ -348,7 +337,6 @@ type CustomDocument struct {
     // Add other document-specific fields here
 }
 ```
-
 
 In this example, the MyMeta map can hold various key-value pairs that will serve as your custom metadata fields.
 
@@ -395,7 +383,6 @@ func main() {
     }
 }
 ```
- 
 
 In this code snippet: - CustomDocument has a my_meta field that holds your custom metadata. - createDocumentWithMetadata serializes the document and sends an HTTP POST request to the database URL.
 

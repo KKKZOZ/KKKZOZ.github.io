@@ -1,5 +1,5 @@
 ---
-hide: true
+draft: true
 ---
 
 The most important use of GHCi is interacting with programs that you’re writing.
@@ -26,7 +26,7 @@ If you add `deriving Ord` to your definition of `Icecream`, Haskell defaults to 
 
 A head is an element, and a tail is another list.
 
-Haskell uses a special form of evaluation called *lazy evaluation*. In lazy evaluation, no code is evaluated until it's needed.
+Haskell uses a special form of evaluation called _lazy evaluation_. In lazy evaluation, no code is evaluated until it's needed.
 
 Any infix operator (an operator that's placed between two values) can also be used like a prefix function by wrapping it in parentheses.
 
@@ -38,7 +38,7 @@ paExample3 = (!! 2)
 
 Any binary function can be treated as **an infix operator** by wrapping it in back-quotes (\`)
 
-A *high-order function* is technically *any function that takes another function as an argument*.
+A _high-order function_ is technically _any function that takes another function as an argument_.
 
 ```haskell
 mySum [] = 0
@@ -51,33 +51,33 @@ mySum (x:xs) = x + mySum xs
 
 `fold` 在操作时涉及到一个二元函数，每次操作时涉及到两个值：当前状态和单个元素，所以就会有以下两种情况：
 
-+ 当前状态 biFunc 单个元素
-  + 把 list 折叠到了左边，`foldl`
-+ 单个元素 biFunc 当前状态
-  + 把 list 折叠到了右边，`foldr`
+- 当前状态 biFunc 单个元素
+  - 把 list 折叠到了左边，`foldl`
+- 单个元素 biFunc 当前状态
+  - 把 list 折叠到了右边，`foldr`
 
 ### Types
 
-*Algebraic data types* are any types that can be made by combining other types.
+_Algebraic data types_ are any types that can be made by combining other types.
 
-+ You can combine multiple types with an *and*
-  + a name is a `String` *and* another `String`.
-  + Types that are made by combining other types with an *and* are called *product types*.
-+ You can combine types with an *or*
-  + a `Bool` is a `True` data constructor *or* a `False` data constructor.
-  + Types that are made by combining other types with an *or* are called *sum types*.
+- You can combine multiple types with an _and_
+  - a name is a `String` _and_ another `String`.
+  - Types that are made by combining other types with an _and_ are called _product types_.
+- You can combine types with an _or_
+  - a `Bool` is a `True` data constructor _or_ a `False` data constructor.
+  - Types that are made by combining other types with an _or_ are called _sum types_.
 
-*product type* is the most common way in all programming languages to define types.
+_product type_ is the most common way in all programming languages to define types.
 
 > C's `Struct`
 
 ### Note
 
-加括号保证运算优先级很重要，因为函数是一等公民，并且 Haskell 里调用函数是不要加括号的，所以在不加括号的情况下，无法确定 `aFUnc x` 到底是一个参数还是两个参数，比如我写了一个更通用的 ` myFoldlx `，把状态产生和状态叠加两个函数分开了，一开始是这么写的：
+加括号保证运算优先级很重要，因为函数是一等公民，并且 Haskell 里调用函数是不要加括号的，所以在不加括号的情况下，无法确定 `aFUnc x` 到底是一个参数还是两个参数，比如我写了一个更通用的 `myFoldlx`，把状态产生和状态叠加两个函数分开了，一开始是这么写的：
 
 ```haskell
 myFoldlx accuFunc genFunc init [] = init
-myFoldlx accuFunc genFunc init (x:xs) = 
+myFoldlx accuFunc genFunc init (x:xs) =
   accuFunc (myFoldlx accuFunc genFunc init xs) genFunc x
 ```
 
@@ -95,4 +95,4 @@ myFoldlx accuFunc genFunc init (x:xs) =
 
 ### TODO
 
-+ [ ] 用函数去实现 cipher class
+- [ ] 用函数去实现 cipher class

@@ -1,5 +1,5 @@
 ---
-hide: true
+draft: true
 ---
 
 > 一般是想到什么写什么，逻辑会比较混乱。
@@ -18,14 +18,10 @@ hide: true
 
 > 看这一方面的知识时，我才意识到 Java 其实也能像 Golang 那样写并发编程的代码，我之前一直不知道在 Java 中怎么实现类似于 channel 的功能，后来才发现，我只是需要一个 `BlockingQueue` 哈哈，我感觉 community 中应该有包装好的 Channel 类，下次要用时再去找找。
 
-
 ![运动记录](https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/IMG_B9E8067C101F-1.jpeg)
 
-
 ![森林记录](https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/IMG_82723B676FB3-1.jpeg)
-
 
 哦对了，还有一件事，恭喜 T1 !!!
 
 希望李哥明年直接成为五冠王!
-
