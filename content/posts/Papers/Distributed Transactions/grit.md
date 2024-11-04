@@ -6,6 +6,7 @@ categories:
 - [Distributed]
 - [Transactions]
 date: 2023-12-08
+toc: true
 ---
 
 ## FAQ

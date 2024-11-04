@@ -5,6 +5,9 @@ tags:
 categories:
   - Pieces
 date: 2024-10-23
+toc: true
+
+draft: true
 ---
 
 ## A Quick Note

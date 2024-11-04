@@ -5,6 +5,7 @@ tags:
 categories:
   - Design Data-Intensive Applications
 date: 2023-11-02
+toc: true
 ---
 
 ## Faults and Partial Failures

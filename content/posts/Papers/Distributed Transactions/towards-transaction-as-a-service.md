@@ -6,6 +6,7 @@ categories:
 - [Distributed]
 - [Transactions]
 date: 2024-01-22
+toc: true
 ---
 
 ## Background

@@ -6,21 +6,27 @@ paginate=10
 summaryLength = 10
 
 # Code Highlight
-pygmentsstyle = "monokai"
+# pygmentsstyle = "catppuccin-latte"
+pygmentsstyle = "colorful"
 pygmentscodefences = true
 pygmentscodefencesguesssyntax = true
 
 [markup.goldmark.renderer]
   unsafe = true # Allow HTML in md files
 
+[markup]
+  [markup.tableOfContents]
+    startLevel = 1
+    endLevel = 3
 
 [params]
 	mode="toggle" # color-mode → light,dark,toggle or auto
 	useCDN=false # don't use CDNs for fonts and icons, instead serve them locally.
-  	customcss = ["main.css"]
+  	customcss = ["main.css"] # custom css files to be included
 	subtitle = ""
 	mathjax = true # enable MathJax support
 	katex = true # enable KaTeX support
+	tableOfContents = true
 
 
 [[params.social]]
@@ -40,11 +46,11 @@ url = "/posts"
 weight = 2
 
 [[menu.main]]
-name = "About"
-url = "/about"
+name = "Tags"
+url = "/tags"
 weight = 3
 
 [[menu.main]]
-name = "Tags"
-url = "/tags"
+name = "About"
+url = "/about"
 weight = 4

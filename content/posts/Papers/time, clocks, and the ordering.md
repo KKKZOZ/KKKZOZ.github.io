@@ -5,6 +5,7 @@ tags:
 categories:
   - Distributed
 date: 2023-11-04
+toc: true
 ---
 
 ## Happened Before 关系

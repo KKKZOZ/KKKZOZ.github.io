@@ -5,6 +5,7 @@ tags:
 categories:
   - Design Data-Intensive Applications
 date: 2023-10-24
+toc: true
 ---
 
 

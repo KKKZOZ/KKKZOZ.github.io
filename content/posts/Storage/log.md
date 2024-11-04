@@ -1,10 +1,17 @@
 ---
-draft: true
+title: "A Piece Of: Logs"
+tags:
+  - Dev
+categories:
+  - [Pieces]
+date: 2024-05-13
+toc: true
+# draft: true
 ---
 
 ## Log Levels
 
-Log levels for software applications have a rich history dating back to the 1980s. One of the earliest and most influential logging solutions for Unix systems, Syslog , introduced a range of severity levels, which provided the first standardized framework for categorizing log entries based on their impact or urgency.
+Log levels for software applications have a rich history dating back to the 1980s. One of the earliest and most influential logging solutions for Unix systems, Syslog, introduced a range of severity levels, which provided the first standardized framework for categorizing log entries based on their impact or urgency.
 
 The following are the levels defined by Syslog in descending order of severity:
 

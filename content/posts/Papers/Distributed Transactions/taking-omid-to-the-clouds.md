@@ -6,6 +6,7 @@ categories:
 - [Distributed]
 - [Transactions]
 date: 2024-03-25
+toc: true
 math: true
 ---
 

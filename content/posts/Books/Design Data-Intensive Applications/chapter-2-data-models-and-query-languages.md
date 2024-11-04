@@ -5,6 +5,7 @@ tags:
 categories:
   - Design Data-Intensive Applications
 date: 2023-10-20
+toc: true
 ---
 
 ## Relational Model Versus Document Model

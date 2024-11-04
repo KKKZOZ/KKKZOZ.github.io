@@ -5,6 +5,7 @@ tags:
 categories:
 - [Course]
 date: 2024-10-17
+toc: true
 ---
 
 ## Job Control

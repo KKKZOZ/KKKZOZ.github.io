@@ -1,0 +1,28 @@
+---
+title: "Vim Operations"
+tags:
+  - Dev
+categories:
+  - Pieces
+date: 2024-10-23
+
+draft: true
+---
+
+## A Quick Note
+
+学习 Vim 最好的方法就是渐进式学习，一开始只用那些最基础的操作，当你有一天突然觉得某种操作不够方便，觉得应该存在一种更高效的操作时，就上网去搜，并学习相关知识！
+
+## How to do jjjjjjjjjjjjjjj or kkkkkkkkk more effectively？
+
+1. Use Ctrl-d and Ctrl-u
+   These commands allow you to scroll through the buffer more quickly:
+
+- `Ctrl-d`: Scroll **down** by half a page.
+- `Ctrl-u`: Scroll **up** by half a page.
+
+2. Use Ctrl-f and Ctrl-b
+   For full-page scrolling:
+
+- `Ctrl-f`: Scroll down by a full page.(**forward**)
+- `Ctrl-b`: Scroll up by a full page.(**backward**)

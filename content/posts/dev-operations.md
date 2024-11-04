@@ -1,10 +1,13 @@
 ---
-title: "Vim Operations"
+title: "Dev Operations"
 tags:
   - Dev
 categories:
   - Pieces
 date: 2024-10-25
+toc: true
+
+draft: true
 ---
 
 ## Git

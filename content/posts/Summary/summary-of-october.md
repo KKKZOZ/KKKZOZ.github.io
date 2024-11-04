@@ -5,6 +5,7 @@ tags:
 categories:
   - Summary
 date: 2023-11-02
+toc: true
 draft: true
 ---
 

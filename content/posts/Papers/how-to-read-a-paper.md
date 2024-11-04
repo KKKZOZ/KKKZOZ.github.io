@@ -5,6 +5,7 @@ tags:
 categories:
   - Research
 date: 2023-12-05
+toc: true
 ---
 
 ## The Three-Pass Approach

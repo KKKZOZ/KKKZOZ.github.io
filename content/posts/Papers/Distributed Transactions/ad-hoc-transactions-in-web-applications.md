@@ -6,6 +6,7 @@ categories:
 - [Distributed]
 - [Transactions]
 date: 2023-11-30
+toc: true
 ---
 
 > 这篇文章讲道理不应该写这么长的，但讲的东西比较“好玩”，于是就多记录了一些。

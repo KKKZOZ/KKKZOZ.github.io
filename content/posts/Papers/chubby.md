@@ -5,6 +5,7 @@ tags:
 categories:
   - Distributed
 date: 2023-10-31
+toc: true
 ---
 
 ## FAQ

@@ -5,6 +5,7 @@ tags:
 categories:
   - Database
 date: 2023-12-04
+toc: true
 ---
 
 ## Background

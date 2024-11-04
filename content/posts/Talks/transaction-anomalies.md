@@ -5,6 +5,7 @@ tags:
 categories:
 - [Transactions]
 date: 2024-03-31
+toc: true
 ---
 
 ## Non-Repeatable Read

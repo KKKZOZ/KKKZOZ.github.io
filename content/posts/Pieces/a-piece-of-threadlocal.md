@@ -6,6 +6,7 @@ tags:
 categories:
   - Pieces
 date: 2023-11-29
+toc: true
 ---
 
 ## 原理

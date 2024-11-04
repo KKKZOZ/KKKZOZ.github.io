@@ -6,6 +6,7 @@ categories:
 - [Programming]
 - [Rust]
 date: 2024-02-10
+toc: true
 ---
 
 # Explore Rust
