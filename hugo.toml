@@ -1,32 +1,46 @@
 baseURL = 'http://blog.kkkzoz.top/'
 languageCode = 'en-us'
 title = 'KKKZOZ-Blog'
-theme="archie"
-paginate=10
+theme = "archie"
+paginate = 10
 summaryLength = 10
 
 # Code Highlight
 # pygmentsstyle = "catppuccin-latte"
-pygmentsstyle = "colorful"
-pygmentscodefences = true
-pygmentscodefencesguesssyntax = true
+# # pygmentsstyle = "colorful"
+# pygmentscodefences = true
+# pygmentscodefencesguesssyntax = true
 
 [markup.goldmark.renderer]
-  unsafe = true # Allow HTML in md files
+unsafe = true # Allow HTML in md files
 
 [markup]
-  [markup.tableOfContents]
-    startLevel = 1
-    endLevel = 3
+[markup.tableOfContents]
+startLevel = 1
+endLevel = 3
+
+[markup.highlight]
+anchorLineNos = false
+codeFences = true
+guessSyntax = false
+lineAnchors = ''
+lineNoStart = 1
+lineNos = true
+lineNumbersInTable = false
+noClasses = true
+noHl = false
+style = 'monokai'
+tabWidth = 4
+
 
 [params]
-	mode="toggle" # color-mode → light,dark,toggle or auto
-	useCDN=false # don't use CDNs for fonts and icons, instead serve them locally.
-  	customcss = ["main.css"] # custom css files to be included
-	subtitle = ""
-	mathjax = true # enable MathJax support
-	katex = true # enable KaTeX support
-	tableOfContents = true
+mode = "toggle"          # color-mode → light,dark,toggle or auto
+useCDN = false           # don't use CDNs for fonts and icons, instead serve them locally.
+customcss = ["main.css"] # custom css files to be included
+subtitle = ""
+mathjax = true           # enable MathJax support
+katex = true             # enable KaTeX support
+tableOfContents = true
 
 
 [[params.social]]

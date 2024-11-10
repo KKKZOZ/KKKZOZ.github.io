@@ -22,12 +22,42 @@
 
 pre {
   border: 2px solid #e1e4e8; /* 边框颜色，可以根据需要调整 */
-  padding: 16px; /* 内边距，可根据需要调整 */
+  padding: 1em; /* 内边距，统一 */
   border-radius: 5px; /* 可选：圆角 */
-  /* background-color: #f6f8fa; 可选：背景颜色 */
-  overflow: auto; /* 可选：内容溢出时显示滚动条 */
+  background-color: #ececec; /* 背景颜色 */
+  line-height: 1.4;
+  overflow-x: auto;
   color: #000; /* 设置字体颜色为黑色 */
 }
+
+code {
+  background-color: #f1f1f1;
+  text-decoration: bold;
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  white-space: break-spaces;
+  border-radius: 6px;
+}
+
+pre code {
+  background-color: transparent;
+  color: inherit;
+  font-size: 100%;
+  padding: 0;
+}
+
+::selection {
+  background: var(--maincolor);
+  color: #fff;
+}
+
+pre code::selection {
+  background: var(--maincolor);
+  color: #e16969;
+}
+
+/* 其他样式保持不变 */
 
 /* Markdown */
 :root {
@@ -37,6 +67,7 @@ pre {
   --hovercolor: #00897b;
   --darkMaincolor: #80cbc4;
 }
+
 html {
   color: #232333;
   font-family: "Roboto Mono", "Noto Sans TC", monospace;
@@ -44,17 +75,14 @@ html {
   font-size: 16px;
   line-height: 1.5em;
 }
+
 body {
   display: block;
   margin: 0px;
 }
+
 * {
   -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
-}
-
-::selection {
-  background: var(--maincolor);
-  color: #fff;
 }
 
 p {
@@ -80,6 +108,7 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
 a:hover {
   background-color: var(--hovercolor);
   color: #fff;
@@ -89,9 +118,11 @@ ul {
   list-style: none;
   padding-left: 2ch;
 }
+
 ul li {
   text-indent: -2ch;
 }
+
 ul > li::before {
   content: "* ";
   font-weight: bold;
@@ -125,6 +156,7 @@ figure h4 {
   margin: 0;
   margin-bottom: 1em;
 }
+
 figure h4::before {
   content: "↳ ";
 }
@@ -147,9 +179,14 @@ pre {
   padding: 1em;
 }
 
-.highlight pre ::selection {
-  background: rgba(255, 255, 255, 0.2);
+/* .pre ::selection {
+  background: rgba(255, 2, 2, 0.2);
   color: inherit;
+} */
+
+pre code::selection {
+  background: var(--maincolor);
+  color: #fff;
 }
 
 pre code {
@@ -268,22 +305,28 @@ article .title {
   display: block;
   justify-content: space-between;
 }
+
 .tags li::before {
   content: "🏷 ";
 }
+
 .tags a {
   border-bottom: 3px solid var(--maincolor);
 }
+
 .tags a:hover {
   color: white;
   background-color: var(--hovercolor);
 }
+
 svg {
   max-height: 15px;
 }
+
 .soc:hover {
   color: white;
 }
+
 .draft-label {
   color: var(--bordercl);
   text-decoration: none;
@@ -292,7 +335,10 @@ svg {
   margin-left: 6px;
   background-color: #f9f2f4;
 }
-/* .highlight {
+
+/* Optional: Highlighting styles (commented out) */
+/*
+.highlight {
   position: relative;
   -webkit-overflow-scrolling: touch;
 }
@@ -365,4 +411,5 @@ svg {
   content: "C++";
   background: royalblue;
   color: whitesmoke;
-} */
+}
+*/
