@@ -106,6 +106,50 @@ rm "$tar_dir"/iot-*.txt
 
 ## Git
 
+### How to use `git commit --amend`
+
+`git commit --amend` 通常在以下场景使用：
+
+1. 修复最后一次提交的拼写错误：
+
+```bash
+# 原提交信息打错了
+git commit -m "fix: add user validaton"  # validation 拼错了
+# 修复
+git commit --amend -m "fix: add user validation"
+```
+
+2. 遗漏了文件或修改：
+
+```bash
+# 已经提交
+git commit -m "feat: add login page"
+
+# 发现忘了提交某个文件
+git add forgotten_file.js
+git commit --amend --no-edit
+```
+
+3. 合并琐碎修改：
+
+```bash
+# 已经提交
+git commit -m "feat: implement login logic"
+
+# 发现一个小问题需要修复
+vim login.js  # 修复问题
+git add login.js
+git commit --amend --no-edit  # 直接合并到上一次提交
+```
+
+以上操作针对于本地提交，如果更改已经被 `git push` 到了远端仓库中，则
+
+```bash
+git push --force-with-lease origin main
+```
+
+- `--force-with-lease` 比 `-f` 更安全，它会在其他人修改了远程分支时拒绝推送
+
 ### How to untrack a file in a git repo?
 
 1. Add the File to .gitignore
@@ -121,6 +165,7 @@ rm "$tar_dir"/iot-*.txt
 ```bash
 git rm --cached <file>
 # batch process
+# untrack all files whose type is bak
 fd --extension bak --type f -0 | xargs -0 git rm --cached
 ```
 
