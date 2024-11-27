@@ -1,70 +1,130 @@
+title = "KKKZOZ's Blog"
+# copyright = "© [PaperMod Contributors](https://github.com/adityatelange/hugo-PaperMod/graphs/contributors)"
 baseURL = 'http://blog.kkkzoz.top/'
-languageCode = 'en-us'
-title = 'KKKZOZ-Blog'
-theme = "archie"
-paginate = 10
-summaryLength = 10
-
-# Code Highlight
-# pygmentsstyle = "catppuccin-latte"
-# # pygmentsstyle = "colorful"
-# pygmentscodefences = true
-# pygmentscodefencesguesssyntax = true
-
-[markup.goldmark.renderer]
-unsafe = true # Allow HTML in md files
-
-[markup]
-[markup.tableOfContents]
-startLevel = 1
-endLevel = 3
-
-[markup.highlight]
-anchorLineNos = false
-codeFences = true
-guessSyntax = false
-lineAnchors = ''
-lineNoStart = 1
-lineNos = true
-lineNumbersInTable = false
-noClasses = true
-noHl = false
-style = 'monokai'
-tabWidth = 4
+paginate = 5
+theme = ["PaperMod"]
+enableInlineShortcodes = true
+enableRobotsTXT = true
+buildDrafts = false
+buildFuture = false
+buildExpired = false
+enableEmoji = true
+pygmentsUseClasses = true
+mainsections = ["posts", "papermod"]
 
 
-[params]
-mode = "toggle"          # color-mode → light,dark,toggle or auto
-useCDN = false           # don't use CDNs for fonts and icons, instead serve them locally.
-customcss = ["main.css"] # custom css files to be included
-subtitle = ""
-mathjax = true           # enable MathJax support
-katex = true             # enable KaTeX support
-tableOfContents = true
+[minify]
+disableXML = true
 
-
-[[params.social]]
-name = "GitHub"
-icon = "github"
-url = "https://github.com/kkkzoz"
-
-
-[[menu.main]]
-name = "Home"
-url = "/"
+[languages.en]
+languageName = "English"
 weight = 1
 
-[[menu.main]]
-name = "All posts"
-url = "/posts"
-weight = 2
+[languages.en.taxonomies]
+category = "categories"
+tag = "tags"
+series = "series"
 
-[[menu.main]]
+[[languages.en.menu.main]]
+name = "Archive"
+url = "archives"
+weight = 5
+
+[[languages.en.menu.main]]
+name = "Search"
+url = "search/"
+weight = 10
+
+[[languages.en.menu.main]]
 name = "Tags"
-url = "/tags"
-weight = 3
+url = "tags/"
+weight = 10
 
-[[menu.main]]
+[[languages.en.menu.main]]
 name = "About"
-url = "/about"
-weight = 4
+url = "about/"
+weight = 12
+
+# [[languages.en.menu.main]]
+# name = "WiKi"
+# url = "https://github.com/adityatelange/hugo-PaperMod/wiki/"
+
+[outputs]
+home = ["HTML", "RSS", "JSON"]
+
+[params]
+env = "production"
+description = "KKKZOZ's Blog"
+author = "KKKZOZ"
+defaultTheme = "auto"
+ShowShareButtons = true
+ShowReadingTime = true
+displayFullLangName = true
+ShowPostNavLinks = true
+ShowBreadCrumbs = true
+ShowCodeCopyButtons = true
+ShowRssButtonInSectionTermList = true
+ShowAllPagesInArchive = true
+ShowPageNums = true
+ShowToc = true
+comments = true
+images = ["images/papermod-cover.png"]
+
+[params.profileMode]
+enabled = false
+title = "PaperMod"
+imageUrl = "#"
+imageTitle = "my image"
+
+[[params.profileMode.buttons]]
+name = "Archives"
+url = "archives"
+
+[[params.profileMode.buttons]]
+name = "Tags"
+url = "tags"
+
+[params.homeInfoParams]
+Title = "KKKZOZ's Blog"
+Content = """
+欢迎来到我的博客!
+
+内容包括但不仅限于: Golang, Rust, 分布式系统, 数据库, 编程相关等
+
+"""
+
+[[params.socialIcons]]
+name = "github"
+title = "View Source on Github"
+url = "https://github.com/adityatelange/hugo-PaperMod"
+
+# [[params.socialIcons]]
+# name = "Discord"
+# title = "Join discord community"
+# url = "https://discord.gg/ahpmTvhVmp"
+
+# [[params.socialIcons]]
+# name = "X"
+# title = "Share PaperMod on X/Twitter"
+# url = "https://x.com/intent/tweet/?text=Checkout%20Hugo%20PaperMod%20%E2%9C%A8%0AA%20fast,%20clean,%20responsive%20Hugo%20theme.&url=https://github.com/adityatelange/hugo-PaperMod&hashtags=Hugo,PaperMod"
+
+
+# [params.editPost]
+# URL = "https://github.com/adityatelange/hugo-PaperMod/tree/exampleSite/content"
+# Text = "Suggest Changes"
+# appendFilePath = true
+
+[params.assets]
+disableHLJS = true
+
+[markup.goldmark.renderer]
+unsafe = true
+
+[markup.highlight]
+style = "monokai"
+
+[services.instagram]
+disableInlineCSS = true
+
+[services.twitter]
+disableInlineCSS = true
