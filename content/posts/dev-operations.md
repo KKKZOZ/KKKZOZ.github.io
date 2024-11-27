@@ -4,7 +4,7 @@ tags:
   - Dev
 categories:
   - Pieces
-date: 2024-11-06
+date: 2024-11-25
 toc: true
 ---
 
@@ -13,6 +13,255 @@ toc: true
 本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
 
 ## CommandLine
+
+### How to use `rsync`
+
+> rsync 是一个文件同步和传输工具
+
+```bash
+# 复制目录
+rsync -av /source/folder/ /destination/folder/
+
+# 带进度条
+rsync -avP /source/folder/ /destination/folder/
+
+# 本地到远程
+rsync -avz /local/folder/ user@remote:/remote/folder/
+
+# 远程到本地
+rsync -avz user@remote:/remote/folder/ /local/folder/
+
+# 使用 --exclude
+rsync -av --exclude='*.txt' source/ destination/
+
+# 多个排除
+rsync -av --exclude='*.txt' --exclude='*.pdf' source/ destination/
+```
+
+### 设置项目级 ROOT 环境变量实现快速目录导航
+
+> 原问题：如何实现在不同的项目中设置不同的 ROOT 环境变量，以便于我在某个项目中的子文件夹中能够迅速跳转到项目根目录
+
+使用 direnv：
+
+```bash
+# 安装 direnv
+sudo apt install direnv  # Ubuntu/Debian
+brew install direnv      # MacOS
+
+# 在 shell 配置文件（~/.bashrc 或 ~/.zshrc）中添加：
+eval "$(direnv hook bash)"  # 或 zsh
+
+# 在项目根目录创建 .envrc 文件
+echo 'export ROOT=$PWD' > .envrc
+direnv allow
+```
+
+然后就可以在项目中的任意一个位置通过 `cd $ROOT` 跳转到项目根目录了
+
+direnv 的常用场景包括：
+
+1. 项目特定的环境变量：
+
+```bash
+# Node.js 项目
+export NODE_ENV=development
+export PORT=3000
+
+# Python 项目
+export PYTHONPATH=$PWD/src
+export FLASK_ENV=development
+```
+
+2. 工具路径和版本管理：
+
+```bash
+# 指定项目 Node 版本
+use node 16.14.0
+
+# 指定 Python 虚拟环境
+layout python3
+
+# Go 项目配置
+export GOPATH=$PWD/.go
+layout go
+```
+
+3. API 密钥和配置：
+
+```bash
+export AWS_ACCESS_KEY_ID=xxx
+export AWS_SECRET_ACCESS_KEY=xxx
+export DATABASE_URL="postgresql://user:pass@localhost:5432/db"
+```
+
+4. 项目别名和快捷命令：
+
+```bash
+alias run="npm run"
+alias test="pytest"
+alias db="psql $DATABASE_URL"
+```
+
+5. 路径简写：
+
+```bash
+export SRC=$PWD/src
+export DOCS=$PWD/docs
+export CONFIG=$PWD/config
+
+PATH_add scripts
+PATH_add bin
+```
+
+### 如何在脚本中实现自动输入 sudo 密码
+
+```bash
+echo "password" | sudo -S command
+```
+
+- `-S` 选项告诉 `sudo` 从标准输入读取密码
+- `|` 管道符将 `echo` 的输出传给 `sudo` 命令
+
+如果使用 `ssh` 在远程执行脚本的话：
+
+```bash
+ssh -t $node1 "echo '$PASSWORD' | sudo -S command"
+```
+
+- 没有 `-t` 时，可能会遇到 "sudo: no tty present and no askpass program specified" 这样的错误
+- `-t` 选项强制 SSH 分配一个伪终端(pseudo-terminal, PTY)
+
+PTY (Pseudo Terminal) 和 SSH 的工作原理：
+
+PTY 和 SSH 直接建立的终端的主要区别在于它们的工作方式和用途：
+
+1. SSH 默认终端（不带 `-t`）：
+
+```bash
+本地机器         SSH通道          远程机器
+程序 --> SSH客户端 -----> SSH服务器 --> 远程程序
+     (标准输入输出重定向)      (无终端环境)
+
+# 特点：
+- 只是简单的标准输入输出重定向
+- 不支持终端特性（如光标控制）
+- 适合运行非交互式命令
+```
+
+2. PTY 终端（带 `-t`）：
+
+```bash
+本地机器          SSH通道          远程机器
+终端模拟器 --> SSH客户端 -----> SSH服务器 --> PTY --> 远程程序
+     (完整终端环境模拟)        (完整终端环境)
+
+# 特点：
+- 完整的终端环境模拟
+- 支持所有终端特性
+- 适合交互式程序
+```
+
+PTY (Pseudo Terminal) 的概念：
+
+```
+实际终端设备        PTY主设备(master)    PTY从设备(slave)     应用程序
+(keyboard/screen) <--> (/dev/ptmx) <--> (/dev/pts/N) <--> (如 bash, sudo)
+```
+
+- PTY 是一对虚拟设备：主设备(master)和从设备(slave)
+- 主设备负责与实际终端设备通信
+- 从设备为应用程序提供一个类似实际终端的接口
+
+SSH 终端分配过程：
+
+```
+本地机器                     远程机器
+ssh client                  sshd
+    |                         |
+    |--- SSH连接请求 --------->|
+    |<-- 认证握手 ------------>|
+    |                         |
+[带-t选项]:                    |
+    |-- 请求PTY分配 ---------> |
+    |                     创建PTY
+    |                         |
+    |<-- PTY信息 ------------- |
+    |                         |
+    |-- 启动shell或命令 ----->  |-- PTY从设备 --> 目标程序
+```
+
+为什么某些命令需要 PTY：
+
+```bash
+# sudo 需要 PTY 的原因：
+- 安全考虑：确保是真实用户在操作
+- 密码输入：需要控制终端来安全读取密码
+- 信号处理：正确处理 Ctrl+C 等终端信号
+
+# 示例：sudo 的行为差异
+ssh server "sudo ls"          # 可能失败：no tty present
+ssh -t server "sudo ls"       # 正常工作：有PTY支持
+```
+
+实际应用中的区别：
+
+```bash
+# 不需要 PTY 的命令
+ssh server "ls -l"
+ssh server "echo hello"
+
+# 需要 PTY 的命令
+ssh -t server "sudo apt update"
+ssh -t server "vim file.txt"
+ssh -t server "top"
+```
+
+环境变量对比：
+
+```bash
+# 不带 -t
+$ ssh server "env | grep TERM"
+# 可能为空或基础值
+
+# 带 -t
+$ ssh -t server "env | grep TERM"
+TERM=xterm-256color
+```
+
+> `TERM` 环境变量指定了当前终端的类型，它告诉程序如何正确地处理终端输出，比如颜色、光标移动等特性
+> `TERM=xterm-256color` 表示终端支持：
+>
+> - 256色显示
+> - 光标定位
+> - 清屏
+> - 粗体/斜体
+> - 鼠标事件
+> - 特殊键(方向键等)
+
+举一个最简单的例子：
+
+```bash
+# 不带 -t（无或基础 TERM）
+$ ssh server "ls --color"
+# 可能无颜色显示，因为程序检测不到终端支持颜色
+
+# 带 -t（TERM=xterm-256color）
+$ ssh -t server "ls --color"
+# 显示完整的颜色输出
+```
+
+实际有什么影响呢？
+
+```bash
+# 不带 -t
+$ ssh server "vim file.txt"
+# 失败，因为 vim 需要知道终端类型来处理光标、颜色等
+
+# 带 -t
+$ ssh -t server "vim file.txt"
+# 正常工作，vim 知道如何在 xterm-256color 终端下工作
+```
 
 ### Input/Output Redirection and Process Substitution
 
@@ -103,6 +352,42 @@ echo -n $var2
 ```bash
 rm "$tar_dir"/iot-*.txt
 ```
+
+## Docker
+
+### 服务器拉取不了镜像怎么办？使用 docker save 和 docker load
+
+常见的加镜像源，挂梯子的办法这里就不说了，这里介绍一个“一次性”的方法
+
+```bash
+# 在能访问互联网的笔记本上
+docker pull redis:latest
+docker save redis:latest > redis.tar
+# 或者压缩以减小体积
+docker save redis:latest | gzip > redis.tar.gz
+
+# 通过 scp 或其他方式传输到目标机器
+scp redis.tar.gz remote:/path/to/
+
+# 在目标机器上
+docker load < redis.tar.gz
+```
+
+注意，上面这个简单的例子适用于笔记本和远端服务器架构相同的情况，比如都是 `x86`
+
+如果你的笔记本是 M 芯片系列的 MacBook，你的架构是 `arm64`，直接套用上述方法会报错，需要修改一下 `docker pull` 的操作：
+
+```bash
+# 显式指定 linux/amd64 平台
+docker pull --platform linux/amd64 apache/kvrocks
+
+# 查看镜像确认架构
+docker inspect apache/kvrocks | grep Architecture
+```
+
+后续操作不变
+
+> 在 Docker 中，同一个镜像标签（例如 apache/kvrocks:latest）在本地只会存储一个平台的版本。当你使用 --platform 拉取镜像时，Docker 会替换掉本地已有的同名镜像。
 
 ## Git
 

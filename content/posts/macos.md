@@ -85,3 +85,17 @@ set -x HOMEBREW_BOTTLE_DOMAIN "https://mirrors.tuna.tsinghua.edu.cn/homebrew-bot
 ```bash
 brew update
 ```
+
+## 为什么有些时候我在 macos 上长按 jkhl 时会出现类似于希腊字母的选项，我只是想输入jjjjjj之类的
+
+> (玩 Vim 玩得)
+
+这是 macOS 的特殊字符输入功能。当你长按某些键时，会弹出带有变音符号和特殊字符的菜单。这个功能主要是为了输入带重音符号的字母（如é, ü等）
+
+要禁用这个功能，在终端中执行以下命令：
+
+```bash
+defaults write -g ApplePressAndHoldEnabled -bool false
+```
+
+执行后需要重启系统才能生效
