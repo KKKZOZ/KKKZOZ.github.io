@@ -114,6 +114,79 @@ PATH_add scripts
 PATH_add bin
 ```
 
+### .bash_profile 和 .bashrc 有什么区别
+
+`.bash_profile`:
+
+- 用户登录时加载一次
+- 适用于登录shell（login shell）
+- 通常用于设置环境变量，如 PATH、JAVA_HOME 等
+- 典型场景：SSH 远程登录、图形界面登录时
+
+`.bashrc`:
+
+- 每次打开新的终端窗口时都会加载
+- 适用于交互式非登录 shell（non-login shell）
+- 通常用于设置命令别名、shell 函数等交互相关的配置
+- 典型场景：在已登录系统后打开新终端窗口
+
+为确保配置生效，`.bash_profile` 中通常会包含这样的代码来源引 `.bashrc`：
+
+```bash
+if [ -f ~/.bashrc ]; then
+    . ~/.bashrc
+fi
+
+```
+
+> 所以个人的配置应该写到哪个文件里呢？
+
+建议如下配置：
+
+写在 `.bashrc` 中：
+
+- 命令别名 (alias)
+- shell 函数
+- 命令补全设置
+- 其他交互式使用的配置
+
+写在 `.bash_profile` 中：
+
+- PATH 环境变量
+- JAVA_HOME, MAVEN_HOME 等程序路径
+- 其他需要被所有子程序继承的环境变量
+
+{{< notice tip summary >}}
+推荐做法：
+
+- 将所有个人配置写在 `.bashrc` 中
+- 在 `.bash_profile` 中只保留环境变量，并源引 `.bashrc`
+- 这样既确保环境变量只设置一次，又能让交互式配置在每个新终端中生效
+{{< /notice >}}
+
+
+
+### 如何在 ssh 中合并多条命令
+
+SSH 中合并多条命令有以下几种方法：
+
+1. 使用分号分隔：
+
+```bash
+ssh user@host "command1; command2; command3"
+
+# 可以使用换行符和引号包围多行命令
+ssh user@host "cd /path/to/dir;
+ls -l;
+df -h"
+```
+
+2. 使用 && 确保前一条命令成功才执行下一条：
+
+```bash
+ssh user@host "command1 && command2 && command3"
+```
+
 ### 如何在脚本中实现自动输入 sudo 密码
 
 ```bash

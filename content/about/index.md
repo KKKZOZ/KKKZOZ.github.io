@@ -3,7 +3,7 @@ title: "About Me"
 date: 2024-10-23
 ---
 
-<div style="text-align: center;">
+<div style="display: flex; justify-content: center; align-items: center;">
     <img src="avatar.jpg" alt="img" style="width: 30%;"/>
 </div>
 
