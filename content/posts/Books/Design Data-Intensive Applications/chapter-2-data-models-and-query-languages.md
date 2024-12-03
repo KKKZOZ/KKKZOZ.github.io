@@ -95,7 +95,7 @@ The document model has limitations: for example, you cannot refer directly to a 
 
 However, if your application does use many-to-many relationships, the document model becomes less appealing. It’s possible to reduce the need for joins by denormal‐ izing, but then the application code needs to do additional work to keep the denor‐ malized data consistent.
 
-> [!summary]
+> [!TIP] Summary
 > Denormalizing means more efforts to keep data consistent.
 
 再谈到了它的优点：

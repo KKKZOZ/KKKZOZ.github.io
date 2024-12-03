@@ -5,7 +5,7 @@ tags:
 categories:
   - Pieces
 date: 2024-11-25
-toc: true
+showtoc: true
 ---
 
 ## 写在前面
@@ -13,6 +13,38 @@ toc: true
 本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
 
 ## CommandLine
+
+### 可执行文件存放位置
+
+> [!QUESTION] 如果我有一个可执行文件，我应该把它放在哪里
+
+- `/usr/local/bin`
+  - 最推荐的位置
+  - 所有用户都可访问
+  - 该目录默认在 `PATH` 中
+  - 适合系统级的第三方软件
+- `$HOME/.local/bin`
+  - 用户级安装的推荐位置
+  - 只对当前用户可用
+  - 需要确保该目录在 `PATH` 中
+
+要将文件复制到 /usr/local/bin，使用:
+
+```bash
+sudo cp 程序名 /usr/local/bin/
+sudo chmod +x /usr/local/bin/程序名
+```
+
+> [!EXPERIMENT] Behind The Scenes
+> 当你用 `sudo cp` 复制文件到 `/usr/local/bin/` 时，复制后的文件所有者会变成 root，且文件的权限会继承源文件的权限
+> `chmod +x` 会同时修改三个组的权限：
+> 
+> 1. 所有者权限（owner/user）
+> 2. 组权限（group）
+> 3. 其他用户权限（others）
+>
+> `chmod +x` 实际上等同于 `chmod ugo+x` 或 `chmod a+x`（`a` 表示 `all`）
+
 
 ### How to use `rsync`
 
@@ -156,15 +188,12 @@ fi
 - JAVA_HOME, MAVEN_HOME 等程序路径
 - 其他需要被所有子程序继承的环境变量
 
-{{< notice tip summary >}}
-推荐做法：
-
-- 将所有个人配置写在 `.bashrc` 中
-- 在 `.bash_profile` 中只保留环境变量，并源引 `.bashrc`
-- 这样既确保环境变量只设置一次，又能让交互式配置在每个新终端中生效
-{{< /notice >}}
-
-
+> [!TIP] Summary
+> 推荐做法：
+>
+> - 将所有个人配置写在 `.bashrc` 中
+> - 在 `.bash_profile` 中只保留环境变量，并源引 `.bashrc`
+> - 这样既确保环境变量只设置一次，又能让交互式配置在每个新终端中生效
 
 ### 如何在 ssh 中合并多条命令
 
@@ -428,9 +457,91 @@ rm "$tar_dir"/iot-*.txt
 
 ## Docker
 
+### Docker 容器分类
+
+#### 守护式容器（Daemon Containers）
+
+
+- 特征：
+  - 必须有一个前台进程（foreground process）持续运行
+  - 如果主进程退出，容器就会停止
+  - 通常使用 PID 1 进程
+- 常见用途：
+  - Web 服务器（Nginx, Apache）
+  - 数据库（MySQL, PostgreSQL）
+  - 消息队列（RabbitMQ, Redis）
+  - 应用服务器（Node.js, Java）
+
+Dockerfile 示例：
+
+```dockerfile
+FROM nginx
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+```
+
+#### 任务型容器（Task Containers）
+- 特征：
+  - 运行完特定任务就退出
+  - 通常结合 `docker run --rm` 使用，完成后自动删除容器
+  - 经常用于 CI/CD 流程
+- 常见用途：
+  - 数据备份
+  - 代码编译
+  - 数据处理
+  - 定时任务
+
+Dockerfile 示例：
+
+```dockerfile
+FROM python
+COPY script.py /
+CMD ["python", "script.py"]
+```
+
+#### 运行方式的区别
+
+守护式容器：
+```bash
+# 后台运行
+docker run -d nginx
+
+# 查看日志
+docker logs container_id
+
+# 进入容器
+docker exec -it container_id bash
+```
+
+任务型容器：
+```bash
+# 运行并自动删除
+docker run --rm alpine echo "Hello World"
+
+# 用作构建环境
+docker run --rm -v $(pwd):/app node npm run build
+```
+
+> [!QUESTION] 如何让任务型容器长久运行呢？
+> 
+> `docker run -d ubuntu tail -f /dev/null`
+> 
+> `tail -f` 命令的工作原理：
+> 
+> - 它会监视文件的变化
+> - 当文件没有变化时，进程会进入睡眠状态
+> - 几乎不消耗 CPU 资源
+> 
+> `/dev/null` 的特点：
+>
+> - 这是一个特殊的设备文件
+> - 它永远不会有新内容
+> 
+> 所以 `tail -f` 在监视它时会一直处于等待状态
+
 ### 服务器拉取不了镜像怎么办？使用 docker save 和 docker load
 
-常见的加镜像源，挂梯子的办法这里就不说了，这里介绍一个“一次性”的方法
+常见的加镜像源，挂梯子的办法这里就不说了，这里介绍一个「一次性」的方法
 
 ```bash
 # 在能访问互联网的笔记本上
