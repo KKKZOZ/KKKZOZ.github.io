@@ -38,13 +38,12 @@ sudo chmod +x /usr/local/bin/程序名
 > [!EXPERIMENT] Behind The Scenes
 > 当你用 `sudo cp` 复制文件到 `/usr/local/bin/` 时，复制后的文件所有者会变成 root，且文件的权限会继承源文件的权限
 > `chmod +x` 会同时修改三个组的权限：
-> 
+>
 > 1. 所有者权限（owner/user）
 > 2. 组权限（group）
 > 3. 其他用户权限（others）
 >
 > `chmod +x` 实际上等同于 `chmod ugo+x` 或 `chmod a+x`（`a` 表示 `all`）
-
 
 ### How to use `rsync`
 
@@ -461,7 +460,6 @@ rm "$tar_dir"/iot-*.txt
 
 #### 守护式容器（Daemon Containers）
 
-
 - 特征：
   - 必须有一个前台进程（foreground process）持续运行
   - 如果主进程退出，容器就会停止
@@ -481,6 +479,7 @@ CMD ["nginx", "-g", "daemon off;"]
 ```
 
 #### 任务型容器（Task Containers）
+
 - 特征：
   - 运行完特定任务就退出
   - 通常结合 `docker run --rm` 使用，完成后自动删除容器
@@ -502,6 +501,7 @@ CMD ["python", "script.py"]
 #### 运行方式的区别
 
 守护式容器：
+
 ```bash
 # 后台运行
 docker run -d nginx
@@ -514,6 +514,7 @@ docker exec -it container_id bash
 ```
 
 任务型容器：
+
 ```bash
 # 运行并自动删除
 docker run --rm alpine echo "Hello World"
@@ -523,20 +524,20 @@ docker run --rm -v $(pwd):/app node npm run build
 ```
 
 > [!QUESTION] 如何让任务型容器长久运行呢？
-> 
+>
 > `docker run -d ubuntu tail -f /dev/null`
-> 
+>
 > `tail -f` 命令的工作原理：
-> 
+>
 > - 它会监视文件的变化
 > - 当文件没有变化时，进程会进入睡眠状态
 > - 几乎不消耗 CPU 资源
-> 
+>
 > `/dev/null` 的特点：
 >
 > - 这是一个特殊的设备文件
 > - 它永远不会有新内容
-> 
+>
 > 所以 `tail -f` 在监视它时会一直处于等待状态
 
 ### 服务器拉取不了镜像怎么办？使用 docker save 和 docker load
@@ -573,7 +574,120 @@ docker inspect apache/kvrocks | grep Architecture
 
 > 在 Docker 中，同一个镜像标签（例如 apache/kvrocks:latest）在本地只会存储一个平台的版本。当你使用 --platform 拉取镜像时，Docker 会替换掉本地已有的同名镜像。
 
+## Python
+
+### uv
+
+Uv is an extremely fast Python package and project manager, written in Rust.
+
+- 🚀 A single tool to replace `pip`, `pip-tools`, `pipx`, `poetry`, `pyenv`, `twine`, `virtualenv`, and more.
+- ⚡️ 10-100x faster than `pip`.
+- 🐍 Installs and manages Python versions.
+- 🛠️ Runs and installs Python applications.
+- ❇️ Runs single-file scripts, with support for inline dependency metadata.
+- 🗂️ Provides comprehensive project management, with a universal lockfile.
+- 🔩 Includes a pip-compatible interface for a performance boost with a familiar CLI.
+- 🏢 Supports Cargo-style workspaces for scalable projects.
+- 💾 Disk-space efficient, with a global cache for dependency deduplication.
+- 🖥️ Supports macOS, Linux, and Windows.
+
+#### The pip interface
+
+- **Creating a virtual environment**
+
+```shell
+uv venv
+uv venv my-name
+uv venv --python 3.11
+```
+
+- **Using a virtual environment**
+
+```shell
+source .venv/bin/activate
+```
+
+- **Installing packages**
+
+```shell
+uv pip install flask ruff
+uv pip install -r requirements.txt
+```
+
+### ruff
+
+Ruff is an extremely fast Python linter and code formatter, written in Rust.
+
+- ⚡️ 10-100x faster than existing linters (like Flake8) and formatters (like Black)
+- 🐍 Installable via `pip`
+🛠️ `pyproject.toml` support
+- ⚖️ Drop-in parity with Flake8, isort, and Black
+- 🔧 Fix support, for automatic error correction (e.g., automatically remove unused imports)
+- 📏 Over 800 built-in rules, with native re-implementations of popular Flake8 plugins, like flake8-bugbear
+
+```shell
+# With pip.
+pip install ruff
+
+# Lint all files in the current directory (and any subdirectories).
+ruff check
+
+# With automatic fix
+ruff check --fix
+
+# Format all files in the current directory (and any subdirectories).
+ruff format
+```
+
 ## Git
+
+### How to use git tag
+
+常用操作如下：
+
+```shell
+
+# 列出所有标签
+git tag
+
+# 按模式列出标签
+git tag -l "v0.4.*"
+
+# 创建标签
+git tag -a v0.4.0 -m "Version 0.4.0"
+
+# 推送特定标签
+git push origin v1.5
+
+# 推送所有标签
+git push origin --tags
+
+# 删除本地标签：
+git tag -d v1.4
+
+# 删除远程标签：
+git push origin --delete v1.4
+
+```
+
+> [!QUESTION] `git tag -a` 是什么
+
+`git tag -a` 中的 `-a` 选项表示创建一个"附注标签"(annotated tag)。这是 Git 中两种主要标签类型之一, 另一种是轻量标签(lightweight tag)。
+
+附注标签(Annotated Tag):
+
+- 使用 -a 选项创建
+- 存储完整的对象，包含标签名、电子邮件、日期、标签信息等
+- 可以使用 GPG 签名和验证
+- 通常用于发布版本等重要节点
+- 创建命令: `git tag -a v1.4.0 -m "Version 1.4"`
+
+轻量标签(Lightweight Tag):
+
+- 不使用 `-a`、`-s` 或 `-m` 选项
+- 只是特定提交的引用
+- 本质上是一个不会改变的分支
+- 创建命令: `git tag v1.4-lw`
 
 ### How to use `git commit --amend`
 
