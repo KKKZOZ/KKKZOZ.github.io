@@ -641,6 +641,82 @@ ruff format
 
 ## Git
 
+### 作为仓库所有者，如何修改别人的 PR?
+
+**假设场景：**
+
+- 你的仓库名为 `my-repo`
+- Pull Request 的发起者是 `user_name`
+- Pull Request 的分支名为 `branch_name`
+- Pull Request 的编号是 `123`
+- 你的远程仓库名为 `origin`
+
+**步骤：**
+
+1. **进入你的本地仓库目录：**
+
+    ```bash
+    cd path/to/your/my-repo
+    ```
+
+2. **获取 Pull Request 的分支：**
+
+    ```bash
+    git fetch origin pull/123/head:pr-123-fix
+    ```
+
+    - `origin`：你的远程仓库名。
+    - `pull/123/head`：这是 GitHub 特定的语法，表示获取编号为 `123` 的 Pull Request 的头部。
+    - `pr-123-fix`：这是你本地要创建的分支名称，可以自定义，例如 `pr-fix`、`fix-branch-name` 等，建议命名能体现此分支的作用。
+
+3. **切换到新创建的本地分支：**
+
+    ```bash
+    git checkout pr-123-fix
+    ```
+
+4. **进行修改并提交：**
+
+    - 现在你在这个分支上，可以对代码进行任意修改。
+    - 修改完成后，使用常规的 Git 命令进行提交：
+
+    ```bash
+    git add .
+    git commit -m "Your descriptive commit message"
+    ```
+
+5. **将修改推送到远程的原始分支：**
+
+    ```bash
+    git push origin pr-123-fix:branch_name
+    ```
+
+    - `origin`：你的远程仓库名
+    - `pr-123-fix`：你刚刚创建并修改的本地分支名
+    - `branch_name`：发起 Pull Request 的用户(`user_name`) 的仓库中的原始分支名
+
+    **关键点解释：** 这一步直接将你本地分支 `pr-123-fix` 的内容推送到远程仓库的 `branch_name` 分支。因为你是仓库所有者或协作者，你有权限直接推送到这个分支
+
+**简化命令 (可选):**
+
+如果你觉得 `git fetch origin pull/123/head:pr-123-fix` 太长，可以配置一下 `git fetch` 的 refspec, 这样下次就可以简化命令了
+
+打开 `.git/config` 文件，找到 `[remote "origin"]` 部分，修改 `fetch` 这一行，添加 `+refs/pull/*/head:refs/remotes/origin/pr/*`：
+
+```
+[remote "origin"]
+        url = git@github.com:your_username/my-repo.git
+        fetch = +refs/heads/*:refs/remotes/origin/*
+        fetch = +refs/pull/*/head:refs/remotes/origin/pr/*
+```
+
+之后你就可以使用更简短的命令来获取 Pull Request 分支：
+
+```bash
+git fetch origin
+git checkout -b pr-123-fix origin/pr/123
+```
+
 ### How to use git tag
 
 常用操作如下：
@@ -731,7 +807,71 @@ git commit --amend --no-edit  # 直接合并到上一次提交
 git push --force-with-lease origin main
 ```
 
-- `--force-with-lease` 比 `-f` 更安全，它会在其他人修改了远程分支时拒绝推送
+即使使用 --force-with-lease，也可能会覆盖别人的工作：
+
+这里解释一下 `--force-with-lease` 的工作机制：
+
+#### --force-with-lease 的检查机制
+
+`--force-with-lease` 不是直接检查实际的远程仓库状态，而是检查**本地 git 记录的远程分支状态**（remote tracking reference）。
+
+具体来说：
+
+```text
+本地 git 维护了三个重要的引用：
+1. 本地分支状态（HEAD）
+2. 本地记录的远程分支状态（refs/remotes/origin/main）
+3. 实际远程分支状态（在远程仓库上）
+
+当你执行 git fetch 时，才会更新"本地记录的远程分支状态"
+```
+
+#### 实际例子
+
+```text
+初始状态：
+- 远程仓库: commit A
+- 本地分支: commit A
+- 本地记录的远程状态: commit A
+
+步骤1: 其他人推送 commit B
+- 远程仓库: commit B
+- 本地分支: commit A
+- 本地记录的远程状态: commit A （未执行 fetch，所以没更新）
+
+步骤2: 你修改并 amend
+- 远程仓库: commit B
+- 本地分支: commit A'
+- 本地记录的远程状态: commit A （仍然未更新）
+
+步骤3: 执行 push --force-with-lease
+- git 只会检查"本地记录的远程状态"(commit A)
+- 不会直接检查实际远程仓库的状态(commit B)
+```
+
+#### 如何安全使用
+
+为了安全起见，应该养成这样的习惯：
+
+```bash
+# 1. 先获取最新状态
+git fetch
+
+# 2. 如果需要，可以查看远程变化
+git log origin/main
+
+# 3. 然后再决定是否执行 force-with-lease
+git push --force-with-lease origin main
+```
+
+或者使用更安全的组合命令：
+
+```bash
+# 这个命令会确保在 push 之前先更新本地的远程跟踪状态
+git push --force-with-lease origin main --force-if-includes
+```
+
+这样就能真正达到保护远程分支的目的。
 
 ### How to untrack a file in a git repo?
 
