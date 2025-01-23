@@ -20,9 +20,9 @@ showtoc: true
 
 Some examples:
 
-![image-20241220165926835](./image-20241220165926835.png)
+![image-20241220165926835](/images/image-20241220165926835.png)
 
-![image-20241220170016430](./image-20241220170016430.png)
+![image-20241220170016430](/images/image-20241220170016430.png)
 
 In total, AeroSpace provides 4 possible layouts:
 
@@ -35,11 +35,11 @@ Accordion is a layout where windows are placed on top of each other.
 
 - **The horizontal accordion** shows left and right paddings to visually indicate the presence of other windows in those directions.
 
-![image-20241220170411145](./image-20241220170411145.png)
+![image-20241220170411145](/images/image-20241220170411145.png)
 
 - **The vertical accordion** shows top and bottom paddings to visually indicate the presence of other windows in those directions.
 
-![image-20241220170424142](./image-20241220170424142.png)
+![image-20241220170424142](/images/image-20241220170424142.png)
 
 ## Normalization
 

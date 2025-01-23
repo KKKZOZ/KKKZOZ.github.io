@@ -12,6 +12,13 @@ enableEmoji = true
 pygmentsUseClasses = true
 mainsections = ["posts", "papermod"]
 
+[[module.mounts]]
+source = 'static'
+target = 'static'
+
+[[module.mounts]]
+source = 'images'
+target = 'static/images'
 
 [minify]
 disableXML = true
@@ -87,10 +94,9 @@ url = "tags"
 [params.homeInfoParams]
 Title = "KKKZOZ's Blog"
 Content = """
-欢迎来到我的博客!
+Welcome to my blog! Here you can find my thoughts on various topics, including programming, technology, and life. 
 
-内容包括但不仅限于: Golang, Rust, 分布式系统, 数据库, 编程相关等
-
+I hope you enjoy your stay!
 """
 
 [[params.socialIcons]]
