@@ -8,7 +8,8 @@ date: 2025-01-23
 toc: true
 ---
 
-这篇文章记录几个我非常喜欢的 Chrome 插件
+> [!SUMMARY]
+> 这篇文章记录几个我非常喜欢的 Chrome 插件
 
 ## PrintFriendly[^1]
 
