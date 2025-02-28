@@ -215,6 +215,13 @@ df -h"
 ssh user@host "command1 && command2 && command3"
 ```
 
+> [!summary]
+> 几种常见分隔符的对比：
+>
+> `A ; B`: 无论 A 成功失败，B 都执行
+> `A && B`: 只有 A 成功，B 才执行
+> `A || B`: 只有 A 失败，B 才执行
+
 ### 如何在脚本中实现自动输入 sudo 密码
 
 ```bash
@@ -364,6 +371,18 @@ $ ssh -t server "vim file.txt"
 # 正常工作，vim 知道如何在 xterm-256color 终端下工作
 ```
 
+### 在使用 tar 命令解压文件时，如果文件夹已经存在，是在此基础上添加，还是说会自动清空这个文件夹，再解压？
+
+如果解压的文件与目标文件夹中的文件同名：
+
+- 会直接覆盖已存在的文件
+- 不会提示确认
+
+如果是新文件：
+
+- 会直接添加到目标文件夹中
+- 原有的其他文件保持不变
+
 ### Input/Output Redirection and Process Substitution
 
 #### 输入/输出重定向
@@ -455,6 +474,50 @@ rm "$tar_dir"/iot-*.txt
 ```
 
 ## Docker
+
+### 如何使用 docker 限制一个容器能使用的核心数和内存大小
+
+- 限制 CPU:
+
+```shell
+# 限制使用 2 个 CPU 核心
+docker run --cpus=2 镜像名称
+
+# 或者使用 CPU 份额(默认1024)
+docker run --cpu-shares=512 镜像名称
+
+# 指定只能在 CPU 0 和 CPU 1 上运行
+docker run --cpuset-cpus="0,1" 镜像名称
+```
+
+- 限制内存
+
+```shell
+# 限制最大内存使用为 2GB
+docker run -m 2g 镜像名称
+# 或者使用 MB 单位
+docker run --memory=2048m 镜像名称
+
+# 设置 swap 限制为 1GB
+docker run --memory-swap=1g 镜像名称
+```
+
+> [!INFO]
+>
+> - 对于正在运行的容器，可以使用 docker update 命令来动态调整资源限制，不需要停止容器
+> - 资源限制的更新是即时生效的，但不会影响容器内已经运行的进程
+
+使用 docker update 更新资源限制时：
+
+- 新启动的进程会受到这些新限制的约束
+- 容器内已经运行的进程不会被强制终止或重启
+  - 已分配的内存不会被立即回收
+  - 如果进程已经使用了超过新限制的资源，它可以继续使用这些资源
+
+> [!SUMMARY]
+>
+> - 提高限制：进程可以立即使用新增的资源
+> - 降低限制：已使用的资源不会被强制回收，只会限制新的资源申请
 
 ### Docker 容器分类
 
@@ -580,17 +643,6 @@ docker inspect apache/kvrocks | grep Architecture
 
 Uv is an extremely fast Python package and project manager, written in Rust.
 
-- 🚀 A single tool to replace `pip`, `pip-tools`, `pipx`, `poetry`, `pyenv`, `twine`, `virtualenv`, and more.
-- ⚡️ 10-100x faster than `pip`.
-- 🐍 Installs and manages Python versions.
-- 🛠️ Runs and installs Python applications.
-- ❇️ Runs single-file scripts, with support for inline dependency metadata.
-- 🗂️ Provides comprehensive project management, with a universal lockfile.
-- 🔩 Includes a pip-compatible interface for a performance boost with a familiar CLI.
-- 🏢 Supports Cargo-style workspaces for scalable projects.
-- 💾 Disk-space efficient, with a global cache for dependency deduplication.
-- 🖥️ Supports macOS, Linux, and Windows.
-
 #### The pip interface
 
 - **Creating a virtual environment**
@@ -618,13 +670,6 @@ uv pip install -r requirements.txt
 
 Ruff is an extremely fast Python linter and code formatter, written in Rust.
 
-- ⚡️ 10-100x faster than existing linters (like Flake8) and formatters (like Black)
-- 🐍 Installable via `pip`
-🛠️ `pyproject.toml` support
-- ⚖️ Drop-in parity with Flake8, isort, and Black
-- 🔧 Fix support, for automatic error correction (e.g., automatically remove unused imports)
-- 📏 Over 800 built-in rules, with native re-implementations of popular Flake8 plugins, like flake8-bugbear
-
 ```shell
 # With pip.
 pip install ruff
@@ -640,6 +685,36 @@ ruff format
 ```
 
 ## Git
+
+### 如何区分 .gitignore 中忽略的是文件还是文件夹
+
+区分文件和文件夹的方法：
+
+- 文件夹：在末尾添加斜杠 /，例如 node_modules/
+- 文件：直接写文件名，例如 config.json
+
+> [!tip]
+> 当你忽略一个文件夹时（例如 node_modules/），该文件夹下的所有内容（包括子文件夹和文件）都会被自动忽略
+
+### 如何确定一个文件是否被 .gitignore 忽略了
+
+1. 使用 git ls-files 检查特定文件
+
+```shell
+git ls-files 文件名
+```
+
+- 如果文件被追踪，会显示文件名
+- 如果没有输出，说明文件未被追踪
+
+2. 使用 git check-ignore 检查文件是否被忽略
+
+```shell
+git check-ignore -v 文件名
+```
+
+- 如果有输出，说明文件被 .gitignore 规则忽略
+- 如果没有输出且返回值为 1，说明文件没有被忽略规则匹配
 
 ### 作为仓库所有者，如何修改别人的 PR?
 
