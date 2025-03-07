@@ -37,10 +37,26 @@ Wikiwand is an award-winning interface that optimizes Wikipedia's amazing conten
 
 ![wikiwand](/images/wikiwand.png)
 
-Here is a simple footnote.
+## Modern for Hacker News[^3]
 
-A footnote can also have multiple lines[^2].
+A redesigned web interface for Hacker News.
+
+Enhance your Hacker News experience with a beautiful, clean, modern design that's fully customizable.
+
+Once installed, this extension will simply apply the new look and features to existing Hacker News pages, without you having to do anything.
+
+> Hacker News 的原始界面很难看, 没有阅读的欲望
+
+- Old
+
+![hn-old](/images/hn-old.png)
+
+- New
+
+![hn-new](/images/hn-new.png)
 
 [^1]: [PrintFriendly](https://chromewebstore.google.com/detail/printfriendly-print-and-p/ohlencieiipommannpdfcmfdpjjmeolj)
 
 [^2]: [Wikiwand](https://chromewebstore.google.com/detail/wikiwand-wikipedia-and-be/emffkefkbkpkgpdeeooapgaicgmcbolj)
+
+[^3]: [Modern for Hacker News](https://chromewebstore.google.com/detail/modern-for-hacker-news/dabkegjlekdcmefifaolmdhnhdcplklo)

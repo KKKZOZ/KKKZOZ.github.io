@@ -635,13 +635,21 @@ docker inspect apache/kvrocks | grep Architecture
 
 后续操作不变
 
-> 在 Docker 中，同一个镜像标签（例如 apache/kvrocks:latest）在本地只会存储一个平台的版本。当你使用 --platform 拉取镜像时，Docker 会替换掉本地已有的同名镜像。
+> 在 Docker 中，同一个镜像标签（例如 `apache/kvrocks:latest`）在本地只会存储一个平台的版本。当你使用 --platform 拉取镜像时，Docker 会替换掉本地已有的同名镜像。
 
 ## Python
 
 ### uv
 
 Uv is an extremely fast Python package and project manager, written in Rust.
+
+#### With Project
+
+> With `pyprojects.toml`
+
+```shell
+uv sync
+```
 
 #### The pip interface
 
@@ -656,7 +664,11 @@ uv venv --python 3.11
 - **Using a virtual environment**
 
 ```shell
+# bash
 source .venv/bin/activate
+
+# fish
+source .venv/vin/activate.fish
 ```
 
 - **Installing packages**
@@ -685,6 +697,25 @@ ruff format
 ```
 
 ## Git
+
+### Merge vs Rebase
+
+> See [here](https://stackoverflow.com/questions/16666089/whats-the-difference-between-git-merge-and-git-rebase) for reference.
+
+Git rebase is closer to a merge. The difference in rebase is:
+
+- the local commits are removed temporally from the branch.
+- run the git pull
+- insert again all your local commits.
+
+So that means that all your local commits are moved to the end, after all the remote commits. If you have a merge conflict, you have to solve it too.
+
+![merge-rebase](/images/merge-rebase.png)
+
+`git rebase` helps create **a linear project history** by transferring your feature branch commits to the top of the main branch, effectively "replaying" changes as if they were applied sequentially after the main branch's most recent commits. This linearity makes the history easier to read and understand.
+
+> [!CAUTION]
+> DO NOT rebase in public branches!
 
 ### 如何区分 .gitignore 中忽略的是文件还是文件夹
 

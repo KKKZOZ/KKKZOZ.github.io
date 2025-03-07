@@ -1,7 +1,7 @@
 title = "KKKZOZ's Blog"
 # copyright = "© [PaperMod Contributors](https://github.com/adityatelange/hugo-PaperMod/graphs/contributors)"
 baseURL = 'http://blog.kkkzoz.top/'
-paginate = 5
+pagination.pagerSize = 5
 theme = ["hugo-admonitions", "PaperMod"]
 enableInlineShortcodes = true
 enableRobotsTXT = true
@@ -93,16 +93,14 @@ url = "tags"
 
 [params.homeInfoParams]
 Title = "KKKZOZ's Blog"
-Content = """
-Welcome to my blog! Here you can find my thoughts on various topics, including programming, technology, and life. 
-
-I hope you enjoy your stay!
-"""
+# Content = """
+# Welcome to my blog!
+# """
 
 [[params.socialIcons]]
 name = "github"
 title = "View Source on Github"
-url = "https://github.com/adityatelange/hugo-PaperMod"
+url = "https://github.com/KKKZOZ/KKKZOZ.github.io"
 
 # [[params.socialIcons]]
 # name = "Discord"
@@ -132,5 +130,5 @@ style = "monokai"
 [services.instagram]
 disableInlineCSS = true
 
-[services.twitter]
+[services.x]
 disableInlineCSS = true

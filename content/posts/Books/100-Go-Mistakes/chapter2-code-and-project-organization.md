@@ -1,5 +1,5 @@
 ---
-title: "100 Mistakes in Golang: Chapter 2 Code and Project Organization"
+title: "100 Mistakes in Golang: Chapter 2 "
 tags:
   - BookNote
   - 100 Mistakes in Golang
