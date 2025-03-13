@@ -2,8 +2,9 @@
 title: "Rustlings Note"
 tags:
   - Programming
+  - Rust
 date: 2024-12-26
-showtoc: true
+toc: true
 ---
 
 ## 05 Vectors
@@ -250,7 +251,7 @@ match optional_point.as_ref() {
     }
 ```
 
-Option 的 as_ref() 方法将 Option<T> 转换为 Option<&T>。因此，optional_point.as_ref() 将 Some(Point) 转换为 Some(&Point)。match 语句匹配 Some(&Point)，p 就是 &Point 类型，从而避免了所有权转移。
+Option 的 as_ref() 方法将 `Option<T>` 转换为 `Option<&T>`。因此，optional_point.as_ref() 将 Some(Point) 转换为 Some(&Point)。match 语句匹配 Some(&Point), p 就是 &Point 类型，从而避免了所有权转移。
 
 > [!]
 
