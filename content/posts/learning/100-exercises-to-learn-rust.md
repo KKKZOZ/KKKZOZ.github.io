@@ -78,3 +78,92 @@ On the other hand, you can implement From multiple times for a type, as long as 
 
 - Use an associated type when the type must be uniquely determined for a given trait implementation.
 - Use a generic parameter when you want to allow multiple implementations of the trait for the same type, with different input types.
+
+## Ticket V2
+
+### match
+
+```rust
+pub fn assigned_to(&self) -> &str {
+    match &self.status {
+        Status::InProgress { assigned_to } => assigned_to,
+        _ => panic!("Only In-Progress tickets can be assigned to someone"),
+    }
+}
+
+pub fn assigned_to(&self) -> &str {
+    match self.status {
+        Status::InProgress { ref assigned_to } => assigned_to,
+        _ => panic!("Only In-Progress tickets can be assigned to someone"),
+    }
+}
+```
+
+- 第一种更常见一点
+
+### `Error::source`
+
+There's one more thing we need to talk about to complete our coverage of the Error trait: the source method.
+
+// Full definition this time!
+pub trait Error: Debug + Display {
+    fn source(&self) -> Option<&(dyn Error + 'static)> {
+        None
+    }
+}
+The source method is a way to access the error cause, if any.
+Errors are often chained, meaning that one error is the cause of another: you have a high-level error (e.g. cannot connect to the database) that is caused by a lower-level error (e.g. can't resolve the database hostname).
+
+Implementing source using thiserror
+thiserror provides three ways to automatically implement source for your error types:
+
+A field named source will automatically be used as the source of the error.
+use thiserror::Error;
+
+# [derive(Error, Debug)]
+
+pub enum MyError {
+    #[error("Failed to connect to the database")]
+    DatabaseError {
+        source: std::io::Error
+    }
+}
+A field annotated with the #[source] attribute will automatically be used as the source of the error.
+use thiserror::Error;
+
+# [derive(Error, Debug)]
+
+pub enum MyError {
+    #[error("Failed to connect to the database")]
+    DatabaseError {
+        #[source]
+        inner: std::io::Error
+    }
+}
+A field annotated with the #[from] attribute will automatically be used as the source of the error and thiserror will automatically generate a From implementation to convert the annotated type into your error type.
+
+use thiserror::Error;
+
+# [derive(Error, Debug)]
+
+pub enum MyError {
+    #[error("Failed to connect to the database")]
+    DatabaseError {
+        #[from]
+        inner: std::io::Error
+    }
+}
+
+- 如果你在结构体或枚举的字段上使用了 #[from] 属性，thiserror 宏会自动为你的错误类型生成一个 From 实现。这个 From 实现允许你将标注的字段类型（在这个例子中是 std::io::Error）直接转换为你的自定义错误类型（MyError）
+
+> Using tuple
+
+```rust
+use thiserror::Error;
+
+#[derive(Error, Debug)]
+pub enum MyError {
+    #[error("Failed to connect to the database")]
+    DatabaseError(#[from] std::io::Error, String), // 只有第一个字段会生成 From 实现
+}
+```

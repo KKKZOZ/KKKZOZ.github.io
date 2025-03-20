@@ -145,7 +145,7 @@ brew upgrade 软件包名  # 升级指定软件包
 
 - 主要是 macOS 图形界面应用程序（GUI 应用）
 - 使用 `brew install --cask 包名` 安装
-- 安装后的应用会出现在 `/Applications` 目录下
+- 它会下载预编译的应用程序包（通常是 .dmg 或 .pkg 文件）,安装后的应用会出现在 `/Applications` 目录下
 - 例如：chrome, visual-studio-code, docker-desktop 等
 
 ##### 举例对比
