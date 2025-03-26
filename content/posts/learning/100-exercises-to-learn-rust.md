@@ -167,3 +167,33 @@ pub enum MyError {
     DatabaseError(#[from] std::io::Error, String), // 只有第一个字段会生成 From 实现
 }
 ```
+
+## impl Traits
+
+When used in argument position, impl Trait is equivalent to a generic parameter with a trait bound:
+
+```rust
+pub fn add_ticket<T: Into<Ticket>>(&mut self, ticket: T) {
+    self.tickets.push(ticket.into());
+}
+
+pub fn add_ticket(&mut self, ticket: impl Into<Ticket>) {
+    self.tickets.push(ticket.into());
+}
+
+```
+
+## `&[T]`
+
+A &[T] is a fat pointer, just like &str.
+It consists of a pointer to the first element of the slice and the length of the slice.
+
+&Vec<T> vs &[T]
+When you need to pass an immutable reference to a Vec to a function, prefer &[T] over &Vec<T>.
+This allows the function to accept any kind of slice, not necessarily one backed by a Vec.
+
+For example, you can then pass a subset of the elements in a Vec. But it goes further than that—you could also pass a slice of an array:
+
+let array = [1, 2, 3];
+let slice: &[i32] = &array;
+Array slices and Vec slices are the same type: they're fat pointers to a contiguous sequence of elements. In the case of arrays, the pointer points to the stack rather than the heap, but that doesn't matter when it comes to using the slice.

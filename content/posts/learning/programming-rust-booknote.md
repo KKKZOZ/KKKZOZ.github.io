@@ -1,10 +1,9 @@
 ---
-title: "Rust Learning Note"
+title: "Programming Rust Book Note"
 tags:
 - Learning
-categories:
-- [Programming]
-- [Rust]
+- BookNote
+
 date: 2024-02-10
 toc: true
 ---
