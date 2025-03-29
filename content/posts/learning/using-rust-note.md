@@ -7,7 +7,7 @@ date: 2025-03-26
 toc: true
 ---
 
-> 记录一些在写 Rust 时遇到的错误
+> 记录一些在写 Rust 时遇到的错误和重构
 
 ## Ownership
 
@@ -129,6 +129,227 @@ match engine_name.as_str() {
 
 ; run_server::<SledKvsEngine> 
 ; 使用SledKvsEngine的所有方法调用也是静态确定的
+```
+
+## `F: FnOnce() + Send +'static`
+
+> 这个约束是 Rust 并发编程中一个非常经典且重要的组合，它确保了传递给新线程执行的任务（通常是一个闭包）是安全且有效的
+
++ `FnOnce()`
+  + FnOnce 表示一个可以被调用至少一次的“可调用实体”（函数、闭包）
+  + 调用 FnOnce 类型的闭包可能会消耗（consume）这个闭包自身，或者消耗它所捕获的变量的所有权。一旦调用完成，这个闭包实例可能就不再有效了（或者至少不能保证再次调用）
+  + 为什么是 `FnOnce()`
+    + 线程池的 spawn 方法的目的是接收一个任务，然后交给某个工作线程去执行一次。我们不需要保证这个任务能被重复执行，只需要它能被成功执行一次即可
+    + FnOnce 是这三种 Fn trait 中约束最宽松的。它允许闭包通过 move 关键字**捕获环境变量的所有权**。
+    + 如果使用更严格的 Fn（要求闭包能被多次调用且只共享借用捕获的变量）或 FnMut（要求闭包能被多次调用且可变借用捕获的变量），会限制我们创建能在新线程中安全运行的闭包类型。例如，一个需要获取某个 String 所有权的闭包就无法满足 Fn 或 FnMut，但可以满足 FnOnce。
+
++ `Send`
+  + 一个类型 T 如果实现了 Send (T: Send)，意味着这个类型的值可以被安全地从一个线程转移（move）到另一个线程。也就是说，它的所有权可以在线程间传递。
+  + 为什么需要 `Send`
+    + spawn 方法接收到的任务 f（类型为 F），最终需要在线程池中的某个工作线程上执行，而不是在调用 spawn 的那个线程上执行
+    + 这意味着任务 f（闭包本身，连同它捕获的所有变量）必须能够被安全地**发送**到那个工作线程
+
+Rust 中绝大多数基础类型和标准库中常用的拥有所有权（owned）的类型都是 Send 的，前提是它们包含的泛型参数（如果存在）也是 Send 的。
+
+常见不满足 `Send` trait 的:
+
++ `Rc<T>`(引用计数指针)
+  + Rc 使用非原子的引用计数。如果在多个线程之间共享 Rc 并尝试克隆（增加计数）或丢弃（减少计数），同时发生时会导致数据竞争，使得引用计数不准确。
++ `RefCell<T>`/`Cell<T>`(内部可变性容器)
+  + RefCell 在运行时检查借用规则，允许多个不可变借用或一个可变借用，但它没有使用锁或其他同步机制来防止来自不同线程的同时访问。
++ *mut T /*const T (裸指针)
+  + 裸指针完全绕过了 Rust 的借用检查器和安全保证。编译器无法判断一个裸指针是否指向有效内存、是否已经被其他线程访问、是否存在数据竞争等。因此，Rust 默认将裸指针标记为非 Send（和非 Sync）。发送裸指针到另一个线程是非常危险的，除非程序员通过 unsafe 代码块确保了其安全性。
++ `MutexGuard<'a, T>`
+  + 这些守卫类型代表了在当前线程持有的锁。它们的存在与锁的状态紧密相关，并且通常带有一个生命周期 'a，限制它们不能活得比锁或者创建它们的作用域更长。将锁的守卫发送到另一个线程是没有意义的，也破坏了锁的基本语义（锁应该由获取它的线程释放）。
+
++ `'static`
+  + 'static 是一个生命周期（lifetime）约束。当它用作 trait bound 时（如 T: 'static），通常意味着类型 T **不包含任何非 static 的借用（引用）**
+    + 要么 T 类型的值完全拥有其所有数据（内部没有引用，或者只有 &'static 这种指向全局/静态数据的引用）
+    + 要么 T 本身就是一个 'static 引用（&'static U）
+  + 为什么需要 `'static`
+    + 调用 spawn 的线程（父线程）和执行任务 f 的工作线程（子线程）的生命周期是独立的。父线程可能会在子线程开始执行任务之前、之中或之后结束。
+    + 如果闭包 f 捕获了父线程栈上的某个局部变量的引用（非 'static 引用），那么当父线程的相关作用域结束时，这个局部变量就会被销毁。如果此时子线程才开始执行 f，它持有的引用就会变成悬垂引用（dangling reference），访问它会导致未定义行为（通常是崩溃）。
+
+F: FnOnce() + Send + 'static 这三个约束共同确保了传递给 ThreadPool::spawn 的任务 f：
+
++ 可以被执行 (FnOnce)：它是一个可调用一次的任务。允许通过 move 捕获变量所有权。
++ 可以被传递到其他线程 (Send)：任务本身及其捕获的数据可以安全地跨线程转移所有权。
++ 不会依赖于调用者（父线程）的临时数据 ('static)：任务不会持有父线程栈上可能提前销毁的数据的引用，保证了生命周期的安全，防止悬垂引用。
+
+> [!QUESTION]
+> 为什么这个 trait bound 组合中不包括 `Sync`?
+
++ `Sync`
+  + 如果一个类型 T 实现了 Sync (T: Sync)，那么意味着类型 &T（对 T 的不可变引用）实现了 Send
+  + 如果一个类型 T 是 Sync 的，那么这个类型的引用 (&T) 可以被安全地跨线程发送。这实际上意味着，类型 T 的值可以被多个线程同时安全地共享和访问（通过不可变引用）。多线程并发地读取 T 的值不会导致数据竞争。
+
+Send vs Sync 对比:
+
++ T: Send: 值 T 本身可以安全地转移所有权到另一个线程。
++ T: Sync: 对值 T 的不可变引用 &T 可以安全地发送到另一个线程，也就是说 T 可以安全地被多个线程共享（通过 &T）。
+
+常见不满足 `Sync` trait 的
+
++ `RefCell<T>`/`Cell<T>`
+  + 它们提供了内部可变性，但没有使用原子操作或锁。
++ `Rc<T>`
+  + Rc 的引用计数是非原子的。如果多个线程共享同一个 &Rc<T> 并同时尝试克隆它（调用 .clone()），就会对非原子引用计数进行并发的读写，导致数据竞争和未定义行为。
++ *mut T /*const T (裸指针)
+  + 裸指针绕过了 Rust 的安全检查。编译器无法保证通过 &*const T 或 &*mut T (即从裸指针创建引用) 的操作是安全的，特别是当多个线程可能同时这样做时。因此，裸指针默认不是 Sync
++ `mpsc::Receiver<T>`
+  + Receiver 代表了多生产者单消费者队列的接收端。它的 recv() 方法会改变接收器的内部状态（消耗队列中的消息）。如果允许多个线程共享同一个 &Receiver<T> 并同时调用 recv()，就会产生竞争条件。
+
+为什么 `spawn` 中 `F` 不需要 `Sync` 约束?
+
+所有权转移而非共享: ThreadPool::spawn 的核心语义是将任务 f（类型为 F）的所有权从调用者线程转移给线程池，最终由某个工作线程拥有并执行。在这个过程中，闭包 f 本身并没有被多个线程共享。
+
+## Refactor
+
+### 1
+
+```rust
+use std::io::Write;
+use std::net::{TcpStream, ToSocketAddrs};
+
+use serde::Deserialize;
+use serde_json::de::IoRead;
+
+use crate::common::{Command, GetResponse, RemoveResponse, SetResponse};
+use crate::err::KVSError::StringError;
+use crate::Result;
+
+pub struct Client {
+    reader: serde_json::Deserializer<IoRead<TcpStream>>,
+    writer: TcpStream,
+}
+
+impl Client {
+    pub fn connect(addr: impl ToSocketAddrs) -> Self {
+        let stream = TcpStream::connect(addr).unwrap();
+        let reader = serde_json::Deserializer::from_reader(stream.try_clone().unwrap());
+        Client {
+            reader,
+            writer: stream,
+        }
+    }
+
+    pub fn get(&mut self, key: String) -> Result<Option<String>> {
+        let command = Command::Get { key };
+        serde_json::to_writer(&mut self.writer, &command)?;
+        self.writer.flush()?;
+        let resp = GetResponse::deserialize(&mut self.reader)?;
+        match resp {
+            GetResponse::Ok(value) => Ok(value),
+            GetResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+
+    pub fn set(&mut self, key: String, value: String) -> Result<()> {
+        let command = Command::Set { key, value };
+        serde_json::to_writer(&mut self.writer, &command)?;
+        self.writer.flush()?;
+        let resp = SetResponse::deserialize(&mut self.reader)?;
+        match resp {
+            SetResponse::Ok(_) => Ok(()),
+            SetResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+
+    pub fn remove(&mut self, key: String) -> Result<()> {
+        let command = Command::Rm { key };
+        serde_json::to_writer(&mut self.writer, &command)?;
+        self.writer.flush()?;
+        let resp = RemoveResponse::deserialize(&mut self.reader)?;
+        match resp {
+            RemoveResponse::Ok(_) => Ok(()),
+            RemoveResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+}
+```
+
+1. Error Handling in connect: Using unwrap() can lead to panics. The connect function should return a Result.
+2. API Ergonomics: Taking String by value forces callers to clone if they have &str. Accepting &str (or `impl Into<String>`) is often more flexible.
+3. Buffering: While serde_json::Deserializer might do some internal buffering, using BufReader explicitly for reading and BufWriter for writing is a common pattern for potentially improving I/O performance, especially if many small reads/writes occur.
+4. Repetitive Logic: The get, set, and remove methods share a lot of boilerplate code (serialize command, flush, deserialize response, handle response). This can be extracted into a helper function.
+
+```rust
+use std::io::Write;
+use std::net::{TcpStream, ToSocketAddrs};
+
+use serde::de::DeserializeOwned;
+use serde::Deserialize;
+use serde_json::de::IoRead;
+
+use crate::common::{Command, GetResponse, RemoveResponse, SetResponse};
+use crate::err::KVSError::StringError;
+use crate::Result;
+
+pub struct Client {
+    reader: serde_json::Deserializer<IoRead<TcpStream>>,
+    writer: TcpStream,
+}
+
+impl Client {
+    pub fn connect(addr: impl ToSocketAddrs) -> Result<Self> {
+        let stream = TcpStream::connect(addr)?;
+        let reader = serde_json::Deserializer::from_reader(stream.try_clone()?);
+        Ok(Client {
+            reader,
+            writer: stream,
+        })
+    }
+
+    /// Sends a command and deserializes the expected response type.
+    ///
+    /// Generic over the expected response type `R`.
+    /// `R` must be Deserializable and own its data
+    fn request<R>(&mut self, command: Command) -> Result<R>
+    where
+        R: DeserializeOwned,
+    {
+        // Serialize the command to the buffered writer
+        serde_json::to_writer(&mut self.writer, &command)?;
+        self.writer.flush()?;
+        let response = R::deserialize(&mut self.reader)?;
+        Ok(response)
+    }
+
+    pub fn get(&mut self, key: &str) -> Result<Option<String>> {
+        let command = Command::Get {
+            key: key.to_string(),
+        };
+        let resp = self.request::<GetResponse>(command)?;
+        match resp {
+            GetResponse::Ok(value) => Ok(value),
+            GetResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+
+    pub fn set(&mut self, key: &str, value: String) -> Result<()> {
+        let command = Command::Set {
+            key: key.to_string(),
+            value,
+        };
+        let resp = self.request::<SetResponse>(command)?;
+        match resp {
+            SetResponse::Ok(_) => Ok(()),
+            SetResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+
+    pub fn remove(&mut self, key: &str) -> Result<()> {
+        let command = Command::Rm {
+            key: key.to_string(),
+        };
+        let resp = self.request::<RemoveResponse>(command)?;
+        match resp {
+            RemoveResponse::Ok(_) => Ok(()),
+            RemoveResponse::Err(msg) => Err(StringError(msg)),
+        }
+    }
+}
+
 ```
 
 ## Interior Mutability
