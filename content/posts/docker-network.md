@@ -112,3 +112,4 @@ Each container can now look up the service name web or db and get back the appro
 
 - [Understanding Docker Networking](https://medium.com/the-metricfire-blog/understanding-docker-networking-9f81244cf824)
 - [Networking | Docker Docs](https://docs.docker.com/compose/how-tos/networking/)
+- [Docker Networking - Basics, Network Types & Examples](https://spacelift.io/blog/docker-networking)
