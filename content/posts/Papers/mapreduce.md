@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: MapReduce"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-10-30
 toc: true
 ---

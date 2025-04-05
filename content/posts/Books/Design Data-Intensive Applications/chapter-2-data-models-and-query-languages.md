@@ -1,8 +1,7 @@
 ---
 title: "DDIA: Chapter 2 Data Models and Query Languages"
 tags:
-  - BookNote
-categories:
+  - Reading Note
   - Design Data-Intensive Applications
 date: 2023-10-20
 toc: true
@@ -125,6 +124,7 @@ On the document database side, RethinkDB supports relational-like joins in its q
 这里首先谈到了编写代码的两种方式：
 
 Let’s generalize and say that there are two ways in which we can write code: imperative and declarative. We could define the difference as follows:
+
 + **Imperative programming**: telling the “machine” _how_ to do something, and as a result _what_ you want to happen will happen.
 + **Declarative programming**: telling the “machine” _what_ you would like to happen, and let the computer figure out _how_ to do it.
 

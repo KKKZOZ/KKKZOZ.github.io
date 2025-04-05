@@ -1,10 +1,7 @@
 ---
 title: "Data Management in Microservices: State of the Practice, Challenges, and Research Directions"
 tags:
-  - PaperNote
-categories:
-  - [Distributed]
-  - [Transactions]
+  - Paper Note
 date: 2024-04-15
 toc: true
 # draft: true

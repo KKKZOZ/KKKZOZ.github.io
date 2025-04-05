@@ -2,8 +2,7 @@
 title: "Missing Semester - Lecture 1"
 tags:
   - Course
-categories:
-  - [Course]
+  - The Missing Semester
 date: 2024-10-09
 toc: true
 ---

@@ -2,8 +2,6 @@
 title: "A Piece Of: Golang Profile"
 tags:
   - Golang
-categories:
-  - Pieces
 date: 2024-10-23
 toc: true
 ---
@@ -25,14 +23,14 @@ toc: true
 在程序运行时，直接通过 kill 命令结束程序的话，最后生成的 `profile` 为空（？），最好使用下面的这个模式：
 
 ```golang
-	sigs := make(chan os.Signal, 1)
-	signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
+ sigs := make(chan os.Signal, 1)
+ signal.Notify(sigs, syscall.SIGINT, syscall.SIGTERM)
 
-	server := NewServer(port, connMap)
-	go server.Run()
+ server := NewServer(port, connMap)
+ go server.Run()
 
-	<-sigs
-	Log.Info("Shutting down server")
+ <-sigs
+ Log.Info("Shutting down server")
 ```
 
 - 通过 `signal.Notify` 来拦截 kill 的信号，保证程序能够正常结束，`profile` 文件不为空
@@ -41,9 +39,9 @@ toc: true
 
 ```golang
 if pprofFlag {
-	// runtime.SetCPUProfileRate(1000)
+ // runtime.SetCPUProfileRate(1000)
 
-	cpuFile, err := os.Create("executor_profile.prof")
+ cpuFile, err := os.Create("executor_profile.prof")
     if err != nil {
         fmt.Println("无法创建 CPU profile 文件:", err)
         return
@@ -138,6 +136,7 @@ main() --> A() --> B() --> D()
   - cum 时间 = 自身 flat 时间（10ms） + A() 的 cum 时间（90ms） = 100ms
 
 结果总结
+
 | 函数名 | flat 时间 | cum 时间 |
 |---------|------------|----------|
 | D() | 50ms | 50ms |
@@ -244,8 +243,8 @@ Duration: 4.15s, Total samples = 36.24s(872.85%)
 
 # Practice
 
-https://nyadgar.com/posts/go-profiling-like-a-pro/ 对整个 Profile 的过程进行了实战，讲得很清楚，可以参考
+<https://nyadgar.com/posts/go-profiling-like-a-pro/> 对整个 Profile 的过程进行了实战，讲得很清楚，可以参考
 
 # References
 
-- https://github.com/google/pprof/blob/main/doc/README.md#interpreting-the-callgraph
+- <https://github.com/google/pprof/blob/main/doc/README.md#interpreting-the-callgraph>

@@ -2,8 +2,6 @@
 title: "Vim Operations"
 tags:
   - Dev
-categories:
-  - Pieces
 date: 2024-10-23
 toc: true
 

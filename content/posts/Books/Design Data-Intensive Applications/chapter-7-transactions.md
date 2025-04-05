@@ -1,8 +1,7 @@
 ---
 title: "DDIA: Chapter 7 Transactions"
 tags:
-  - BookNote
-categories:
+  - Reading Note
   - Design Data-Intensive Applications
 date: 2023-10-29
 toc: true
@@ -356,7 +355,6 @@ However, by the time transaction 43 wants to commit, transaction 42 has already 
 In order to prevent this anomaly, the database **needs to track when a transaction ignores another transaction’s writes due to MVCC visibility rules**. When the transaction wants to commit, the database checks whether any of the ignored writes have now been committed. If so, the transaction must be aborted.
 
 注意这种方法只适用于并发写发生在读之前，因为数据库需要跟踪的是那些因为可见性规则被忽略的写操作，如果并发写发生在读之后，是不会有“因为可见性规则被忽略的写操作”的。
-
 
 ##### Detecting writes that affect prior reads
 

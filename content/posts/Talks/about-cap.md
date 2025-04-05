@@ -2,7 +2,6 @@
 title: "About CAP"
 tags:
   - Talk
-categories:
   - Distributed
 date: 2023-11-06
 toc: true

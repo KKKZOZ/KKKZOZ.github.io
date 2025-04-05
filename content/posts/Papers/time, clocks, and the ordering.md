@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: Time, clocks, and the ordering"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-11-04
 toc: true
 ---

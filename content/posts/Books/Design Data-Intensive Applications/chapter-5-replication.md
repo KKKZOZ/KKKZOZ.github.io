@@ -1,8 +1,7 @@
 ---
 title: "DDIA: Chapter 5 Replication"
 tags:
-  - BookNote
-categories:
+  - Reading Note
   - Design Data-Intensive Applications
 date: 2023-10-23
 toc: true

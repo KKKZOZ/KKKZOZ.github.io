@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Omid, Reloaded: Scalable and Highly-Available Transaction Processing"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2024-03-22
 toc: true
 ---

@@ -2,8 +2,6 @@
 title: "Transaction Anomalies"
 tags:
 - Talk
-categories:
-- [Transactions]
 date: 2024-03-31
 toc: true
 ---
@@ -38,14 +36,13 @@ Transaction T1 reads x, and then a second transaction T2 updates x and y to new 
 Acceptable consistent states:
 
 + x and y
-+ *x and *y
++ *x and*y
 
 > Note: * denotes the updated value of the variable
 
 When x and y are the same data, it leads to the problem of non-repeatable.
 
 > We may call read skew is a generalization form of a non-repeatable problem.
-
 
 ## Lost Updates
 
@@ -54,7 +51,6 @@ When x and y are the same data, it leads to the problem of non-repeatable.
 假设有支付宝账户X，余额100元，事务A、B同时向X分别充值10元、20元，最后结果应该为130元，但是由于丢失更新，最后是110元。
 
 ![image-20240331173155756](https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/image-20240331173155756.png)
-
 
 ## Write Skew
 
@@ -65,5 +61,6 @@ When x and y are the same data, it leads to the problem of non-repeatable.
 ## Lost Updates vs Write Skew
 
 丢失更新与写偏斜很相似，都是由于写前提被改变，他们区别是:
+
 + 丢失更新是在同一个数据的最终不一致。
 + 写偏斜的冲突不在同一个数据，在不同数据中的最终不一致。

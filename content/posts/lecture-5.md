@@ -2,8 +2,7 @@
 title: "Missing Semester - Lecture 5"
 tags:
 - Course
-categories:
-- [Course]
+- The Missing Semester
 date: 2024-10-17
 toc: true
 ---
@@ -25,9 +24,8 @@ ls
 # wait will take 60s
 ```
 
-
-
 ## Terminal Multiplexers
+
 tmux has the following hierarchy of objects:
 
 - **Sessions** - a session is an independent workspace with one or more windows
@@ -42,7 +40,7 @@ tmux has the following hierarchy of objects:
 
   - `<C-A> c` Creates a new window. To close it you can just terminate the shells doing `<C-d>`
 
-  - `<C-A> N` Go to the *N* th window. 
+  - `<C-A> N` Go to the *N* th window.
   - `<C-A> ,` Rename the current window
   - `<C-A> w` List current windows
 
@@ -107,10 +105,8 @@ Add the following configuration for your server:
 ```bash
 Host s2-root
     HostName 123.123.123.123
-    User root	
+    User root 
 ```
-
-
 
 ## Copying files over SSH
 
@@ -121,7 +117,7 @@ Host s2-root
 scp -r /path/to/local/directory username@remote_host:/path/to/remote/directory/
 ```
 
-+ [`rsync`](https://www.man7.org/linux/man-pages/man1/rsync.1.html) improves upon `scp` by detecting identical files in local and remote, and preventing copying them again. It also provides more fine grained control over symlinks, permissions
+- [`rsync`](https://www.man7.org/linux/man-pages/man1/rsync.1.html) improves upon `scp` by detecting identical files in local and remote, and preventing copying them again. It also provides more fine grained control over symlinks, permissions
 
 ### Port Forwarding
 

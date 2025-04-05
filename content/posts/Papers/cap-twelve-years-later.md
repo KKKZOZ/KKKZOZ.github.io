@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: CAP Twelve Years Later: How the \"Rules\" have Changed"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-11-12
 toc: true
 ---

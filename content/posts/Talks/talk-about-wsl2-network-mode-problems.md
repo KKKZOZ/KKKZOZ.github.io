@@ -1,9 +1,6 @@
 ---
 title: "Note: WSL2 Mirrored 网络模式下异常情况总结"
 tags:
-  - Note
-  - Dev
-categories:
   - Dev
 date: 2023-11-25
 toc: true

@@ -2,9 +2,7 @@
 title: "Chrome Plugin Recommendation"
 tags:
   - Dev
-categories:
-  - Pieces
-date: 2025-01-23
+date: 2025-04-01
 toc: true
 ---
 
@@ -55,8 +53,26 @@ Once installed, this extension will simply apply the new look and features to ex
 
 ![hn-new](/images/hn-new.png)
 
+## Bionic Reading - AaRead[^4]
+
+Read webpages with less effort and increased concentration, use the Bionic Reading method
+
+AaRead is a reading helper for your eyes and brain. It makes some letters extra bold to make reading fast and keep effort low. This is a free alternative to Bionic Reading and Open Dyslexic font, and is great for folks with ADHD, dyslexia, or anyone whose brain gets bored easily when reading.
+
+> 阅读长篇大论的纯英文文本时有帮助
+
+- Bionic Off
+
+![bionic-off](/images/bionic-off.png)
+
+- Bionic On
+
+![bionic-on](/images/bionic-on.png)
+
 [^1]: [PrintFriendly](https://chromewebstore.google.com/detail/printfriendly-print-and-p/ohlencieiipommannpdfcmfdpjjmeolj)
 
 [^2]: [Wikiwand](https://chromewebstore.google.com/detail/wikiwand-wikipedia-and-be/emffkefkbkpkgpdeeooapgaicgmcbolj)
 
 [^3]: [Modern for Hacker News](https://chromewebstore.google.com/detail/modern-for-hacker-news/dabkegjlekdcmefifaolmdhnhdcplklo)
+
+[^4]: [Bionic Reading - AaRead](https://chromewebstore.google.com/detail/bionic-reading-aaread/glncdcmjopmgniilckffbhcpkgambpko)

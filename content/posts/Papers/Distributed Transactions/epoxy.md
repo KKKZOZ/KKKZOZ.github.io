@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Epoxy: ACID Transactions Across Diverse Data Stores"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2023-11-22
 toc: true
 ---
@@ -16,7 +13,6 @@ toc: true
 因为这篇文章在组会上做了汇报，所以我就直接贴 PPT 了。
 
 ## Content
-
 
 ![](https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/%E5%B9%BB%E7%81%AF%E7%89%873.png)
 

@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: BigTable"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-10-30
 toc: true
 ---
@@ -53,6 +51,7 @@ SSTable (Sorted Strings Table) is a file format used in Apache Cassandra, a popu
   - to store access control lists
 
 Three components:
+
 - A library that is linked into every client.
 - One master server.
 - Many tablet servers.
@@ -104,6 +103,7 @@ Steps:
 #### Compactions
 
 Three kinds of compactions are mentioned:
+
 - *minor compaction*
   - When the memtable size reaches a threshold, the memtable is frozen, a new memtable is created, and the frozen memtable is converted to an SSTable and written to GFS.
 - *merging compaction*
@@ -124,6 +124,7 @@ Page metadata in Webtable can be in one locality group, and the contents of the 
 #### Caching for read performance
 
 Two levels of caching:
+
 - *The Scan Cache*
   - caches the key-value pairs returned by the SSTable interface to the tablet server code.
   - useful for applications that tend to read the same data repeatedly.

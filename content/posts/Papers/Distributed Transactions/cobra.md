@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Cobra: Making Transactional Key-Value Stores Verifiably Serializable"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2023-11-23
 toc: true
 ---

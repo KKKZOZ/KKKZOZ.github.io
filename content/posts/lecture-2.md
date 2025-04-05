@@ -2,8 +2,7 @@
 title: "Missing Semester - Lecture 2"
 tags:
 - Course
-categories:
-- [Course]
+- The Missing Semester
 date: 2024-10-11
 toc: true
 ---
@@ -40,28 +39,26 @@ true || echo "Will not be printed"
 ```
 
 - **command substitution**: Whenever you place $( CMD ) it will execute CMD, get the output of the command and substitute it in place.
-    - > `for file in $(ls)`
+  - > `for file in $(ls)`
 - **process substitution**: <( CMD ) will execute CMD and place the output in a temporary file and substitute the <() with that file’s name. This is useful when commands expect values to be passed by file instead of by STDIN.
-    - > `diff <(ls foo) <(ls bar)`
+  - > `diff <(ls foo) <(ls bar)`
 
 ### Shell Globbing
 
 A glob (short for global) is a simplified pattern-matching mechanism typically used for matching file names or paths in Unix-like systems. Globs are commonly used with command-line tools like bash, find, and fd.
 
-
 **Common Glob Patterns:**
 
 - `*`: Matches zero or more characters.
-    - Example: `*.txt` matches all files with a .txt extension.
+  - Example: `*.txt` matches all files with a .txt extension.
 - `?`: Matches exactly one character.
-    - Example: file?.txt matches file1.txt, fileA.txt, but not file10.txt.
+  - Example: file?.txt matches file1.txt, fileA.txt, but not file10.txt.
 - `[abc]`: Matches one character that is either a, b, or c.
-    - Example: file[1-3].txt matches file1.txt, file2.txt, and file3.txt.
+  - Example: file[1-3].txt matches file1.txt, file2.txt, and file3.txt.
 - `[!abc]`: Matches one character that is not a, b, or c.
-    - Example: file[!1-3].txt matches file4.txt, fileA.txt, etc.
+  - Example: file[!1-3].txt matches file4.txt, fileA.txt, etc.
 
 Curly braces `{}` - Whenever you have a common substring in a series of commands, you can use curly braces for bash to expand this automatically.
-
 
 ```bash
 convert image.{png,jpg}
@@ -120,6 +117,7 @@ find . -name '*.tmp' -exec rm {} \;
 find root_path -name '*.ext' -exec wc -l {} \+;
 
 ```
+
 - `{}` is a placeholder that find replaces with the current file's path that matches the search criteria.
 - `\;` in the find command's -exec option serves as an escaped semicolon that terminates the command to be executed.
 - `\+` to execute the command once with multiple files.
@@ -151,7 +149,6 @@ rg -t md 'shell' -A 3
 The history command will let you access your shell history programmatically.
 
 In most shells, you can make use of `Ctrl+R` to perform backwards search through your history.
-
 
 ## Exercises
 

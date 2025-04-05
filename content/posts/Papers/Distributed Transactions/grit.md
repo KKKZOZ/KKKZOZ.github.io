@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: GRIT: Consistent Distributed Transactions across Polyglot Microservices with Multiple Databases"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2023-12-08
 toc: true
 ---
@@ -12,7 +9,6 @@ toc: true
 ## FAQ
 
 ### *What is a deterministic database?*
-
 
 **A deterministic database is a system where the outcomes of any database operations are guaranteed to be the same every time they are executed, provided that the operations are started from the same database state.**
 This concept implies a level of reliability and predictability in the behavior of the database system.
@@ -38,7 +34,6 @@ Deterministic database systems are typically not advertised with "deterministic"
 + 2PC does not work well in large-scale high-throughput systems. The reason is that locks are held during the entire 2PC process that significantly increase the transaction conflicts and latency.
 
 GRIT leverages some deterministic ideas, such as ordering transactions in Paxos-based logs before execution.
-
 
 ## Structure
 

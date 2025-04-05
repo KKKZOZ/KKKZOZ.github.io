@@ -2,8 +2,6 @@
 title: 十月个人总结
 tags:
   - Personal
-categories:
-  - Summary
 date: 2023-11-02
 toc: true
 draft: true

@@ -1,8 +1,7 @@
 ---
 title: "DDIA: Chapter 6 Partioning"
 tags:
-  - BookNote
-categories:
+  - Reading Note
   - Design Data-Intensive Applications
 date: 2023-10-24
 toc: true

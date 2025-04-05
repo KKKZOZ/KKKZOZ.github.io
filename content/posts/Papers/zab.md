@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: Zab: High-performance broadcast for primary-backup systems"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-11-15
 toc: true
 ---

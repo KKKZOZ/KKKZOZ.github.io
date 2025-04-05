@@ -1,8 +1,7 @@
 ---
 title: "DDIA: Chapter 9 Consistency and Consensus"
 tags:
-  - BookNote
-categories:
+  - Reading Note
   - Design Data-Intensive Applications
 date: 2023-11-13
 toc: true

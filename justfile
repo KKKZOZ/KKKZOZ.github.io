@@ -6,7 +6,7 @@ alias r := run
 
 @publish:
     git add --all
-    git commit -m "update"
+    git commit -m "$(date +%Y-%m-%d) update"
     git push
 
 @run:

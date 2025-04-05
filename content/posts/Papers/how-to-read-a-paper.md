@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: How to Read a Paper"
 tags:
-  - PaperNote
-categories:
-  - Research
+  - Paper Note
 date: 2023-12-05
 toc: true
 ---

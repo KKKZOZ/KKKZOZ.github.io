@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Ad Hoc Transactions in Web Applications: The Good, the Bad, and the Ugly"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2023-11-30
 toc: true
 ---
@@ -73,7 +70,7 @@ Gap locking is often associated with InnoDB storage engine in MySQL, where it is
 + Ad hoc transactions’ usages and implementations are much more flexible than database transactions.
 + Ad hoc transactions are prone to errors.
 + Ad hoc transactions can have performance benefits under high-contention workloads.
- 	+ Using application semantics such as access patterns, ad hoc transactions’ CC could be implemented in a simple yet precise way.
+  + Using application semantics such as access patterns, ad hoc transactions’ CC could be implemented in a simple yet precise way.
 
 ## Background and Motivation
 
@@ -149,12 +146,12 @@ The flexibility of ad hoc transactions is also reflected in coordinating non-dat
 这一节主要讲了开发者们在锁和验证步骤上的具体实现，锁的实现可以分为：
 
 + 利用现有系统的锁
- 	+ 利用数据库中的 `Select For Update` 语句
- 	+ 直接利用编程语言中的特性，比如 Java 的 `synchronized`
+  + 利用数据库中的 `Select For Update` 语句
+  + 直接利用编程语言中的特性，比如 Java 的 `synchronized`
 + 自己实现的锁
- 	+ 在 Redis 中实现的租约锁
- 	+ 在数据库中专门留出一张锁的表
- 	+ 内存中实现，比如 `ConcurrentHashMap`
+  + 在 Redis 中实现的租约锁
+  + 在数据库中专门留出一张锁的表
+  + 内存中实现，比如 `ConcurrentHashMap`
 
 ### What Are The Coordination Granularities?
 

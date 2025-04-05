@@ -1,9 +1,8 @@
 ---
 title: "Paper Note: Chubby"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
+
 date: 2023-10-31
 toc: true
 ---
@@ -92,6 +91,7 @@ The design differs from UNIX in a ways that ease distribution. To allow the file
 一致性协议其实并不是锁需求直接相关的，假设我们有一个永不宕机的节点和永不中断的网络，那么一个单点的存储即可支撑上层的锁的实现及使用。但这种假设在互联网环境中是不现实的，所以才引入了一致性协议，来保证我们可以通过副本的方式来容忍节点或网络的异常，同时又不引起正确性的风险，作为一个整体对上层提供高可用的服务。
 
 Chubby 采用的是一个有强主的 Multi-Paxos，其概要实现如下：
+
 + 多个副本组成一个集群，副本通过一致性协议选出一个 Master，集群在一个确定的租约时间内保证这个 Master 的领导地位；
 + Master周期性的向所有副本刷新延长自己的租约时间；
 + 每个副本通过一致性协议维护一份数据的备份，而只有Master可以发起读写操作；

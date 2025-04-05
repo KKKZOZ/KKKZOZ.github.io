@@ -2,8 +2,6 @@
 title: "A Piece Of: Go Tests"
 tags:
   - Golang
-categories:
-  - Pieces
 date: 2024-01-21
 toc: true
 ---
@@ -30,7 +28,7 @@ var Config = config{
 从网上查了资料后，才知道：
 
 > The behavior you're seeing is expected because Config is a global variable and it's shared across the entire package. This means that state, such as the current ID from your NewIncrementalGenerator (), is preserved and reused across all your tests running within the same package.
->  
+> 
 > ***Go runs test functions (those starting with Test) in parallel by default, but within a single test package, they all share the same memory space. Therefore, global variables will persist their state across individual tests within that package.***
 
 我一直以为像 config 这种全局变量，每个测试都有一个自己对应的，所以在一些特殊的单元测试中修改了某些参数后，没有及时修改回来，导致后面的测试使用了错误的参数，进而无法通过。

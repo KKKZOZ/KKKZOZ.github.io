@@ -2,8 +2,6 @@
 title: "Watchdogs in OpenFaaS"
 tags:
   - FaaS
-categories:
-  - [FaaS]
 date: 2024-08-25
 toc: true
 # draft: true
@@ -44,69 +42,69 @@ Every function needs to embed this binary and use it as its ENTRYPOINT or CMD, i
 package main
 
 import (
-	"bytes"
-	"io"
-	"log"
-	"net/http"
-	"os"
-	"os/exec"
-	"time"
+ "bytes"
+ "io"
+ "log"
+ "net/http"
+ "os"
+ "os/exec"
+ "time"
 )
 
 func main() {
-	http.HandleFunc("/", handleRequest)
+ http.HandleFunc("/", handleRequest)
 
-	port := getEnv("PORT", "8080")
-	writeTimeout, _ := time.ParseDuration(getEnv("WRITE_TIMEOUT", "10s"))
-	readTimeout, _ := time.ParseDuration(getEnv("READ_TIMEOUT", "10s"))
+ port := getEnv("PORT", "8080")
+ writeTimeout, _ := time.ParseDuration(getEnv("WRITE_TIMEOUT", "10s"))
+ readTimeout, _ := time.ParseDuration(getEnv("READ_TIMEOUT", "10s"))
 
-	server := &http.Server{
-		Addr:         ":" + port,
-		WriteTimeout: writeTimeout,
-		ReadTimeout:  readTimeout,
-	}
+ server := &http.Server{
+  Addr:         ":" + port,
+  WriteTimeout: writeTimeout,
+  ReadTimeout:  readTimeout,
+ }
 
-	log.Printf("Starting server on port %s", port)
-	log.Fatal(server.ListenAndServe())
+ log.Printf("Starting server on port %s", port)
+ log.Fatal(server.ListenAndServe())
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request) {
-	fprocess := getEnv("fprocess", "")
+ fprocess := getEnv("fprocess", "")
 
-	if fprocess == "" {
-		http.Error(w, "fprocess environment variable not set", http.StatusInternalServerError)
-		return
-	}
+ if fprocess == "" {
+  http.Error(w, "fprocess environment variable not set", http.StatusInternalServerError)
+  return
+ }
 
-	var input bytes.Buffer
-	if r.Body != nil {
-		defer r.Body.Close()
-		io.Copy(&input, r.Body)
-	}
+ var input bytes.Buffer
+ if r.Body != nil {
+  defer r.Body.Close()
+  io.Copy(&input, r.Body)
+ }
 
-	cmd := exec.Command("sh", "-c", fprocess)
-	cmd.Stdin = &input
+ cmd := exec.Command("sh", "-c", fprocess)
+ cmd.Stdin = &input
 
-	var output bytes.Buffer
-	cmd.Stdout = &output
-	cmd.Stderr = os.Stderr
+ var output bytes.Buffer
+ cmd.Stdout = &output
+ cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
-		log.Printf("Error executing function: %v", err)
-		http.Error(w, "Error executing function", http.StatusInternalServerError)
-		return
-	}
+ err := cmd.Run()
+ if err != nil {
+  log.Printf("Error executing function: %v", err)
+  http.Error(w, "Error executing function", http.StatusInternalServerError)
+  return
+ }
 
-	w.Write(output.Bytes())
+ w.Write(output.Bytes())
 }
 
 func getEnv(key, fallback string) string {
-	value, exists := os.LookupEnv(key)
-	if !exists {
-		return fallback
-	}
-	return value
+ value, exists := os.LookupEnv(key)
+ if !exists {
+  return fallback
+ }
+ return value
 }
 
 ```
@@ -125,22 +123,22 @@ http.HandleFunc("/", metrics.InstrumentHandler(requestHandler, httpMetrics))
 
 ```go
 func makeRequestHandler(config *WatchdogConfig) http.Handler {
-	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		switch r.Method {
-		case
-			http.MethodPost,
-			http.MethodPut,
-			http.MethodPatch,
-			http.MethodDelete,
-			http.MethodGet:
-			pipeRequest(config, w, r, r.Method)
-			break
-		default:
-			w.WriteHeader(http.StatusMethodNotAllowed)
+ handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+  switch r.Method {
+  case
+   http.MethodPost,
+   http.MethodPut,
+   http.MethodPatch,
+   http.MethodDelete,
+   http.MethodGet:
+   pipeRequest(config, w, r, r.Method)
+   break
+  default:
+   w.WriteHeader(http.StatusMethodNotAllowed)
 
-		}
-	})
-	return limiter.NewConcurrencyLimiter(handler, config.maxInflight)
+  }
+ })
+ return limiter.NewConcurrencyLimiter(handler, config.maxInflight)
 }
 ```
 
@@ -148,167 +146,167 @@ func makeRequestHandler(config *WatchdogConfig) http.Handler {
 
 ```go
 func pipeRequest(config *WatchdogConfig, w http.ResponseWriter, r *http.Request, method string) {
-	startTime := time.Now()
+ startTime := time.Now()
 
-	parts := strings.Split(config.faasProcess, " ")
+ parts := strings.Split(config.faasProcess, " ")
 
-	ri := &requestInfo{}
+ ri := &requestInfo{}
 
-	if config.debugHeaders {
-		debugHeaders(&r.Header, "in")
-	}
+ if config.debugHeaders {
+  debugHeaders(&r.Header, "in")
+ }
 
-	log.Println("Forking fprocess.")
+ log.Println("Forking fprocess.")
 
   // 准备执行命令
-	targetCmd := exec.Command(parts[0], parts[1:]...)
+ targetCmd := exec.Command(parts[0], parts[1:]...)
 
-	envs := getAdditionalEnvs(config, r, method)
-	if len(envs) > 0 {
-		targetCmd.Env = envs
-	}
+ envs := getAdditionalEnvs(config, r, method)
+ if len(envs) > 0 {
+  targetCmd.Env = envs
+ }
 
-	writer, _ := targetCmd.StdinPipe()
+ writer, _ := targetCmd.StdinPipe()
 
-	var out []byte
-	var err error
-	var requestBody []byte
+ var out []byte
+ var err error
+ var requestBody []byte
 
-	var wg sync.WaitGroup
+ var wg sync.WaitGroup
 
-	wgCount := 2
+ wgCount := 2
 
-	var buildInputErr error
-	requestBody, buildInputErr = buildFunctionInput(config, r)
-	if buildInputErr != nil {
-		if config.writeDebug == true {
-			log.Printf("Error=%s, ReadLen=%d\n", buildInputErr.Error(), len(requestBody))
-		}
-		ri.headerWritten = true
-		w.WriteHeader(http.StatusBadRequest)
-		// I.e. "exit code 1"
-		w.Write([]byte(buildInputErr.Error()))
+ var buildInputErr error
+ requestBody, buildInputErr = buildFunctionInput(config, r)
+ if buildInputErr != nil {
+  if config.writeDebug == true {
+   log.Printf("Error=%s, ReadLen=%d\n", buildInputErr.Error(), len(requestBody))
+  }
+  ri.headerWritten = true
+  w.WriteHeader(http.StatusBadRequest)
+  // I.e. "exit code 1"
+  w.Write([]byte(buildInputErr.Error()))
 
-		// Verbose message - i.e. stack trace
-		w.Write([]byte("\n"))
-		w.Write(out)
+  // Verbose message - i.e. stack trace
+  w.Write([]byte("\n"))
+  w.Write(out)
 
-		return
-	}
+  return
+ }
 
-	wg.Add(wgCount)
+ wg.Add(wgCount)
 
-	var timer *time.Timer
+ var timer *time.Timer
 
-	if config.execTimeout > 0*time.Second {
-		timer = time.AfterFunc(config.execTimeout, func() {
-			log.Printf("Killing process: %s\n", config.faasProcess)
-			if targetCmd != nil && targetCmd.Process != nil {
-				ri.headerWritten = true
-				w.WriteHeader(http.StatusRequestTimeout)
+ if config.execTimeout > 0*time.Second {
+  timer = time.AfterFunc(config.execTimeout, func() {
+   log.Printf("Killing process: %s\n", config.faasProcess)
+   if targetCmd != nil && targetCmd.Process != nil {
+    ri.headerWritten = true
+    w.WriteHeader(http.StatusRequestTimeout)
 
-				w.Write([]byte("Killed process.\n"))
+    w.Write([]byte("Killed process.\n"))
 
-				val := targetCmd.Process.Kill()
-				if val != nil {
-					log.Printf("Killed process: %s - error %s\n", config.faasProcess, val.Error())
-				}
-			}
-		})
-	}
+    val := targetCmd.Process.Kill()
+    if val != nil {
+     log.Printf("Killed process: %s - error %s\n", config.faasProcess, val.Error())
+    }
+   }
+  })
+ }
 
-	// Write to pipe in separate go-routine to prevent blocking
+ // Write to pipe in separate go-routine to prevent blocking
   // 防止写入操作阻塞主线程，从而实现并发处理
   // 外部命令在读取标准输入时，可能会等待直到读取到 EOF
   // 当我们关闭管道（即关闭 writer），标准输入会接收到 EOF 信号，这通常意味着输入已经完成。
-	go func() {
-		defer wg.Done()
-		writer.Write(requestBody)
-		writer.Close()
-	}()
+ go func() {
+  defer wg.Done()
+  writer.Write(requestBody)
+  writer.Close()
+ }()
 
-	if config.combineOutput {
-		// Read the output from stdout/stderr and combine into one variable for output.
-		go func() {
-			defer wg.Done()
+ if config.combineOutput {
+  // Read the output from stdout/stderr and combine into one variable for output.
+  go func() {
+   defer wg.Done()
       // 指令实际执行位置
-			out, err = targetCmd.CombinedOutput()
-		}()
-	} else {
-		go func() {
-			var b bytes.Buffer
-			targetCmd.Stderr = &b
+   out, err = targetCmd.CombinedOutput()
+  }()
+ } else {
+  go func() {
+   var b bytes.Buffer
+   targetCmd.Stderr = &b
 
-			defer wg.Done()
+   defer wg.Done()
       // 指令实际执行位置
-			out, err = targetCmd.Output()
-			if b.Len() > 0 {
-				log.Printf("stderr: %s", b.Bytes())
-			}
-			b.Reset()
-		}()
-	}
+   out, err = targetCmd.Output()
+   if b.Len() > 0 {
+    log.Printf("stderr: %s", b.Bytes())
+   }
+   b.Reset()
+  }()
+ }
 
-	wg.Wait()
-	if timer != nil {
-		timer.Stop()
-	}
+ wg.Wait()
+ if timer != nil {
+  timer.Stop()
+ }
 
-	if err != nil {
-		if config.writeDebug == true {
-			log.Printf("Success=%t, Error=%s\n", targetCmd.ProcessState.Success(), err.Error())
-			log.Printf("Out=%s\n", out)
-		}
+ if err != nil {
+  if config.writeDebug == true {
+   log.Printf("Success=%t, Error=%s\n", targetCmd.ProcessState.Success(), err.Error())
+   log.Printf("Out=%s\n", out)
+  }
 
-		if ri.headerWritten == false {
-			w.WriteHeader(http.StatusInternalServerError)
-			response := bytes.NewBufferString(err.Error())
-			w.Write(response.Bytes())
-			w.Write([]byte("\n"))
-			if len(out) > 0 {
-				w.Write(out)
-			}
-			ri.headerWritten = true
-		}
-		return
-	}
+  if ri.headerWritten == false {
+   w.WriteHeader(http.StatusInternalServerError)
+   response := bytes.NewBufferString(err.Error())
+   w.Write(response.Bytes())
+   w.Write([]byte("\n"))
+   if len(out) > 0 {
+    w.Write(out)
+   }
+   ri.headerWritten = true
+  }
+  return
+ }
 
-	var bytesWritten string
-	if config.writeDebug == true {
-		os.Stdout.Write(out)
-	} else {
-		bytesWritten = fmt.Sprintf("Wrote %d Bytes", len(out))
-	}
+ var bytesWritten string
+ if config.writeDebug == true {
+  os.Stdout.Write(out)
+ } else {
+  bytesWritten = fmt.Sprintf("Wrote %d Bytes", len(out))
+ }
 
-	if len(config.contentType) > 0 {
-		w.Header().Set("Content-Type", config.contentType)
-	} else {
+ if len(config.contentType) > 0 {
+  w.Header().Set("Content-Type", config.contentType)
+ } else {
 
-		// Match content-type of caller if no override specified.
-		clientContentType := r.Header.Get("Content-Type")
-		if len(clientContentType) > 0 {
-			w.Header().Set("Content-Type", clientContentType)
-		}
-	}
+  // Match content-type of caller if no override specified.
+  clientContentType := r.Header.Get("Content-Type")
+  if len(clientContentType) > 0 {
+   w.Header().Set("Content-Type", clientContentType)
+  }
+ }
 
-	execDuration := time.Since(startTime).Seconds()
-	if ri.headerWritten == false {
-		w.Header().Set("X-Duration-Seconds", fmt.Sprintf("%f", execDuration))
-		ri.headerWritten = true
-		w.WriteHeader(200)
-		w.Write(out)
-	}
+ execDuration := time.Since(startTime).Seconds()
+ if ri.headerWritten == false {
+  w.Header().Set("X-Duration-Seconds", fmt.Sprintf("%f", execDuration))
+  ri.headerWritten = true
+  w.WriteHeader(200)
+  w.Write(out)
+ }
 
-	if config.debugHeaders {
-		header := w.Header()
-		debugHeaders(&header, "out")
-	}
+ if config.debugHeaders {
+  header := w.Header()
+  debugHeaders(&header, "out")
+ }
 
-	if len(bytesWritten) > 0 {
-		log.Printf("%s - Duration: %fs", bytesWritten, execDuration)
-	} else {
-		log.Printf("Duration: %fs", execDuration)
-	}
+ if len(bytesWritten) > 0 {
+  log.Printf("%s - Duration: %fs", bytesWritten, execDuration)
+ } else {
+  log.Printf("Duration: %fs", execDuration)
+ }
 }
 ```
 
@@ -378,59 +376,59 @@ requestHandler := makeHTTPRequestHandler(watchdogConfig, prefixLogs, watchdogCon
 http.HandleFunc("/", requestHandler)
 
 func makeHTTPRequestHandler(watchdogConfig config.WatchdogConfig, prefixLogs bool, logBufferSize int) func(http.ResponseWriter, *http.Request) {
-	upstreamURL, _ := url.Parse(watchdogConfig.UpstreamURL)
+ upstreamURL, _ := url.Parse(watchdogConfig.UpstreamURL)
 
-	commandName, arguments := watchdogConfig.Process()
-	functionInvoker := executor.HTTPFunctionRunner{
-		ExecTimeout:    watchdogConfig.ExecTimeout,
-		Process:        commandName,
-		ProcessArgs:    arguments,
-		BufferHTTPBody: watchdogConfig.BufferHTTPBody,
-		LogPrefix:      prefixLogs,
-		LogBufferSize:  logBufferSize,
-		LogCallId:      watchdogConfig.LogCallId,
-		ReverseProxy: &httputil.ReverseProxy{
-			Director: func(req *http.Request) {
-				req.URL.Host = upstreamURL.Host
-				req.URL.Scheme = "http"
-			},
-			ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
-			},
-			ErrorLog: log.New(io.Discard, "", 0),
-		},
-	}
+ commandName, arguments := watchdogConfig.Process()
+ functionInvoker := executor.HTTPFunctionRunner{
+  ExecTimeout:    watchdogConfig.ExecTimeout,
+  Process:        commandName,
+  ProcessArgs:    arguments,
+  BufferHTTPBody: watchdogConfig.BufferHTTPBody,
+  LogPrefix:      prefixLogs,
+  LogBufferSize:  logBufferSize,
+  LogCallId:      watchdogConfig.LogCallId,
+  ReverseProxy: &httputil.ReverseProxy{
+   Director: func(req *http.Request) {
+    req.URL.Host = upstreamURL.Host
+    req.URL.Scheme = "http"
+   },
+   ErrorHandler: func(w http.ResponseWriter, r *http.Request, err error) {
+   },
+   ErrorLog: log.New(io.Discard, "", 0),
+  },
+ }
 
-	if len(watchdogConfig.UpstreamURL) == 0 {
-		log.Fatal(`For "mode=http" you must specify a valid URL for "http_upstream_url"`)
-	}
+ if len(watchdogConfig.UpstreamURL) == 0 {
+  log.Fatal(`For "mode=http" you must specify a valid URL for "http_upstream_url"`)
+ }
 
-	urlValue, err := url.Parse(watchdogConfig.UpstreamURL)
-	if err != nil {
-		log.Fatalf(`For "mode=http" you must specify a valid URL for "http_upstream_url", error: %s`, err)
-	}
+ urlValue, err := url.Parse(watchdogConfig.UpstreamURL)
+ if err != nil {
+  log.Fatalf(`For "mode=http" you must specify a valid URL for "http_upstream_url", error: %s`, err)
+ }
 
-	functionInvoker.UpstreamURL = urlValue
+ functionInvoker.UpstreamURL = urlValue
 
-	log.Printf("Forking: %s, arguments: %s", commandName, arguments)
-	functionInvoker.Start()
+ log.Printf("Forking: %s, arguments: %s", commandName, arguments)
+ functionInvoker.Start()
 
-	return func(w http.ResponseWriter, r *http.Request) {
+ return func(w http.ResponseWriter, r *http.Request) {
 
-		req := executor.FunctionRequest{
-			Process:      commandName,
-			ProcessArgs:  arguments,
-			OutputWriter: w,
-		}
+  req := executor.FunctionRequest{
+   Process:      commandName,
+   ProcessArgs:  arguments,
+   OutputWriter: w,
+  }
 
-		if r.Body != nil {
-			defer r.Body.Close()
-		}
+  if r.Body != nil {
+   defer r.Body.Close()
+  }
 
-		if err := functionInvoker.Run(req, r.ContentLength, r, w); err != nil {
-			w.WriteHeader(500)
-			w.Write([]byte(err.Error()))
-		}
-	}
+  if err := functionInvoker.Run(req, r.ContentLength, r, w); err != nil {
+   w.WriteHeader(500)
+   w.Write([]byte(err.Error()))
+  }
+ }
 }
 
 
@@ -466,21 +464,21 @@ func makeHTTPRequestHandler(watchdogConfig config.WatchdogConfig, prefixLogs boo
 package main
 
 import (
-	"net/http"
-	"net/http/httputil"
-	"net/url"
-	"log"
+ "net/http"
+ "net/http/httputil"
+ "net/url"
+ "log"
 )
 
 func main() {
-	target, _ := url.Parse("http://example.com")
-	proxy := httputil.NewSingleHostReverseProxy(target)
+ target, _ := url.Parse("http://example.com")
+ proxy := httputil.NewSingleHostReverseProxy(target)
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		proxy.ServeHTTP(w, r)
-	})
+ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  proxy.ServeHTTP(w, r)
+ })
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+ log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 ```
@@ -491,37 +489,37 @@ func main() {
 package main
 
 import (
-	"io"
-	"net/http"
-	"net/url"
-	"log"
+ "io"
+ "net/http"
+ "net/url"
+ "log"
 )
 
 func main() {
-	client := &http.Client{}
+ client := &http.Client{}
 
-	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		targetURL, _ := url.Parse("http://example.com" + r.URL.Path)
-		req, _ := http.NewRequest(r.Method, targetURL.String(), r.Body)
-		req.Header = r.Header
+ http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+  targetURL, _ := url.Parse("http://example.com" + r.URL.Path)
+  req, _ := http.NewRequest(r.Method, targetURL.String(), r.Body)
+  req.Header = r.Header
 
-		resp, err := client.Do(req)
-		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
-		}
-		defer resp.Body.Close()
+  resp, err := client.Do(req)
+  if err != nil {
+   http.Error(w, err.Error(), http.StatusInternalServerError)
+   return
+  }
+  defer resp.Body.Close()
 
-		for key, values := range resp.Header {
-			for _, value := range values {
-				w.Header().Add(key, value)
-			}
-		}
-		w.WriteHeader(resp.StatusCode)
-		io.Copy(w, resp.Body)
-	})
+  for key, values := range resp.Header {
+   for _, value := range values {
+    w.Header().Add(key, value)
+   }
+  }
+  w.WriteHeader(resp.StatusCode)
+  io.Copy(w, resp.Body)
+ })
 
-	log.Fatal(http.ListenAndServe(":8080", nil))
+ log.Fatal(http.ListenAndServe(":8080", nil))
 }
 
 ```

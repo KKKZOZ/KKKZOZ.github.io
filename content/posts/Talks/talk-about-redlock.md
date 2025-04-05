@@ -2,7 +2,6 @@
 title: "Talk about Redlock"
 tags:
   - Talk
-categories:
   - Distributed
 date: 2023-11-02
 toc: true
@@ -196,6 +195,7 @@ However, this is not entirely true if acquiring the lock also implies that the s
 Say that every time a client acquires a lock to exclusively access a resource, it goes to the resource and before anything else it marks the resource in such a way that clients that acquired the lock previously cannot access the resource. In the scenario above, client *C1* thinks that it still holds the lock, but when it tries to access the shared resource, it fails because it has an earlier mark from *C2*.
 
 That is:
+
 - Get the lock
 - Mark the resource (like an epoch number)
 - Do something

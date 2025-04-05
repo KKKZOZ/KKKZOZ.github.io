@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Towards Transaction as a Service"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2024-01-22
 toc: true
 ---

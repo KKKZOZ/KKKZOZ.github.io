@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2024-03-25
 toc: true
 math: true
@@ -14,14 +11,13 @@ math: true
 Designing a TPS for clouds will meet these challenges:
 
 + **Diverse functionality**.
-    + The concept of *translytics* as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, ... and ensures full transactional integrity and data consistency”.
+  + The concept of *translytics* as “a unified and integrated data platform that supports multi-workloads such as transactional, operational, and analytical simultaneously in realtime, ... and ensures full transactional integrity and data consistency”.
 + **Scale**
-    + Cloud-first data platforms are designed to scale well beyond the limits of a single application.
+  + Cloud-first data platforms are designed to scale well beyond the limits of a single application.
 + **Latency**
-    + With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential. 
+  + With the thrust into new interactive domains like social networks, messaging and algorithmic trading,latency becomes essential.
 + **Multi-tenancy**
-    + Maintaining access rights is therefore an important design consideration for TPSs.
-
+  + Maintaining access rights is therefore an important design consideration for TPSs.
 
 论文的工作集中于以下几点：
 
@@ -52,11 +48,10 @@ Designing a TPS for clouds will meet these challenges:
 Omid LL 采用了：
 
 + **Centralized validation**: 集中式的验证（在TM里集中进行冲突检测）避免了在数据存储中使用悲观锁，并且拥有良好的可扩展性。（在Omid 2017中已经得到验证）
-+ **Distributed commit entry updates with multi-tenancy**: 
++ **Distributed commit entry updates with multi-tenancy**:
   + Omid 2014 将提交条目复制到客户端中，显然在消耗高带宽的同时失去了更好的扩展性；为了降低 TM 写入的性能瓶颈，Omid 2014 以批量写入的方式增加吞吐量，同时也提高了延迟。
   + Omid 2017 中，低延时是工作的一个重要目标。工作将写入提交条目的操作均分到了客户端上。
 + **Write intent resolution**: 这涉及到的决策是：在执行事务读操作时，如果读到了一个事务状态不确定的记录，本事务是选择等待还是中止事务。Omid LL 选择了 “reads to force aborts”。
-
 
 OMid LL 的提交操作也分为两个阶段：
 
@@ -72,7 +67,7 @@ OMid LL 的提交操作也分为两个阶段：
 FP的优化策略聚焦于单键值的事务：
 
 + `brc(key)`：开启事务，读最新已提交的版本。
-    + 可能会忽略掉正在进行 post-commit 的事务，但论文中说这种行为是符合 FP 语义的。
+  + 可能会忽略掉正在进行 post-commit 的事务，但论文中说这种行为是符合 FP 语义的。
 + `bwc(key, val)`：直接写入一个新版本，要求其 $ts_c$ 大于已有版本。
 + `br(key)`：开启事务，读最新已提交的版本。
 + `wc(ver, key, val)`： 验证自返回 ver 的 br 调用以来未对 key 进行写操作，将 val 写入 key 的新版本，并提交。
@@ -85,12 +80,11 @@ FP的优化策略聚焦于单键值的事务：
 为了在不访问 TM 的情况下产生一个新版本，Omid FP 采用了 HLC（Hybrid Logical Clock）。
 
 > What is HLC?
-> 
+>
 > An HLC timestamp typically includes two parts:
 >
 > 1. A physical component which is assigned by the TM.
 > 2. A logical component that behaves like a locally advancing sequence number.
-
 
 在 FP 中改变版本时只增加 logical ts 即可（通过 `putVersion` 函数）。
 
@@ -107,6 +101,5 @@ FP 事务并没有记录在 CT 中，旧的检测机制失效了。为了能让T
 + `putVersion` 会提升 maxVersion。
 + 普通事务的读会提升 maxVersion 到**不小于**事务的 $ts_r$。
 + 普通事务的写会检查 maxVersion **不大于**事务的 $ts_r$，检查未通过说明有 FP 事务与它发生了写冲突。
-
 
 这个改动增加了普通路径的开销，为每个记录都维护一个 maxVersion 字段开销非常大，所以 OMid 在每个 HBase 的 region server 上维护一个 Local Version Clock (LVC)，作为该区域所有记录的 maxVersion，以增加 false abortion 的代价降低了性能开销：“a transactional read modifies the LVC only if its tsr exceeds it”。

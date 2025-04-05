@@ -2,8 +2,6 @@
 title: "Mac Development Environment Setup"
 tags:
   - Dev
-categories:
-  - Pieces
 date: 2024-11-21
 toc: true
 ---

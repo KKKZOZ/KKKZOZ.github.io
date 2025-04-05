@@ -2,8 +2,6 @@
 title: "Golang Struct and Interfaces"
 tags:
   - Dev
-categories:
-  - Pieces
 date: 2025-01-28
 toc: true
 ---

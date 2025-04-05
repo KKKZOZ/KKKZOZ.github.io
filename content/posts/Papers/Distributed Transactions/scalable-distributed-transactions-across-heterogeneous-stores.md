@@ -1,10 +1,7 @@
 ---
 title: "Paper Note: Scalable Distributed Transactions across Heterogeneous Stores"
 tags:
-- PaperNote
-categories:
-- [Distributed]
-- [Transactions]
+- Paper Note
 date: 2023-12-09
 toc: true
 ---

@@ -2,8 +2,6 @@
 title: "Golang Errors"
 tags:
   - Dev
-categories:
-  - Pieces
 date: 2025-02-04
 toc: true
 ---

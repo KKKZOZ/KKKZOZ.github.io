@@ -1,9 +1,7 @@
 ---
 title: "Paper Note: Chain Replication"
 tags:
-  - PaperNote
-categories:
-  - Distributed
+  - Paper Note
 date: 2023-11-06
 toc: true
 ---

@@ -2,8 +2,6 @@
 title: "A Piece Of: Logs"
 tags:
   - Dev
-categories:
-  - [Pieces]
 date: 2024-05-13
 toc: true
 # draft: true

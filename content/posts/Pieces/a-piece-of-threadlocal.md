@@ -3,8 +3,6 @@ title: "A Piece Of: ThreadLocal"
 tags:
   - Java
   - Concurrency
-categories:
-  - Pieces
 date: 2023-11-29
 toc: true
 ---

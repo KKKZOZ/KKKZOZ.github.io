@@ -2,8 +2,6 @@
 title: "Dev Operations"
 tags:
   - Dev
-categories:
-  - Pieces
 date: 2024-11-25
 showtoc: true
 ---

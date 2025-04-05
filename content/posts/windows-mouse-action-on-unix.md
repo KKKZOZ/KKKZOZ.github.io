@@ -2,8 +2,7 @@
 title: "From Clicks to Commands: A Windows User's Survival Guide"
 tags:
   - Dev
-categories:
-  - Pieces
+  - Tutorial
 date: 2024-11-26
 toc: true
 ---
