@@ -78,7 +78,7 @@ Rust的泛型是通过**单态化(monomorphization)**实现的，这意味着编
 > Monomorphization is the process of turning generic code into specific code by filling in the concrete types that are used when compiled.
 
 > [!IMPORTANT]
-> 泛型函数的返回类型必须由调用者确定，而不是由函数内部逻辑决定。
+> 泛型函数的返回类型必须由调用者确定，而不是由函数内部逻辑决定
 
 泛型函数必须在所有路径返回相同类型 `E`，不能根据运行时值返回不同类型
 
@@ -121,7 +121,7 @@ match engine_name.as_str() {
 .unwrap();
 ```
 
-因为每个分支调用run_server时，编译器知道具体的类型参数E是什么, 最终二进制中会有两个版本:
+因为每个分支调用 `run_server` 时，编译器知道具体的类型参数 `E` 是什么, 最终二进制中会有两个版本:
 
 ```text
 ; run_server::<KvStore>
@@ -129,6 +129,90 @@ match engine_name.as_str() {
 
 ; run_server::<SledKvsEngine> 
 ; 使用SledKvsEngine的所有方法调用也是静态确定的
+```
+
++ 合并点 (编译期 - 定义通用逻辑):
+  + 你定义一个泛型函数，比如 run_server<E: KvsEngine>(...)。
+  + 这个函数代表了一套通用的逻辑模板，适用于任何满足 KvsEngine trait 的类型 E。这是你在源代码层面统一逻辑的地方。这里的 E 是一个占位符。
++ 分叉点 (运行时 - 做出选择):
+  + 你使用 match engine_name.as_str() 这样的代码。
+  + 这是一个基于运行时的值 (engine_name) 来决定走哪条代码路径的决策点。
++ 桥梁 (连接运行时选择和编译期特化):
+  + 关键在于： match 的分支不试图改变一个变量的编译时类型。相反，它根据运行时的选择，去调用那个通用逻辑模板的不同编译期特化版本。
+
+处理运行时选择和泛型代码的常用模式是：
+静态分发： 使用 match 等控制流，根据运行时条件，调用泛型函数的不同类型参数的特化版本。每个调用路径的类型在编译期是确定的
+
+再提供一个相似的例子:
+
+```rust
+use anyhow::Result;
+
+// --- 合并点 1: 定义通用格式化行为 (Trait) ---
+trait Formatter {
+    fn format(&self, items: &[String]) -> String;
+}
+
+// --- 定义具体的格式化策略 ---
+struct PlainTextFormatter;
+impl Formatter for PlainTextFormatter {
+    fn format(&self, items: &[String]) -> String {
+        items.join("\n")
+    }
+}
+
+struct CsvFormatter;
+impl Formatter for CsvFormatter {
+    fn format(&self, items: &[String]) -> String {
+        // 简单的 CSV，不处理引号和转义
+        items.join(",")
+    }
+}
+
+// --- 合并点 2: 使用泛型格式化器的通用函数 (静态分发的基础) ---
+fn print_formatted_statically<F: Formatter>(formatter: F, items: &[String]) {
+     println!("[Static] Formatting using {}:", std::any::type_name::<F>());
+     let output = formatter.format(items); // 静态分发
+     println!("{}", output);
+}
+
+// --- 用于动态分发的工厂函数 ---
+fn create_formatter_dynamically(mode: &str) -> Option<Box<dyn Formatter>> {
+    match mode {
+        "plain" => Some(Box::new(PlainTextFormatter)),
+        "csv" => Some(Box::new(CsvFormatter)),
+        _ => None,
+    }
+}
+
+fn main() -> Result<()> {
+    let data = vec!["apple".to_string(), "banana".to_string(), "cherry".to_string()];
+
+    // --- 运行时决策 ---
+    let output_mode = "csv"; // 或 "plain"
+
+    // --- 方式一：静态分发 ---
+    println!("--- Static Dispatch Example ---");
+    // 分叉点: match 决定调用哪个 print_formatted_statically 的特化版本
+    match output_mode {
+        "plain" => print_formatted_statically(PlainTextFormatter, &data),
+        "csv" => print_formatted_statically(CsvFormatter, &data),
+        _ => println!("Static dispatch: Mode {} not supported", output_mode),
+    }
+
+    println!("\n--- Dynamic Dispatch Example ---");
+    // --- 方式二：动态分发 ---
+    // 分叉点 + 桥梁 + 合并点
+    if let Some(formatter) = create_formatter_dynamically(output_mode) {
+        println!("[Dynamic] Formatting using selected mode:");
+        let output = formatter.format(&data); // 动态分发
+        println!("{}", output);
+    } else {
+        println!("Dynamic dispatch: Mode {} not supported", output_mode);
+    }
+
+    Ok(())
+}
 ```
 
 ## `F: FnOnce() + Send +'static`
