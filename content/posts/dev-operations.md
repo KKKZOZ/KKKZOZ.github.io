@@ -6,9 +6,7 @@ date: 2024-11-25
 showtoc: true
 ---
 
-## 写在前面
-
-本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
+> 本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
 
 ## CommandLine
 
@@ -1026,11 +1024,27 @@ git commit -m "Stop tracking .bak files"
 > - 在 Git 中，建议使用连字符（-）而不是下划线（\_）或空格，这样分支名更易读，并且与常见的命名风格保持一致
 > - 分支名称最好使用小写字母，避免使用大写字母或混合大小写，这可以保持风格一致且减少错误
 
-## Regex
+## Miscellaneous
 
-### Extract a number
+### VSCode Remote Tunnel Access
 
-要求从下面这个 `iot-oreo-8.txt` 文件中提取出 TXN 对应的 P99 Latency，即`57727`
+VS Code 中的 Remote Tunnel Access (远程隧道访问) 是一种 无需 SSH 或其他复杂配置就能 安全、便捷地连接到远程计算机进行开发的功能。它可以让你从任何地方、使用任何设备上的 VS Code 客户端，无缝访问远程机器上的文件、终端、运行代码和使用扩展，就好像你在本地操作一样。
+
+简单来说，Remote Tunnel Access 就像为你建立了一条 "隧道"，让你安全地穿过网络障碍（比如防火墙、NAT 等），直接连接到你的远程机器。
+
+与传统的 Remote SSH 等方式的区别和优势:
+
+- 更简单易用: Remote Tunnel Access 无需复杂的 SSH 密钥配置、端口转发或网络配置。 只需在远程主机和客户端都登录 VS Code 账号即可轻松连接。
+
+- 网络穿透性更强: Tunnel 连接是 出站连接，这意味着它可以 轻松穿透防火墙和 NAT，即使你的远程主机在受限的网络环境中也能访问。 这对于访问家里的电脑、公司内网的机器、或者位于不同网络环境下的服务器非常方便。
+
+- 更安全: Tunnel 连接是 加密的，并由 Microsoft 的服务进行管理，保证了连接的安全性。 你无需担心暴露 SSH 端口或者复杂的安全配置。
+
+- 跨平台和跨设备: 客户端和远程主机可以是不同的操作系统 (Windows, macOS, Linux)。你可以在任何安装了 VS Code 的设备上连接到远程主机。
+
+### Extract a number using regex
+
+要求从下面这个 `iot-oreo-8.txt` 文件中提取出 TXN 对应的 P99 Latency，即 `57727`
 
 ```txt
 # 省略许多行

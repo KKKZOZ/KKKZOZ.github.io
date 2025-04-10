@@ -10,12 +10,15 @@ showtoc: true
 
 ## General Advice on Technical Writing
 
-One of the most crucial aspects of writing a good technical paper is what I call maintaining user state. Like a good operating system, the writer should ensure that the (mental) state of the user (i.e. reader) is kept coherent.
+One of the most crucial aspects of writing a good technical paper is what I call **maintaining user state**. Like a good operating system, the writer should ensure that the (mental) state of the user (i.e. reader) is kept coherent.
 
-it means that the paper systematically builds up the reader's understanding and knowledge of the work, starting from a reasonable initial state. This means you need to put yourself into the reader's shoes (or, rather, brain) and ensure that they can follow at each instance:
+> [!IMPORTANT]
+> It means that **the paper systematically builds up the reader's understanding and knowledge of the work, starting from a reasonable initial state**.
+
+This means you need to put yourself into the reader's shoes (or, rather, brain) and ensure that they can follow at each instance:
 
 - **Make reasonable assumptions about the initial state (i.e. prior knowledge).** A common fault of theses and papers is too much assumed knowledge. You're breathing this stuff daily, and somehow assume everyone else does. They don't.
-- Make sure the paper/report is self-contained. While it is important to reference prior work (yours as well as others), don't expect the reader to have read all those papers!
+- Make sure the paper/report is **self-contained**. While it is important to reference prior work (yours as well as others), don't expect the reader to have read all those papers!
 - Ensure that at any point in the paper, you don't expect more knowledge from the reader than the union of the initial state and what you've told them so far. Remember, the reader normally reads the work sequentially. It doesn't help them if a term you're using right now is explained ten pages later. Define-before-use isn't just important in programming, it's important in writing just the same.
 - Small, strategic doses of redundancy help. A good approach is for each section:
   - Say what you're going to say,

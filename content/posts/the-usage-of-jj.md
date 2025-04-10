@@ -11,7 +11,16 @@ showtoc: true
 
 ```shell
 # Create a change whose ancestor is <chang-id>
+# This operation will check out to the new change
+# You can disable the behavior by add "--no-edit"
 jj new <change-id>
+
+
+# Update the change description or other metadata
+jj desc -m "<message>"
+
+# Update current change's description and create a new change on top
+jj commit -m "<message>"
 
 
 # "Check out" the change
@@ -41,4 +50,12 @@ jj squash
 # All your changes are stored in the "goal" commit
 ```
 
-### The Edit Workflow
+### Working with GitHub
+
+```shell
+# Suppose you are already in the change you want to commit
+# And the remote branch name is main
+jj bookmark set main
+
+jj git push
+```
