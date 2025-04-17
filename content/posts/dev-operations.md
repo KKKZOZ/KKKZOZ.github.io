@@ -2,11 +2,105 @@
 title: "Dev Operations"
 tags:
   - Dev
-date: 2024-11-25
+date: 2025-04-17
 showtoc: true
 ---
 
 > 本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
+
+## Remote
+
+### Bash Shell
+
+Shell 分类:
+
+- 登录 (Login) vs 非登录 (Non-Login):
+  - 登录 Shell: 通常是你通过验证身份（输入用户名和密码，或使用 SSH 密钥）后第一个启动的 Shell。比如：
+    - 直接在物理控制台登录
+    - 通过 ssh user@host 远程登录
+    - 使用 su - 或 sudo -i 切换用户（注意那个 - 或 -i 很关键，它们表示模拟一次完整的登录）
+  - 非登录 Shell: 不是通过上述登录过程直接启动的 Shell。比如：
+    - 在图形界面中已经登录后，打开一个新的终端窗口
+    - 在 Shell 中执行一个脚本 (bash script.sh)
+    - 在已有 Shell 中再启动一个新的 Shell (bash)
+- 交互式 (Interactive) vs 非交互式 (Non-Interactive):
+  - 交互式 Shell: Shell 的标准输入、输出和错误都连接到终端，并且你可以在其中输入命令并看到输出。简单说，就是你正在与之交互的 Shell
+  - 非交互式 Shell: Shell 不是直接连接到终端进行交互的。最常见的例子是运行 Shell 脚本。Shell 从脚本文件读取命令，并将输出（如果未重定向）发送到标准输出，但它不期望用户实时输入命令
+
+根据这两种分类, 可以组合出三种**常见的** shell 类型:
+
+- 交互式登录 Shell: (你的 SSH 登录场景)
+  - 启动方式：控制台登录, `ssh user@host`, `su - <user>`, `sudo -i <user>`
+  - 读取配置文件 (Bash 为例):
+    - /etc/profile (系统全局，所有用户)。
+    - 然后查找并执行第一个找到的文件：
+      - ~/.bash_profile (用户特定)
+      - ~/.bash_login (用户特定)
+      - ~/.profile
+- 交互式非登录 Shell: (你在 GUI 中打开新终端，或手动 source ~/.bashrc 的场景)
+  - 启动方式：在 GUI 中打开新终端，在已有 Shell 中输入 bash
+  - 读取配置文件 (Bash 为例):
+    - ~/.bashrc (用户特定，仅 Bash)
+- 非交互式非登录 Shell: (运行脚本的常见场景)
+  - 启动方式: `bash script.sh`
+  - 这种 shell **默认不读交互式配置**
+  - 只有当 `BASH_ENV` 被设置了，并且其值是一个有效且可读的文件路径，那么 Bash 会执行（source） 这个文件里的命令，然后才开始执行脚本本身（script.sh）的命令
+  - 必要的环境变量都可以通过环境继承，也就是从父 Shell 导出的环境变量，所以通常不需要特殊配置
+
+> [!QUESTION] 为什么要有这种区分？
+
+这种设计背后的逻辑是：
+
+- 登录时执行一次的操作: 有些设置（比如基础的 PATH、设置一些只需要在会话开始时设定一次的环境变量、检查邮件等）适合在登录时执行一次即可。这些通常放在 .profile (或 .bash_profile, .bash_login) 中
+- 每次交互式 Shell 启动时都需要执行的操作: 另一些设置（比如命令别名 alias、Shell 函数、自定义的提示符 PS1、shopt 选项等）是你希望在每一个交互式 Shell 中都可用的，无论它是登录 Shell 还是之后打开的非登录 Shell。这些通常放在 .bashrc 中
+
+> [!IMPORTANT]
+> 通常情况下, ~/.bash_profile 中都会添加逻辑来调用 `~/.bashrc`
+
+> [!NOTE]
+> 在 Ubuntu 中, `.bash_profile` 的优先级**高于** `.profile`
+
+`.profile` 的前几句:
+
+```shell
+# ~/.profile: executed by the command interpreter for login shells.
+# This file is not read by bash(1), if ~/.bash_profile or ~/.bash_login exists.
+```
+
+> [!QUESTION] What about fish shell?
+
+- Fish 主要使用 ~/.config/fish/config.fish 这一个文件
+- 无论 Fish Shell 是以登录、非登录、交互式还是非交互式模式启动，它都会读取并执行 ~/.config/fish/config.fish 文件
+- 条件判断在内部:
+
+```shell
+if status is-interactive
+    # Commands for interactive sessions only (e.g., set prompt, aliases)
+    echo "Fish is interactive"
+end
+
+if status is-login
+    # Commands for login sessions only
+    echo "Fish is a login shell"
+end
+```
+
+> 这就是很多时候将 fish shell 作为 login shell 时, 什么 ssh, rsync 都无法正常运行的原因 -- 在不属于交互式的 shell 中输出了交互式 shell 中的东西, 导致协议失效
+
+> 日常使用中 `is-interactive` 这个判断使用得最多
+
+- Universal Variables： Fish 有一个“通用变量” (`set -U`) 的概念，这种变量的设置会跨所有 Fish 会话自动共享和持久化（存储在 `~/.config/fish/fish_variables` 文件中），通常用于设置像 PATH 这样的全局配置，而无需每次启动都重新设置。例如，添加路径推荐使用：
+
+```shell
+# Add ~/.local/bin to PATH persistently for all fish sessions
+fish_add_path ~/.local/bin
+```
+
+> [!SUMMARY]
+> 关键字:
+>
+> - **自动共享**
+> - **持久保存**
 
 ## CommandLine
 
@@ -470,6 +564,30 @@ rm "$tar_dir"/iot-*.txt
 ```
 
 ## Docker
+
+### Docker 常见操作
+
+#### 通过命令行向 Docker 容器上传和下载文件
+
+```shell
+# 上传文件
+docker cp <本地文件路径> <容器名称或ID>:<容器内的目标路径>
+
+# 下载文件
+docker cp <容器名称或ID>:<容器内的文件路径> <本地目标路径>
+```
+
+> 和 scp 的用法类似
+
+#### 进入 Docker 容器内部并启动一个交互式 shell
+
+```shell
+docker exec -it <container id or name> /bin/bash
+```
+
+- `-it`: 表示以交互模式（-i）和终端（-t）运行
+  - `-i`: 让容器的标准输入（STDIN）保持打开状态，允许用户输入数据
+  - `-t`: 为容器分配一个终端设备（TTY） ，使 Shell 能正确显示终端控制字符（如颜色、光标移动、Ctrl+C 中断等）
 
 ### 如何使用 docker 限制一个容器能使用的核心数和内存大小
 
