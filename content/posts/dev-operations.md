@@ -10,6 +10,14 @@ showtoc: true
 
 ## Remote
 
+### Address
+
+> 很常见很弱智的一个错误, 但就是架不住偶尔会犯一次
+
+在开启 http server 之类的操作时, 如果填的地址是 `localhost:9000`, 那么只有本机可以访问
+
+如果想在其他主机上访问, 需要填为 `:9000`
+
 ### Bash Shell
 
 Shell 分类:
@@ -86,7 +94,7 @@ end
 ```
 
 > 这就是很多时候将 fish shell 作为 login shell 时, 什么 ssh, rsync 都无法正常运行的原因 -- 在不属于交互式的 shell 中输出了交互式 shell 中的东西, 导致协议失效
-
+>
 > 日常使用中 `is-interactive` 这个判断使用得最多
 
 - Universal Variables： Fish 有一个“通用变量” (`set -U`) 的概念，这种变量的设置会跨所有 Fish 会话自动共享和持久化（存储在 `~/.config/fish/fish_variables` 文件中），通常用于设置像 PATH 这样的全局配置，而无需每次启动都重新设置。例如，添加路径推荐使用：
@@ -1143,6 +1151,41 @@ git commit -m "Stop tracking .bak files"
 > - 分支名称最好使用小写字母，避免使用大写字母或混合大小写，这可以保持风格一致且减少错误
 
 ## Miscellaneous
+
+### 如何查看服务器的网络配置
+
+使用 `ip` 命令:
+
+```shell
+# 查看 IP 和掩码
+ip address
+
+# 简单查看 IPv4 地址
+ip address | rg "inet "
+
+# 查看网关
+ip r
+```
+
+- 一般来说, 最常见的接口为 `eth0`, 在 `ip address` 和 `ip r` 命令中找对应的行就行
+
+```shell
+> ip address
+2: enp61s0f0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP group default qlen 1000
+    link/ether 6c:92:bf:c4:19:ee brd ff:ff:ff:ff:ff:ff
+    inet 124.16.138.60/24 brd 124.16.138.255 scope global noprefixroute enp61s0f0
+       valid_lft forever preferred_lft forever
+    inet6 2400:dd01:100f:2:eb57:d4f4:552a:1b52/64 scope global noprefixroute dynamic
+       valid_lft 2591855sec preferred_lft 604655sec
+    inet6 fe80::319f:41fe:b48:a825/64 scope link noprefixroute
+       valid_lft forever preferred_lft forever
+
+> ip r
+default dev utun8 scope link
+default via 10.207.255.254 dev eth0 # This one
+default dev bridge100 scope link
+1.0.0.0/8 dev utun8 scope link
+```
 
 ### VSCode Remote Tunnel Access
 

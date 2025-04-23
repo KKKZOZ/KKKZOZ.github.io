@@ -3,6 +3,7 @@ title: "Chrome Plugin Recommendation"
 tags:
   - Dev
 date: 2025-04-01
+lastmod: 2025-04-17
 toc: true
 ---
 
