@@ -10,6 +10,7 @@ buildFuture = false
 buildExpired = false
 enableEmoji = true
 pygmentsUseClasses = true
+enableGitInfo = true
 mainsections = ["posts", "papermod"]
 
 [[module.mounts]]

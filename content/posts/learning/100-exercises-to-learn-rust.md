@@ -118,6 +118,8 @@ Implementing source using thiserror
 thiserror provides three ways to automatically implement source for your error types:
 
 A field named source will automatically be used as the source of the error.
+
+```rust
 use thiserror::Error;
 
 # [derive(Error, Debug)]
@@ -140,7 +142,11 @@ pub enum MyError {
         inner: std::io::Error
     }
 }
+```
+
 A field annotated with the #[from] attribute will automatically be used as the source of the error and thiserror will automatically generate a From implementation to convert the annotated type into your error type.
+
+```rust
 
 use thiserror::Error;
 
@@ -153,6 +159,8 @@ pub enum MyError {
         inner: std::io::Error
     }
 }
+
+```
 
 - 如果你在结构体或枚举的字段上使用了 #[from] 属性，thiserror 宏会自动为你的错误类型生成一个 From 实现。这个 From 实现允许你将标注的字段类型（在这个例子中是 std::io::Error）直接转换为你的自定义错误类型（MyError）
 
