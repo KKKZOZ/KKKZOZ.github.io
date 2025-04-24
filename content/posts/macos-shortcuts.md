@@ -92,3 +92,7 @@ showtoc: true
 
 - `Shift + Cmd + C`: Copy link
 - `Shift + Option + Cmd + C`: Copy link in markdown format
+
+### Extensions
+
+- `Cmd + 0`: Bionic On/Off

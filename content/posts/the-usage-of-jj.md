@@ -50,12 +50,179 @@ jj squash
 # All your changes are stored in the "goal" commit
 ```
 
-### Working with GitHub
+## Working with GitHub
+
+### Repo init
+
+```shell
+jj git init --colocate
+
+jj git remote add origin git@github.com:KKKZOZ/jj-vcs-test.git
+
+jj bookmark set main -r @
+
+jj git push --allow-new --branch main
+
+# Or
+jj git push --allow-new
+
+```
+
+- jj 默认情况下拒绝在远程仓库 (origin) 上创建一个新的、它不认识的 "远程书签"
+- 创建之后可以直接使用 `jj git push`
+
+### Git Push
+
+推送当前的更改:
+
+对应到 `git` 中:
+
+- `git add --all`
+- `git commit -m "commit message"`
+- `git push`
 
 ```shell
 # Suppose you are already in the change you want to commit
 # And the remote branch name is main
-jj bookmark set main
+jj desc -m "<commit message>"
+
+jj bookmark set <branch-name> -r @
 
 jj git push
 ```
+
+### Git Pull
+
+同步远端的更改:
+
+对应到 `git` 中:
+
+- `git fetch`
+
+```shell
+jj git fetch
+```
+
+> 目前暂时没有对应 `git pull` 的 jj 命令
+
+> [!NOTE]
+> 如果你在 IDE 或者 VSCode 中打开了对应的仓库, 这些应用默认会定期执行 `git fetch`, 所以有些时候你可以发现你只需要执行类似于 `jj st`, `jj log` 之类的命令就能同步远端的更改
+
+执行完后的 `jj log` 大概是这样:
+
+```shell
+❯ jj log
+@  xtrxlwqk kkkzoz@qq.com 2025-04-23 18:58:29 96c6d123
+│  (empty) (no description set)
+│ ◆  tyxpntnk 1206668472@qq.com 2025-04-23 19:00:39 main b1d6f198
+├─╯  Create README.md
+◆  qzpuxqzw kkkzoz@qq.com 2025-04-23 18:39:26 git_head() 9b53401e
+│  project setup
+~
+```
+
+- 和 `git` 最不一样的地方就是**远端更新会在另一个 "branch" 上**
+
+后续可以使用 `jj rebase`
+
+```shell
+> jj rebase -d t
+
+> jj log
+jj log
+@  xtrxlwqk kkkzoz@qq.com 2025-04-23 19:13:01 29370139
+│  (empty) (no description set)
+◆  tyxpntnk 1206668472@qq.com 2025-04-23 19:00:39 main git_head() b1d6f198
+│  Create README.md
+~
+```
+
+> [!QUESTION] Where is my commit, why is it not visible in jj log?
+> you should be aware that jj log only shows a subset of the commits in the repo by default.
+> Most commits that exist on a remote are not shown. **Local commits and their immediate parents (for context) are shown.** The thinking is that you are more likely to interact with this set of commits.
+
+可以使用 `jj log -r ..` 查看完整的记录
+
+如果你和远端相差不止一个 change, 比如像下面这样:
+
+```shell
+> jj log
+@  tmmvvzkn kkkzoz@qq.com 2025-04-23 19:38:07 726f6ed6
+│  iteration 2
+○  xtrxlwqk kkkzoz@qq.com 2025-04-23 19:37:34 git_head() a8a86bfd
+│  iteration 1
+│ ◆  xzwwyvxu 1206668472@qq.com 2025-04-23 19:38:47 main e17f2a78
+├─╯  new feature
+◆  tyxpntnk 1206668472@qq.com 2025-04-23 19:00:39 b1d6f198
+│  Create README.md
+~
+```
+
+此时需要更改我们的 `jj rebase` 指令:
+
+```shell
+> jj rebase -s xt -d main
+Rebased 2 commits onto destination
+Working copy  (@) now at: tmmvvzkn 4e13c26d iteration 2
+Parent commit (@-)      : xtrxlwqk a91a6c31 iteration 1
+Added 0 files, modified 1 files, removed 0 files
+> jj log
+@  tmmvvzkn kkkzoz@qq.com 2025-04-23 20:05:12 4e13c26d
+│  iteration 2
+○  xtrxlwqk kkkzoz@qq.com 2025-04-23 20:05:12 git_head() a91a6c31
+│  iteration 1
+◆  xzwwyvxu 1206668472@qq.com 2025-04-23 19:38:47 main e17f2a78
+│  new feature
+~
+```
+
+- 当使用 `-s` 指定一个提交时，jj 会选择这个提交及其所有后代作为源进行 rebase
+- 其他情况(`-b` 或者 `-r`) 可以参照[这里](https://jj-vcs.github.io/jj/latest/cli-reference/#jj-rebase)
+
+### Create a PR
+
+```shell
+# Create a new change
+jj new
+
+# Implement the feature
+...
+
+# Describe it
+jj desc -m "<commit message>"
+
+
+# Push to remote
+jj git push -c @
+
+Creating bookmark push-ypunlqtzukkp for revision ypunlqtzukkp
+Changes to push to origin:
+  Add bookmark push-ypunlqtzukkp to 05b31f99cd92
+remote: Resolving deltas: 100% (5/5), completed with 1 local object.
+remote:
+remote: Create a pull request for 'push-ypunlqtzukkp' on GitHub by visiting:
+remote:      https://github.com/KKKZOZ/jj-vcs-test/pull/new/push-ypunlqtzukkp
+remote:
+
+# Ready to go!
+
+```
+
+- `-c @` 的意思是 create us a new branch, from the revision @
+
+## Common FAQ
+
+> [!QUESTION] How do I resume working on an existing change?
+
+当你想修改的不是当前最新的提交 (@),而是历史中的某个旧提交时, 有两种方案:
+
+方法一: `jj new <rev>` + `jj squash`
+
+- `jj new <rev>` 在 `change <rev>` 之上创建一个新的 change
+- 在这个 change 的基础上进行修改
+- 使用 `jj squash` 将更改合并到它的父提交上 (也就是 `<rev>`)
+
+方法二: `jj edit <rev>`
+
+- `jj edit <rev>` 会直接切换你的工作区状态，使其内容和 `<rev>` 提交完全一致
+- 缺点是不够清晰, 之后无法在 `jj log` 中分辨出在这次 edit 会话中具体添加或修改了什么
