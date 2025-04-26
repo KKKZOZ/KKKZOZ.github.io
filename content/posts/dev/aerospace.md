@@ -62,3 +62,58 @@ it will be immediately transformed into
 v_tiles (new root node)
 └── window 1
 ```
+
+## Shortcuts
+
+### Between Workspaces
+
+- Switch Workspaces
+
+```toml
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+# ...
+alt-b = 'workspace B'
+alt-c = 'workspace C'
+alt-d = 'workspace D'
+```
+
+- Move Node to Workspaces
+
+```toml
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+# ...
+alt-shift-b = 'move-node-to-workspace B'
+alt-shift-c = 'move-node-to-workspace C'
+alt-shift-d = 'move-node-to-workspace D'
+```
+
+### In a Workspace
+
+- Focus Different Node
+
+```toml
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+```
+
+- Change Node Position
+
+```toml
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+```
+
+- Resize Node
+
+```toml
+alt-shift-minus = 'resize smart -50'
+alt-shift-equal = 'resize smart +50'
+```

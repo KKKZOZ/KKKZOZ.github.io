@@ -3,17 +3,3 @@ This is just a placeholder blank stylesheet so as to support adding custom style
 
 Read https://github.com/adityatelange/hugo-PaperMod/wiki/FAQs#bundling-custom-css-with-themes-assets for more info
 */
-pre {
-    padding: 1em; /* 内边距，统一 */
-    border-radius: 5px; /* 可选：圆角 */
-    line-height: 1.4;
-    overflow-x: auto;
-}
-
-html {
-    color: #232333;
-    font-family: "Roboto Mono", "Noto Sans TC", monospace;
-    text-align: justify;
-    font-size: 16px;
-    line-height: 1.5em;
-  }
