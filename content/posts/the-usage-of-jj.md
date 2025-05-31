@@ -7,7 +7,9 @@ showtoc: true
 ---
 
 
-## Basic Operations
+## Operations
+
+### Basic
 
 ```shell
 # Create a change whose ancestor is <chang-id>
@@ -27,6 +29,100 @@ jj commit -m "<message>"
 jj edit <change-id>
 
 ```
+
+### Squash
+
+```bash
+@  xrnotmor kkkzoz@qq.com 2025-05-31 19:20:11 4f515fd4
+│  D
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:19:57 811e63a7
+│  C
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
+│  A
+◆  zzzzzzzz root() 00000000
+```
+
+最直接的 `jj squash`:
+
+> 可以使用 `-m <MESSAGE>` 为合并后的修订直接提供描述信息，而不是打开文本编辑器输入
+
+```shell
+@  suvuslnm kkkzoz@qq.com 2025-05-31 19:22:56 81fabb20
+│  (empty) (no description set)
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:22:54 d6e7a10e
+│  C
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
+│  A
+◆  zzzzzzzz root() 00000000
+```
+
+可以使用 `jj squash -r <rev>` 来指定把哪个 change 合并到它的 parent 中:
+
+```shell
+jj squash -r u
+❯ jj log
+@  xrnotmor kkkzoz@qq.com 2025-05-31 19:23:59 9bea0f3d
+│  D
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:23:59 ea4deb9c
+│  C
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:23:56 548a20de
+│  A
+◆  zzzzzzzz root() 00000000
+
+```
+
+也可以使用 `jj squash --from u::xr --to m -m "A-D"`
+
+```shell
+❯ jj squash --from u::xr --to m -m "A-D"
+Working copy  (@) now at: rvkxwott fa6c9a22 (empty) (no description set)
+Parent commit (@-)      : mwtsztxw 0fad5eb1 A-D
+❯ jlog
+@  rvkxwott kkkzoz@qq.com 2025-05-31 19:50:29 fa6c9a22
+│  (empty) (no description set)
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:50:29 0fad5eb1
+│  A-D
+◆  zzzzzzzz root() 00000000
+```
+
+还可以隔着进行 squash:
+
+```shell
+❯ jj squash --from xw::xr --to m -m "A,C,D"
+Rebased 1 descendant commits
+Working copy  (@) now at: ptmomxys 6769fa46 (empty) (no description set)
+Parent commit (@-)      : urtyqupy 996fe48a B
+❯ jj log
+@  ptmomxys kkkzoz@qq.com 2025-05-31 19:51:48 6769fa46
+│  (empty) (no description set)
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:51:48 996fe48a
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:51:48 12a76d5a
+│  A,C,D
+◆  zzzzzzzz root() 00000000
+```
+
+## Revsets
+
+Jujutsu supports a functional language for selecting a set of revisions. Expressions in this language are called "revsets".
+
+假设我们有如下线性提交历史，从旧到新为 R <- A <- B <- C <- D <- E (R 是根提交/很早的提交，E 是最新的提交):
+
+- `x..`: `(x, E]`
+- `x::`: `[x, E]`
+- `..x`: `(R, x]`
+- `::x`: `[R, x]`
+- `x..y`: `(x, y]`
+- `x::y`: `[x, y]`
+
+Metal model:
+
+- `..` 都是左开右闭区间
+- `::` 都是闭区间
 
 ## Workflows
 

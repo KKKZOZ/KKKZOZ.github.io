@@ -9,6 +9,11 @@ toc: true
 
 > 记录一些在写 Rust 时遇到的错误和重构
 
+## Option
+
+> [!QUESTION] When to use `.as_ref()`?
+> When you want to convert an `Option<T>` to an `Option<&T>` without consuming the original `Option`.
+
 ## Ownership
 
 ```rust

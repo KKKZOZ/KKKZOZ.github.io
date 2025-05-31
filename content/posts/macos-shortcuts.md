@@ -67,6 +67,8 @@ showtoc: true
 
 - `Cmd + P`: Search files by name
   - By adding `@`, go to symbols
+- `Cmd + Shift + P`: Open Command Palette
+- `Cmd + Shift + O`: Go to symbol in file
 
 ### Tabs and Panels
 
