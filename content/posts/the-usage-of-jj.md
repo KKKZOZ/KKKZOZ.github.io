@@ -44,7 +44,7 @@ jj edit <change-id>
 ◆  zzzzzzzz root() 00000000
 ```
 
-最直接的 `jj squash`:
+最直接的 `jj squash`: 把当前 change (@) 合并到它的 parent 中:
 
 > 可以使用 `-m <MESSAGE>` 为合并后的修订直接提供描述信息，而不是打开文本编辑器输入
 
@@ -304,21 +304,62 @@ remote:
 
 ```
 
-- `-c @` 的意思是 create us a new branch, from the revision @
+- `-c @` 的意思是 create a new branch, from the revision @
 
 ## Common FAQ
 
-> [!QUESTION] How do I resume working on an existing change?
+### How to untrack a file in jj?
+
+```shell
+jj file untrack my_secret.txt
+```
+
+即使该文件之前已经被 jj-vcs 跟踪，执行此命令后，jj-vcs 将不再记录该文件的后续更改
+
+### How do I resume working on an existing change?
 
 当你想修改的不是当前最新的提交 (@),而是历史中的某个旧提交时, 有两种方案:
 
-方法一: `jj new <rev>` + `jj squash`
+> 场景: 假设你的提交历史是 A -> B -> C，你现在想修改提交 A
 
-- `jj new <rev>` 在 `change <rev>` 之上创建一个新的 change
-- 在这个 change 的基础上进行修改
-- 使用 `jj squash` 将更改合并到它的父提交上 (也就是 `<rev>`)
+1. `jj new <rev>` then `jj squash`
+2. `jj edit <rev>`
 
-方法二: `jj edit <rev>`
+#### `jj new <rev>` then `jj squash`
 
-- `jj edit <rev>` 会直接切换你的工作区状态，使其内容和 `<rev>` 提交完全一致
-- 缺点是不够清晰, 之后无法在 `jj log` 中分辨出在这次 edit 会话中具体添加或修改了什么
+1. `jj new <rev>`:
+    - 这个命令会在你指定的旧提交 `<rev>` (这里是 `A`) 的基础上创建一个**新的、空的**提交（我们称之为 `A'`）。
+    - 你的工作区会切换到这个新的提交 `A'`。
+    - 重要的是，原来的提交 `A` 以及其后续的 `B` 和 `C` 仍然存在并且没有被直接修改。你的 `jj log` 可能会看起来像这样（具体展现形式可能略有不同，但概念如此）：
+
+        ```shell
+        A -> B -> C
+        \
+         A'(@)  <-- 你现在在这里工作
+        ```
+
+    - 你现在可以在 `A'` 上进行你想要的修改。这些修改是独立的，不会立即影响 `A`, `B`, `C`。
+
+2. `jj squash`:
+    - 当你完成了在 `A'` 上的所有修改后，`jj squash` 命令会将 `A'` 中的**所有**更改合并回你最初想要修改的那个旧提交 `A`。
+    - 这实际上是“重写”了提交 `A`，形成了一个新的版本（我们称之为 `A_updated`），这个 `A_updated` 包含了原始 `A` 的内容加上你在 `A'` 中所做的修改。
+    - 由于 `A` 被更新成了 `A_updated`，jj 的自动变基机制会启动，将后续的提交 `B` 和 `C` 变基到 `A_updated` 之上，形成 `B'` 和 `C'`。
+    - 最终的提交历史会变成： `A_updated -> B' -> C'`。
+
+> [!SUMMARY] 这种方法的优点
+>
+> - **清晰性**: 你在一个全新的提交 (`A'`) 上工作，所做的修改非常明确。你可以很容易地看到你具体改了什么（通过比较 `A'` 和 `A`，或者查看 `A'` 本身的内容）。
+> - **隔离性**: 在你明确执行 `jj squash` 之前，原始的提交链 (`A -> B -> C`) 是不受影响的。这给了你一个“实验”的空间。
+
+#### `jj edit <rev>`
+
+- 这个命令会直接将你的工作区切换到指定的旧提交 `<rev>` (这里是 `A`)。
+- 你**直接在提交 `A` 上进行修改**。
+- 当你进行修改并保存后，这些修改会**立即更新**提交 `A`。也就是说，原始的 `A` 被一个新的 `A_modified` 替换掉。
+- 同样，jj 的自动变基机制会启动，将后续的 `B` 和 `C` 变基到 `A_modified` 之上，形成 `B'` 和 `C'`。
+- 最终的提交历史会变成： `A_modified -> B' -> C'`。
+
+**潜在问题：**
+
+- **难以分辨具体修改**: 因为你是直接修改提交 `A`，而不是在一个新的提交中进行。如果你做了很多细小的修改，之后可能很难清楚地回忆起或分辨出你到底在这次 `edit` 操作中具体改变了 `A` 的哪些部分。不像 `jj new` + `jj squash` 那样，你有一个明确的 `A'` 来展示所有的增量修改。
+- 因为 `jj edit` 是直接修改，没有一个“草稿”阶段，所以出错的风险相对高一些。

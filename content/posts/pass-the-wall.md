@@ -181,11 +181,28 @@ go env -w GOPROXY=https://goproxy.cn,direct
 
 ### git
 
+> 不如直接开代理
+
 ```shell
 git clone https://gitclone.com/github.com/gogs/gogs.git
 ```
 
 更多配置方式请参阅[官网](https://gitclone.com/docs/feature/gitclone_web)
+
+### maven
+
+`vim ~/.m2/settings.xml`
+
+```xml
+<mirrors>
+<mirror>
+    <id>aliyunmaven</id>
+    <mirrorOf>*</mirrorOf>
+    <name>阿里云公共仓库</name>
+    <url>https://maven.aliyun.com/repository/public</url>
+</mirror>
+</mirrors>
+```
 
 ---
 [^1]: [China first email](https://baike.baidu.com/item/%E4%B8%AD%E5%9B%BD%E7%AC%AC%E4%B8%80%E5%B0%81%E7%94%B5%E5%AD%90%E9%82%AE%E4%BB%B6/15554560)
