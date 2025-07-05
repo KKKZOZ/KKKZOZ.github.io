@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-06-26
 showtoc: true
+draft: true
 ---
 
 > 之前在维护 [`hugo-admonitions`](https://github.com/KKKZOZ/hugo-admonitions) 项目时, 一直都是手动打 tag, 然后发布新版本, 现在想尝试一下 `semantic-release` 的自动化发布流程

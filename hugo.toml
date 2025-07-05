@@ -13,7 +13,6 @@ pygmentsUseClasses = true
 enableGitInfo = true
 mainsections = ["posts", "papermod"]
 comments = true
-track = true
 
 [[module.mounts]]
 source = 'static'
