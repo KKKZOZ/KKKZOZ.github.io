@@ -820,6 +820,16 @@ ruff format
 
 ## Git
 
+### How to undo last local commit
+
+```shell
+# 软重置，保留修改
+git reset --soft HEAD~1
+
+# 硬重置，丢弃修改
+git reset --hard HEAD~1
+```
+
 ### Merge vs Rebase
 
 > See [here](https://stackoverflow.com/questions/16666089/whats-the-difference-between-git-merge-and-git-rebase) for reference.

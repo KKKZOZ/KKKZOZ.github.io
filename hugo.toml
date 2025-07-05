@@ -11,8 +11,9 @@ buildExpired = false
 enableEmoji = true
 pygmentsUseClasses = true
 enableGitInfo = true
-comments = true
 mainsections = ["posts", "papermod"]
+comments = true
+track = true
 
 [[module.mounts]]
 source = 'static'
