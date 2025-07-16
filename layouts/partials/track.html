@@ -1,10 +1,17 @@
+{{ if hugo.IsProduction }}
 <script
     id="counterscale-script"
     data-site-id="Blog"
     src="https://counterscale.1206668472.workers.dev/tracker.js"
     defer
 ></script>
-
 <script>
     console.log("Counterscale script loaded");
 </script>
+{{ end }}
+
+{{ if hugo.IsDevelopment }}
+<script>
+    console.log("Counterscale script not loaded in development mode");
+</script>
+{{ end }}

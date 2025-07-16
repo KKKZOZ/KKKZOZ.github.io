@@ -10,8 +10,7 @@ showtoc: true
 
 ## Key Mapping
 
-- 将 Caps 映射为 Hyper key
-- 将左 Fn 映射为 Ctrl
+- 将 Caps 映射为 Hyper key (Using Karabiner)
 
 ## System Wide
 
@@ -19,7 +18,7 @@ showtoc: true
 
 > Use Karabiner
 
-各种打开应用的快捷键:
+Open apps with Hyper key:
 
 - `Hyper + Q`: Open QQ
 - `Hyper + W`: Open WeChat
@@ -36,7 +35,7 @@ showtoc: true
 
 ### Open Utilities
 
-- `Option + D`: Bob 划词翻译
+- `Option + W`: Bob Translate
 - `Option + .`: Raycast Note
 - `Cmd + Space`: Trigger Raycast
 - `Option + Space`: Trigger EuDic
@@ -69,6 +68,12 @@ showtoc: true
   - By adding `@`, go to symbols
 - `Cmd + Shift + P`: Open Command Palette
 - `Cmd + Shift + O`: Go to symbol in file
+
+### Copilot
+
+- `Tab`: Accept suggestion
+- `Cmd + Left`: Accept suggestion for next token
+- `Cmd + Down`: Accept suggestion for next line
 
 ### Tabs and Panels
 

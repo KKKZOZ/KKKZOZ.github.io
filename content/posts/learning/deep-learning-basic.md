@@ -10,6 +10,49 @@ toc: true
 
 ## Forward Pass
 
+```py
+import torch
+import torch.nn.functional as F
+
+# Setup
+learning_rate = 0.1
+x = torch.randn(1, 5)          # Input data
+y_true = torch.tensor([[1.0]])   # True label
+
+# Model parameters initialized manually
+# requires_grad=True tells PyTorch to calculate gradients for them
+w = torch.randn(5, 1, requires_grad=True)
+b = torch.randn(1, requires_grad=True)
+
+print(f"Initial weight:\n{w.data}\n")
+
+# 1. Forward Pass
+# Calculate a prediction using the current weight and bias
+z = x @ w + b  #  `@` is matrix multiplication
+y_pred = torch.sigmoid(z)
+
+# 2. Calculate Loss
+# Compare the prediction to the true label
+loss = F.binary_cross_entropy(y_pred, y_true)
+
+# 3. Backward Pass
+# Calculate the gradients of the loss with respect to w and b
+loss.backward()
+
+# 4. Update Parameters
+# Manually adjust w and b in the opposite direction of their gradients
+with torch.no_grad(): # Temporarily disable gradient tracking for the update
+    w -= learning_rate * w.grad
+    b -= learning_rate * b.grad
+
+    # Manually zero out the gradients for the next iteration
+    w.grad.zero_()
+    b.grad.zero_()
+
+print(f"Updated weight:\n{w.data}\n")
+print(f"Loss: {loss.item():.4f}")
+```
+
 **"forward pass" (前向传播)** 是指神经网络从输入数据开始，逐层计算，直到产生最终输出（预测结果）的过程。可以把它想象成信息在网络中“向前流动”的过程。
 
 与前向传播相对应的，确实还有一个非常关键的步骤叫做 **"backward pass" (反向传播)**，通常更准确地称为 **反向传播算法 (Backpropagation)**
@@ -19,7 +62,7 @@ toc: true
 1. **计算损失 (Calculate Loss):**
 
     - 在前向传播得到预测值 `a` 之后，我们会将它与真实的标签 `y` (在你的代码中是 `torch.tensor([1.0])`) 进行比较，计算出一个“损失值” (loss)。
-    - 你的代码中 `loss = F.binary_cross_entropy(a, y)` 做的就是这件事。`binary_cross_entropy` 是一种常用的损失函数，用于衡量二分类问题中预测值和真实值之间的差异。损失值越小，说明模型的预测越准确。
+    - `loss = F.binary_cross_entropy(a, y)` 做的就是这件事。`binary_cross_entropy` 是一种常用的损失函数，用于衡量二分类问题中预测值和真实值之间的差异。损失值越小，说明模型的预测越准确。
 2. **计算梯度 (Calculate Gradients):**
 
     - 反向传播的核心任务是计算损失函数相对于模型中每个参数（在你的例子中是 `w1` 和 `b`）的**梯度 (gradient)**。
@@ -48,8 +91,8 @@ new_parameter = old_parameter - learning_rate * gradient
 
 > 在下一次迭代开始时，权重 `w` 的值已经和上一次迭代时不同
 
-链式法则的核心思想:
-某一点（或参数）的最终梯度 = 上游传来的梯度 × 经过该点的局部梯度
+> [!NOTE] 链式法则的核心思想:
+> 某一点（或参数）的最终梯度 = 上游传来的梯度 × 经过该点的局部梯度
 
 计算图是一个 DAG
 
@@ -57,7 +100,7 @@ new_parameter = old_parameter - learning_rate * gradient
 
 反向传播就可以直接利用上一步的结果进行下一步的计算, 有一点像记忆化搜索
 
-> [!Summary]
+> [!SUMMARY]
 > On a high level, all you need to know for this book is that the chain rule is a way to compute gradients of a loss function given the model’s parameters in a computation graph.
 
 - **多变量函数 (Multivariate function)**：就是一个有多个输入变量的函数。在深度学习中，损失函数通常是多变量函数，它的输入是模型的所有权重（weights）和偏置（biases）。

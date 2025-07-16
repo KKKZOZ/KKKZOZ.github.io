@@ -44,9 +44,9 @@ jj edit <change-id>
 ◆  zzzzzzzz root() 00000000
 ```
 
-最直接的 `jj squash`: 把当前 change (@) 合并到它的 parent 中:
+The most direct `jj squash`: merge current change (@) into its parent:
 
-> 可以使用 `-m <MESSAGE>` 为合并后的修订直接提供描述信息，而不是打开文本编辑器输入
+> You can use `-m <MESSAGE>` to provide a description for the merged revision directly, instead of opening a text editor to enter it.
 
 ```shell
 @  suvuslnm kkkzoz@qq.com 2025-05-31 19:22:56 81fabb20
@@ -60,7 +60,7 @@ jj edit <change-id>
 ◆  zzzzzzzz root() 00000000
 ```
 
-可以使用 `jj squash -r <rev>` 来指定把哪个 change 合并到它的 parent 中:
+You can use `jj squash -r <rev>` to specify which change to merge into its parent:
 
 ```shell
 jj squash -r u
@@ -75,7 +75,7 @@ jj squash -r u
 
 ```
 
-也可以使用 `jj squash --from u::xr --to m -m "A-D"`
+You can also use `jj squash --from u::xr --to m -m "A-D"`
 
 ```shell
 ❯ jj squash --from u::xr --to m -m "A-D"
@@ -89,7 +89,7 @@ Parent commit (@-)      : mwtsztxw 0fad5eb1 A-D
 ◆  zzzzzzzz root() 00000000
 ```
 
-还可以隔着进行 squash:
+You can also squash non-consecutive revisions:
 
 ```shell
 ❯ jj squash --from xw::xr --to m -m "A,C,D"
@@ -108,9 +108,13 @@ Parent commit (@-)      : urtyqupy 996fe48a B
 
 ## Revsets
 
-Jujutsu supports a functional language for selecting a set of revisions. Expressions in this language are called "revsets".
+> Jujutsu supports a functional language for selecting a set of revisions. Expressions in this language are called "revsets".
 
-假设我们有如下线性提交历史，从旧到新为 R <- A <- B <- C <- D <- E (R 是根提交/很早的提交，E 是最新的提交):
+Suppose we have the following linear commit history, from oldest to newest:
+
+R ← A ← B ← C ← D ← E
+
+(where R is the root/earliest commit, and E is the latest commit)
 
 - `x..`: `(x, E]`
 - `x::`: `[x, E]`

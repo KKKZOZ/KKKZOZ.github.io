@@ -163,8 +163,6 @@ brew install --cask visual-studio-code
 
 #### Homebrew 中 Tap 和 Core
 
-让我解释一下 Homebrew 中 Tap 和 Core 的区别：
-
 ##### Core（核心仓库）
 
 - 是 Homebrew 的官方默认仓库

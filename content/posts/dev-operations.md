@@ -759,65 +759,6 @@ docker inspect apache/kvrocks | grep Architecture
 
 > 在 Docker 中，同一个镜像标签（例如 `apache/kvrocks:latest`）在本地只会存储一个平台的版本。当你使用 --platform 拉取镜像时，Docker 会替换掉本地已有的同名镜像。
 
-## Python
-
-### uv
-
-Uv is an extremely fast Python package and project manager, written in Rust.
-
-#### With Project
-
-> With `pyprojects.toml`
-
-```shell
-uv sync
-```
-
-#### The pip interface
-
-- **Creating a virtual environment**
-
-```shell
-uv venv
-uv venv my-name
-uv venv --python 3.11
-```
-
-- **Using a virtual environment**
-
-```shell
-# bash
-source .venv/bin/activate
-
-# fish
-source .venv/vin/activate.fish
-```
-
-- **Installing packages**
-
-```shell
-uv pip install flask ruff
-uv pip install -r requirements.txt
-```
-
-### ruff
-
-Ruff is an extremely fast Python linter and code formatter, written in Rust.
-
-```shell
-# With pip.
-pip install ruff
-
-# Lint all files in the current directory (and any subdirectories).
-ruff check
-
-# With automatic fix
-ruff check --fix
-
-# Format all files in the current directory (and any subdirectories).
-ruff format
-```
-
 ## Git
 
 ### How to undo last local commit
