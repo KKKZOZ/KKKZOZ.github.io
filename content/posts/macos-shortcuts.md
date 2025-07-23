@@ -43,11 +43,11 @@ Open apps with Hyper key:
 
 ### Windows Utilities
 
-- `Option + H`: First Three Fourths
-- `Option + L`: Last Fourth
+- `Option + H`: First Two Thirds
+- `Option + L`: Last Third
 
-- `Option + J`: First Two Thirds
-- `Option + K`: Last Thirds
+- `Option + J`: Left Half
+- `Option + K`: Right Half
 
 - `Option + =`: Make Larger
 - `Option + =`: Make Smaller
@@ -59,6 +59,9 @@ Open apps with Hyper key:
 - `Option + Down`: Move Down
 - `Option + Left`: Move Left
 - `Option + Right`: Move Right
+
+- `Option + Shift + H`: Move to Left Monitor
+- `Option + Shift + L`: Move to Right Monitor
 
 ## VSCode
 
