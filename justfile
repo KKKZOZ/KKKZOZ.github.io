@@ -3,6 +3,8 @@
 
 alias p := publish
 alias r := run
+alias b := build-index
+alias l := lint
 
 @publish:
     jj st
@@ -13,5 +15,11 @@ alias r := run
     # git commit -m "$(date +%Y-%m-%d) update"
     # git push
 
+@build-index:
+    python3 build-paper-index.py "$(fd -t d . './content/posts' | fzf)"
+
 @run:
     hugo server --disableFastRender
+
+@lint:
+    markdownlint-cli2 --fix "**/*.md" "#themes"

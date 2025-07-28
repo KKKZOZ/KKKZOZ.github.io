@@ -50,7 +50,7 @@ By default, AeroSpace does two types of tree normalizations:
 
 According to the first normalization, such layout isn’t possible:
 
-```
+```shell
 h_tiles (root node)
 └── v_tiles
     └── window 1
@@ -58,7 +58,7 @@ h_tiles (root node)
 
 it will be immediately transformed into
 
-```
+```shell
 v_tiles (new root node)
 └── window 1
 ```

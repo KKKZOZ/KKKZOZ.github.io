@@ -516,7 +516,7 @@ Trait 也可以进行静态分派和动态分派：
 
 类型擦除: 使用 dyn Trait 会导致类型擦除, 只能访问 Trait 中定义的方法。
 
-必须使用指针: dyn Trait 是一个 Trait 对象(Trait Object)，它是一个胖指针，包含指向数据的指针和指向虚函数表的指针。由于在编译时无法确定 dyn Trait 的大小，因此必须通过某种指针来使用它，例如 &dyn Trait、Box<dyn Trait>、Rc<dyn Trait> 等。
+必须使用指针: dyn Trait 是一个 Trait 对象(Trait Object)，它是一个胖指针，包含指向数据的指针和指向虚函数表的指针。由于在编译时无法确定 dyn Trait 的大小，因此必须通过某种指针来使用它，例如 `&dyn Trait`、`Box<dyn Trait>`、`Rc<dyn Trait>` 等。
 
 所以这里有两种改法：
 
@@ -615,8 +615,8 @@ fn result_with_list() -> Result<Vec<i64>, DivisionError> {
 
 扩展一下：
 
-+ 遇到错误立即停止： collect() 到 Result<Vec<i64>, DivisionError>，适用于需要所有操作都成功才能继续的场景。
-+ 忽略错误，只收集成功结果： 使用 filter_map(Result::ok) 然后 collect() 到 Vec<i64>，适用于允许部分操作失败，只关心成功结果的场景。
++ 遇到错误立即停止： collect() 到 `Result<Vec<i64>, DivisionError>`，适用于需要所有操作都成功才能继续的场景。
++ 忽略错误，只收集成功结果： 使用 filter_map(Result::ok) 然后 collect() 到 `Vec<i64>`，适用于允许部分操作失败，只关心成功结果的场景。
 
 ```rust
 // TODO: Add the correct return type and complete the function body.
@@ -640,19 +640,19 @@ collect() 方法的行为依赖于上下文中的类型注解。Rust 的类型�
 
 + 在 `result_with_list` 函数中
 
-division_results 的类型被显式注解为 Result<Vec<i64>, DivisionError>。这意味着 collect() 方法会尝试将所有 Result<i64, DivisionError> 类型的元素收集到一个 Result<Vec<i64>, DivisionError> 中。具体来说：
+division_results 的类型被显式注解为 `Result<Vec<i64>, DivisionError>`。这意味着 collect() 方法会尝试将所有 `Result<i64, DivisionError>` 类型的元素收集到一个 `Result<Vec<i64>, DivisionError>` 中。具体来说：
 
-如果所有的 divide(n, 27) 调用都返回 Ok(value)，那么 collect() 会将所有的 value 收集到一个 Vec<i64> 中，并返回 Ok(vec)。
+如果所有的 divide(n, 27) 调用都返回 Ok(value)，那么 collect() 会将所有的 value 收集到一个 `Vec<i64>` 中，并返回 Ok(vec)。
 
 如果任何一个 divide(n, 27) 调用返回 Err(e)，那么 collect() 会立即停止并返回 Err(e)。
 
-因此，result_with_list 函数的返回值是一个 Result<Vec<i64>, DivisionError>，要么是包含所有结果的 Ok(vec)，要么是第一个错误的 Err(e)
+因此，result_with_list 函数的返回值是一个 `Result<Vec<i64>, DivisionError>`，要么是包含所有结果的 Ok(vec)，要么是第一个错误的 Err(e)
 
 + 在 `list_of_results` 函数中
 
-函数的返回类型是 Vec<Result<i64, DivisionError>>。因此，collect() 方法会将所有的 Result<i64, DivisionError> 元素收集到一个 Vec<Result<i64, DivisionError>> 中。
+函数的返回类型是 `Vec<Result<i64, DivisionError>>`。因此，collect() 方法会将所有的 `Result<i64, DivisionError>` 元素收集到一个 `Vec<Result<i64, DivisionError>>` 中。
 
-这意味着无论 divide(n, 27) 返回的是 Ok(value) 还是 Err(e)，所有的结果都会被收集到一个 Vec 中。因此，list_of_results 函数的返回值是一个 Vec<Result<i64, DivisionError>>，其中每个元素都是一个独立的 Result
+这意味着无论 divide(n, 27) 返回的是 Ok(value) 还是 Err(e)，所有的结果都会被收集到一个 Vec 中。因此，list_of_results 函数的返回值是一个 `Vec<Result<i64, DivisionError>>`，其中每个元素都是一个独立的 Result
 
 总结一下，这种行为是通过 Rust 的 trait 系统实现的，collect() 方法会根据目标类型选择合适的实现。在标准库中：
 

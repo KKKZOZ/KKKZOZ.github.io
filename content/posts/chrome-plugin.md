@@ -1,13 +1,12 @@
 ---
-title: "Chrome Plugin Recommendation"
+title: "Chrome Plugin Recommendations"
 tags:
   - Dev
 date: 2025-04-01
 toc: true
 ---
 
-> [!SUMMARY]
-> 这篇文章记录几个我非常喜欢的 Chrome 插件
+> This article records several of my favorite Chrome extensions.
 
 ## PrintFriendly[^1]
 

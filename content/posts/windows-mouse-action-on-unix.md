@@ -7,7 +7,7 @@ date: 2024-11-26
 toc: true
 ---
 
-> 本篇 Blog 正在更新中
+> WIP 🚧
 
 这篇 Blog 主要记录了一些在 Unix 终端环境下对应的 Windows 下的常见的鼠标操作
 

@@ -6,7 +6,7 @@ date: 2025-05-31
 showtoc: true
 ---
 
-> 在多分支开发中, 仅仅使用 `git merge` 是不够的!
+> In multi-branch development, simply using git merge is not enough!
 
 > [!HINT]
 > 把单次提交看做为针对于父提交新增的改动 (delta) 可能会好理解一点:

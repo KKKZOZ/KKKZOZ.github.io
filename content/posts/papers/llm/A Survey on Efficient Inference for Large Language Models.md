@@ -1,8 +1,10 @@
 ---
-title: "A Survey on Efficient Inference for Large  Language Models"
+title: "A Survey on Efficient Inference for Large Language Models"
 tags:
-  - LLM Inference
-date: 2025-07-23
+  - arXiv-24
+  - LLM-Inference
+  - Survey
+date: 2025-07-20
 showtoc: true
 ---
 

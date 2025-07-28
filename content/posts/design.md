@@ -386,6 +386,6 @@ func main() {
 
 In this code snippet: - CustomDocument has a my_meta field that holds your custom metadata. - createDocumentWithMetadata serializes the document and sends an HTTP POST request to the database URL.
 
-Remember to replace " http://localhost:5984/mydb" with the actual URL of your CouchDB database and update the data structure to reflect the fields that you want to include.
+Remember to replace " <http://localhost:5984/mydb>" with the actual URL of your CouchDB database and update the data structure to reflect the fields that you want to include.
 
 It's important to design your metadata, keeping in mind that you should not start the keys with an underscore, and all the data included should be intentional and relevant for your application logic or for future queries and indexing.

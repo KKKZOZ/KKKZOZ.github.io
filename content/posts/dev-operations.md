@@ -6,7 +6,7 @@ date: 2025-04-17
 showtoc: true
 ---
 
-> 本篇博客主要会记录和总结一些我平时在 Unix 环境下遇到的一些问题，包括但不局限于命令行，Git 操作等
+> This blog post will primarily document and summarize some issues I usually encounter in Unix environments, including but not limited to command line and Git operations.
 
 ## Remote
 

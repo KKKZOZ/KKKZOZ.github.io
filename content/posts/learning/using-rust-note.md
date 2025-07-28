@@ -7,7 +7,7 @@ date: 2025-03-26
 toc: true
 ---
 
-> 记录一些在写 Rust 时遇到的错误和重构
+> Recording some errors and refactoring encountered while writing Rust.
 
 ## Option
 

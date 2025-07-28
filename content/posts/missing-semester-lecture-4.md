@@ -243,7 +243,7 @@ This prints the second field (`$2`) of each line in the file.
 
 #### Example Input (`example.txt`)
 
-```
+```text
 John 25 Manager
 Jane 30 Developer
 Tom 22 Designer
@@ -255,7 +255,7 @@ awk '{ print $1 }' example.txt
 
 **Output**:
 
-```
+```text
 John
 Jane
 Tom
@@ -277,7 +277,7 @@ awk '{ print $1, $3 }' example.txt
 
 **Output**:
 
-```
+```text
 John Manager
 Jane Developer
 Tom Designer
@@ -289,7 +289,7 @@ By default, `awk` assumes fields are separated by whitespace. You can change the
 
 Example with a CSV file:
 
-```
+```text
 John,25,Manager
 Jane,30,Developer
 Tom,22,Designer
@@ -303,7 +303,7 @@ awk -F',' '{ print $1, $3 }' example.csv
 
 **Output**:
 
-```
+```text
 John Manager
 Jane Developer
 Tom Designer
@@ -325,7 +325,7 @@ awk '$2 > 25 { print $1, $2 }' example.txt
 
 **Output**:
 
-```
+```text
 Jane 30
 ```
 
@@ -345,7 +345,7 @@ awk '{ print $1, $2 + 10 }' example.txt
 
 **Output**:
 
-```
+```text
 John 35
 Jane 40
 Tom 32
@@ -365,7 +365,7 @@ awk '/Developer/ { print $0 }' example.txt
 
 **Output**:
 
-```
+```text
 Jane 30 Developer
 ```
 
@@ -390,7 +390,7 @@ awk 'BEGIN { sum = 0 } { sum += $2 } END { print "Total age:", sum }' example.tx
 
 **Output**:
 
-```
+```text
 Total age: 77
 ```
 
@@ -418,7 +418,7 @@ awk '{ print NR, $0 }' example.txt
 
 **Output**:
 
-```
+```text
 1 John 25 Manager
 2 Jane 30 Developer
 3 Tom 22 Designer
@@ -438,7 +438,7 @@ awk '{ print $1, length($1) }' example.txt
 
 **Output**:
 
-```
+```text
 John 4
 Jane 4
 Tom 3

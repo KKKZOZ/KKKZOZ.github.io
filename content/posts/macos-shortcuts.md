@@ -1,16 +1,16 @@
 ---
-title: "MacOS Shortcuts"
+title: "Effective MacOS Shortcuts"
 tags:
   - Dev
 date: 2025-04-19
 showtoc: true
 ---
 
-> 总结一下自己用到的各种快捷键
+> Summarize the various keyboard shortcuts I am currently using.
 
 ## Key Mapping
 
-- 将 Caps 映射为 Hyper key (Using Karabiner)
+- Map Caps Lock to Hyper key (Using Karabiner)
 
 ## System Wide
 
