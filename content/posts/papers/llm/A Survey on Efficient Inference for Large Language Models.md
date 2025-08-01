@@ -12,7 +12,7 @@ showtoc: true
 
 ### Resources
 
-![pasted-image-20250720153745.png](/images/pasted-image-20250720153745.png)
+![pasted-image-20250720153745](/images/pasted-image-20250720153745.png)
 
 LLMs typically demand:
 
@@ -32,7 +32,7 @@ KV cache technique can store and reuse previous key and value pairs within the M
 
 > [!note] The principle of KV Cache
 >
-> ![pasted-image-20250707102033.png](/images/pasted-image-20250707102033.png)
+> ![pasted-image-20250707102033](/images/pasted-image-20250707102033.png)
 >
 > Two core insight:
 >
@@ -53,7 +53,7 @@ Based on KV cache, the inference process of LLMs can be divided into two phases:
 + **Prefilling Phase**: The LLM calculates and stores the KV cache of the initial input tokens, and generates the first output token.
 + **Decoding Phase**: The LLM generates the output tokens one by one with the KV cache.
 
-![pasted-image-20250720154725.png](/images/pasted-image-20250720154725.png)
+![pasted-image-20250720154725](/images/pasted-image-20250720154725.png)
 
 > [!note] Computation-Bound and Memory-Bound
 >
@@ -89,7 +89,7 @@ Based on KV cache, the inference process of LLMs can be divided into two phases:
 
 **Representative Method: Skeleton-of-Thought (SoT):** This method has the LLM first generate a skeleton or outline of the answer, then expands upon and fleshes out each point within the skeleton in parallel, and finally assembles the results into a complete answer. This allows a process that would otherwise require multiple serial decoding steps to be completed in a single batch inference, significantly increasing speed.
 
-![pasted-image-20250720160412.png](/images/pasted-image-20250720160412.png)
+![pasted-image-20250720160412](/images/pasted-image-20250720160412.png)
 
 ## Model-level Optimization
 
@@ -142,7 +142,7 @@ Reducing the complexity of attention from quadratic to linear, for example, thro
 
 #### Transformer Alternatives
 
-![pasted-image-20250720161836.png](/images/pasted-image-20250720161836.png)
+![pasted-image-20250720161836](/images/pasted-image-20250720161836.png)
 
 ### Model Compression
 
@@ -177,7 +177,7 @@ Two approaches:
     + The latency of the decoding stage is mainly influenced by **the loading of large weight tensors**.
   + Solution: Quantizing only the weights to accelerate memory access.
 
-![pasted-image-20250720165156.png](/images/pasted-image-20250720165156.png)
+![pasted-image-20250720165156](/images/pasted-image-20250720165156.png)
 
 ##### Post-Training Quantization
 
@@ -274,9 +274,7 @@ Other post-training quantization methods:
 + **SqueezeLLM**: Handles outliers by storing them in a separate full-precision sparse matrix and applies non-uniform quantization to the remaining values.
 + **FineQuant**: Uses a heuristic-based approach to determine the optimal quantization granularity for each column in the weight matrix.
 + **FlexGen**: Reduces memory footprint for large batch sizes by quantizing not only the weights but also the KV cache directly into INT4.
-
 + **LLM.int8()**: Splits the matrix multiplication into two parts, processing channels with activation outliers in high-precision FP16 and the rest in INT8 format.
-
 + **RPTQ**: Addresses challenging activation distributions by reordering and clustering channels with similar statistics before applying quantization independently to each cluster.
 
 ##### Quantization-Aware Training
@@ -285,7 +283,7 @@ Other post-training quantization methods:
 
 ##### Comparative Experiments and Analysis
 
-![pasted-image-20250720204337.png](/images/pasted-image-20250720204337.png)
+![pasted-image-20250720204337](/images/pasted-image-20250720204337.png)
 
 Observations:
 
@@ -313,7 +311,7 @@ It can be categorized into two types:
 + **Unstructured Pruning**: Removes individual, scattered weights. While it can achieve high sparsity with less impact on model accuracy, its irregular pattern makes it difficult to accelerate on modern hardware like GPUs.
 + **Structured Pruning**: Removes larger, regular blocks of the model, such as entire channels or layers. This approach is hardware-friendly and directly leads to inference speed-ups, but it often causes a more significant drop in model performance.
 
-![pasted-image-20250720210621.png](/images/pasted-image-20250720210621.png)
+![pasted-image-20250720210621](/images/pasted-image-20250720210621.png)
 
 ##### Sparse Attention
 
@@ -325,7 +323,7 @@ It also comes in two forms:
 
 + **Dynamic Sparse Attention**: Adapts the sparsity pattern based on the input data. This can be done by pruning entire uninformative tokens during the generation process or by dynamically clustering related tokens and only computing attention within those clusters.
 
-![pasted-image-20250720210825.png](/images/pasted-image-20250720210825.png)
+![pasted-image-20250720210825](/images/pasted-image-20250720210825.png)
 
 ---
 For detail methods:
@@ -402,7 +400,7 @@ The sparse attention pattern is determined adaptively based on the input data.
 
 In this domain, methods can be categorized into two main types: white-box KD and blackbox KD.
 
-![pasted-image-20250720212159.png](/images/pasted-image-20250720212159.png)
+![pasted-image-20250720212159](/images/pasted-image-20250720212159.png)
 
 + White-box KD
   + White-box KD refers to distillation methods that **leverage access to the structure and parameters** of the teacher models.
@@ -428,7 +426,7 @@ The paper categorizes studies on early exiting techniques for LLMs into two main
 + Token-level early exiting
   + token-level early exiting techniques aim to optimize the size and structure of LLMs for each output token.
 
-![pasted-image-20250720214734.png](/images/pasted-image-20250720214734.png)
+![pasted-image-20250720214734](/images/pasted-image-20250720214734.png)
 
 ## System-level Optimization
 
@@ -455,7 +453,7 @@ direction: right
 
 Attention operators and linear operators collectively dominate runtime, with their combined duration often exceeding 75% of the inference duration.
 
-![pasted-image-20250721085519.png](/images/pasted-image-20250721085519.png)
+![pasted-image-20250721085519](/images/pasted-image-20250721085519.png)
 
 ##### Attention Operator Optimization
 
@@ -496,7 +494,7 @@ Speculative decoding approach consists of two steps:
 1. **Draft Construction**: It employs the draft model to generate several subsequent tokens.
 2. **Draft Verification**: It employs the target model to compute the conditional probabilities of all the draft tokens in a single LLM inference step, subsequently determining the acceptance of each draft token sequentially.
 
-![pasted-image-20250721090524.png](/images/pasted-image-20250721090524.png)
+![pasted-image-20250721090524](/images/pasted-image-20250721090524.png)
 
 #### Offloading
 

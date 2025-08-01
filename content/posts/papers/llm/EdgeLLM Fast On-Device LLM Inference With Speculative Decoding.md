@@ -4,12 +4,20 @@ tags:
   - IEEE-TMC-25
   - LLM-Inference
   - Speculative-Decoding
-  - Edge-Devices
+  - Serving-on-Edge
 date: 2025-07-23
 showtoc: true
 ---
 
 > Extensive Reading
+
+## Author Info
+
+- [Daliang Xu （徐大亮） - Daliang Xu’s Website](https://daliangxu.github.io/)
+- [‪Wangsong Yin‬ - ‪Google Scholar‬](https://scholar.google.com/citations?user=9hp2_UsAAAAJ&hl=en)
+- [Xin Jin](https://xinjin.github.io/)
+- [Mengwei Xu](https://xumengwei.github.io/)
+- [Professor Xuanzhe Liu @ Peking University](http://www.liuxuanzhe.com/)
 
 ## Background
 
@@ -44,11 +52,11 @@ Applying speculative decoding for on-device LLM introduces three distinctive cha
 
 ## Approaches
 
-![pasted-image-20250723165148.png](/images/pasted-image-20250723165148.png)
+![pasted-image-20250723165148](/images/pasted-image-20250723165148.png)
 
 ### Compute-Efficient Branch Navigation and Verification
 
-![pasted-image-20250723164739.png](/images/pasted-image-20250723164739.png)
+![pasted-image-20250723164739](/images/pasted-image-20250723164739.png)
 
 - Width-adaptive Token Tree: EdgeLLM 会根据每个分支（即候选序列）的置信度得分，动态地调整其深度和宽度 。置信度高的分支会被探索得更深，从而将有限的计算资源优先分配给最有可能正确的生成路径 。
 
@@ -58,7 +66,7 @@ Applying speculative decoding for on-device LLM introduces three distinctive cha
 
 EdgeLLM 利用了 self-attention 计算过程中的 causal mask，将不属于该 branch 的 token 遮蔽，达到切换上下文的效果
 
-![pasted-image-20250723165655.png](/images/pasted-image-20250723165655.png)
+![pasted-image-20250723165655](/images/pasted-image-20250723165655.png)
 
 - Batched Non-autoregressive Verification: 将 token tree 分解为多个 sequence，打包为一个 mini-batch 传入 target model 中进行验证。
 
@@ -72,7 +80,7 @@ EdgeLLM 利用了 self-attention 计算过程中的 causal mask，将不属于�
   - 在位置2，系统查看`logits[0, 2, :]`，并取概率最高的词元，作为**给定`d_1, d_2`后**的正确下一词`g_3`
 - 将草稿序列 `D` 和正确答案序列 `G` 进行比较，直到找到第一个不匹配的位置
 
-![pasted-image-20250723165232.png](/images/pasted-image-20250723165232.png)
+![pasted-image-20250723165232](/images/pasted-image-20250723165232.png)
 
 ### Self-Adaptive Fallback Strategy
 
@@ -84,7 +92,7 @@ EdgeLLM 利用了 self-attention 计算过程中的 causal mask，将不属于�
 
 When target model is validating，cpu resources stay idle most of the time(I/O bound).
 
-![pasted-image-20250723193149.png](/images/pasted-image-20250723193149.png)
+![pasted-image-20250723193149](/images/pasted-image-20250723193149.png)
 
 target model 和 draft model 在 inference 时用的资源不同，所以在 target model 验证时，可以假设当前的序列有效，基于当前令牌树中最可信的那个分支，见缝插针地进行 provisional generation
 

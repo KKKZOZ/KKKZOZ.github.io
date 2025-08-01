@@ -96,9 +96,11 @@ url = "tags"
 
 [params.homeInfoParams]
 Title = "KKKZOZ's Blog"
-# Content = """
-# Welcome to my blog!
-# """
+Content = """
+Three paper indexes(LLM/Transactions/Distributed Systems) are pinned.
+
+Other posts are sorted by date.
+"""
 
 [[params.socialIcons]]
 name = "github"

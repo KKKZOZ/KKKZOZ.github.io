@@ -7,7 +7,7 @@ date: 2024-10-09
 toc: true
 ---
 
-# The shell
+## The shell
 
 How does the shell know how to find the `date` or `echo` programs?
 

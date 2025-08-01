@@ -29,7 +29,7 @@ EdgeShard 将一个计算密集的LLM智能地 **“分片（Shard）”**，并
 
 ## 主要方法
 
-![pasted-image-20250701100036.png](/images/pasted-image-20250701100036.png)
+![pasted-image-20250701100036](/images/pasted-image-20250701100036.png)
 
 为了实现上述思路，EdgeShard框架的设计包含三个主要阶段：
 

@@ -1,4 +1,5 @@
 ---
+title: Get Programming with Haskell
 draft: true
 ---
 

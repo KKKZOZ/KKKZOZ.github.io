@@ -310,4 +310,4 @@ package math
 
 ## 16: Not using linters
 
-Read [LINK](https://golangci-lint.run/welcome/integrations/) for references.
+Read [here](https://golangci-lint.run/welcome/integrations/) for references.

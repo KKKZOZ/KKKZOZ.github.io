@@ -370,7 +370,7 @@ PTY 和 SSH 直接建立的终端的主要区别在于它们的工作方式和�
 
 PTY (Pseudo Terminal) 的概念：
 
-```
+```ascii
 实际终端设备        PTY主设备(master)    PTY从设备(slave)     应用程序
 (keyboard/screen) <--> (/dev/ptmx) <--> (/dev/pts/N) <--> (如 bash, sudo)
 ```
@@ -381,7 +381,7 @@ PTY (Pseudo Terminal) 的概念：
 
 SSH 终端分配过程：
 
-```
+```ascii
 本地机器                     远程机器
 ssh client                  sshd
     |                         |
@@ -882,7 +882,7 @@ git check-ignore -v 文件名
 
 打开 `.git/config` 文件，找到 `[remote "origin"]` 部分，修改 `fetch` 这一行，添加 `+refs/pull/*/head:refs/remotes/origin/pr/*`：
 
-```
+```config
 [remote "origin"]
         url = git@github.com:your_username/my-repo.git
         fetch = +refs/heads/*:refs/remotes/origin/*
@@ -1226,6 +1226,6 @@ rg '^TXN\s' iot-oreo-8.txt | rg -o '\s99th\(us\): [0-9]+' | choose 1
 
 得到:
 
-```
+```shell
 57727
 ```

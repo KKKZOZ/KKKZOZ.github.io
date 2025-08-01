@@ -6,7 +6,7 @@ date: 2024-10-23
 toc: true
 ---
 
-# Tips on Profile
+## Tips on Profile
 
 先说几个小坑点：
 
@@ -35,7 +35,7 @@ toc: true
 
 - 通过 `signal.Notify` 来拦截 kill 的信号，保证程序能够正常结束，`profile` 文件不为空
 
-# How to Profile
+## How to Profile
 
 ```golang
 if pprofFlag {
@@ -60,7 +60,7 @@ if pprofFlag {
 
 - 注意这段代码只能放在 main 函数中，否则 `defer` 语句的语义会有影响
 
-# How to Read Profile Results
+## How to Read Profile Results
 
 ### 命令行
 
@@ -241,10 +241,10 @@ Duration: 4.15s, Total samples = 36.24s(872.85%)
 - 调用当前函数的上级函数及其整个调用链所消耗的总时间，如 1993.68ms。
 - 上级函数调用链占整个程序执行时间的比例，如 63.36%。
 
-# Practice
+## Practice
 
 <https://nyadgar.com/posts/go-profiling-like-a-pro/> 对整个 Profile 的过程进行了实战，讲得很清楚，可以参考
 
-# References
+## References
 
 - <https://github.com/google/pprof/blob/main/doc/README.md#interpreting-the-callgraph>

@@ -9,6 +9,11 @@ showtoc: true
 
 > Extensive Reading
 
+## Author Info
+
+- [About | Edward Hu](https://edwardjhu.com/about/): Edward Hu is a founding partner in a stealth AI company in Woodside, CA. He was a researcher at OpenAI and received his research training as a Ph.D. student advised by [Yoshua Bengio](https://yoshuabengio.org/), a recipient of the 2018 A.M. Turing Award. Before graduate school, Edward was a researcher at Microsoft, where he invented [LoRA](https://github.com/microsoft/LoRA) and [μTransfer](https://github.com/microsoft/mup).
+- [Yelong Shen - Microsoft | AMiner](https://www.aminer.cn/profile/yelong-shen/53f43ddedabfaedd74dd7eac)
+
 ## Background
 
 The dominant paradigm in modern NLP is
@@ -51,7 +56,7 @@ The dominant paradigm in modern NLP is
 
 ## Approaches
 
-![pasted-image-20250725161330.png](/images/pasted-image-20250725161330.png)
+![pasted-image-20250725161330](/images/pasted-image-20250725161330.png)
 将一个模型的权重矩阵分为两部分：
 
 - $W_0(d \times k)$

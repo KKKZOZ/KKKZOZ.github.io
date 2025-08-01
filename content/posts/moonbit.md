@@ -1,4 +1,5 @@
 ---
+title: Moonbit Notes
 draft: true
 ---
 
@@ -79,7 +80,7 @@ fn div(a: Int, b: Int) -> Option[Int] {
 
 ### 表达式块
 
-```
+```rust
 {
  数值绑定
  数值绑定
@@ -113,7 +114,7 @@ fn div(a: Int, b: Int) -> Option[Int] {
 
 ### 模式匹配
 
-```
+```rust
 match <表达式> {
  <模式1> => <表达式>
  <模式2> => <表达式>

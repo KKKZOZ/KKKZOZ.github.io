@@ -12,7 +12,7 @@ showtoc: true
 
 Serverless inference can significantly reduce costs for LLM users by charging only for the duration of inference and the volume of processed data.
 
-![pasted-image-20250701101257.png](/images/pasted-image-20250701101257.png)
+![pasted-image-20250701101257](/images/pasted-image-20250701101257.png)
 
 Key components in GPU serverless clusters:
 
@@ -68,7 +68,7 @@ Insight: In serverless inference environments, checkpoints are uploaded once and
 这种格式**将模型的二进制参数数据和元数据分**离，并按目标 GPU 对张量进行分区存储，以便进行高效的、大块的顺序读取 。
 同时，一个独立的索引文件被创建，用于直接计算每个张量在 GPU 显存中的地址，避免了复杂的解析过程 。
 
-![pasted-image-20250701112331.png](/images/pasted-image-20250701112331.png)
+![pasted-image-20250701112331](/images/pasted-image-20250701112331.png)
 
 同时，ServerlessLLM 将加载过程解耦：即将「加载模型数据」和「初始化模型推理环境」这两个过程分离开来，并让它们并行执行，以缩短总的启动时间
 
@@ -109,7 +109,7 @@ Insight: In serverless inference environments, checkpoints are uploaded once and
 + A flexible task queue-based pipeline design
 + I/O threads read storage chunks and enqueue their indices (offset and size) for the I/O threads in the next tier
 
-![pasted-image-20250701152527.png](/images/pasted-image-20250701152527.png)
+![pasted-image-20250701152527](/images/pasted-image-20250701152527.png)
 > 在每一个 Tier 中，每读一个 Chunk 就通知下一个 Tier 的 I/O Thread 进行读取
 
 > [!NOTE] Direct File Access
@@ -146,7 +146,7 @@ Insight: In serverless inference environments, checkpoints are uploaded once and
 
 ### Efficient Live Migration of LLM Inference
 
-![pasted-image-20250701152733.png](/images/pasted-image-20250701152733.png)
+![pasted-image-20250701152733](/images/pasted-image-20250701152733.png)
 
 几种不同的迁移策略：
 

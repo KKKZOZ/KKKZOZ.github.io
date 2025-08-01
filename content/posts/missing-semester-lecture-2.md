@@ -8,8 +8,6 @@ toc: true
 ---
 
 
-# Shell Tools and Scripting
-
 ## Shell Scripting
 
 To assign variables in bash, use the syntax `foo=bar` and access the value of the variable with `$foo`.

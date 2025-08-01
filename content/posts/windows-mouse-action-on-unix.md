@@ -21,7 +21,7 @@ toc: true
 >
 > 如果你觉得终端难用，就去定制你的 Shell 配置；如果你觉得命令不够方便，就写个函数或别名把它封装得更好；如果你觉得工具功能太弱，就用脚本扩展它的能力；如果你觉得操作繁琐，就从自动化开始，一点点改善工作流程，而不是一昧地抱怨，排斥，逃向 GUI。
 
-# Left Click
+## Left Click
 
 首先需要学习的肯定是鼠标左键的双击 --- 打开某个文件夹，以及打开某个文件夹后的结果：查看这个文件夹的内容
 
@@ -60,7 +60,7 @@ cdl() {
 }
 ```
 
-# Right Click
+## Right Click
 
 鼠标右键涉及的命令就比较多了，建议先掌握基础的：
 
@@ -72,9 +72,7 @@ cdl() {
 
 剩余的操作等有需要之后再来查也不迟
 
-## Basic Operations
-
-## 重命名
+### 重命名
 
 ```bash
 mv old-file-name new-file-name
@@ -90,7 +88,7 @@ alias rename=mv
 # 然后就可以使用 rename old-file-name new-file-name 
 ```
 
-## 复制
+### 复制
 
 ```bash
 cp source-file destination-file    # 复制文件
@@ -101,7 +99,7 @@ cp -r source-dir destination-dir   # 复制目录
 - 默认情况下，cp 命令只会复制文件，不会复制目录
 - `-r` 参数告诉 cp 命令递归地复制目录及其内部的所有内容
 
-## 剪切/移动
+### 剪切/移动
 
 ```bash
 mv source-file destination-file    # 移动文件
@@ -110,7 +108,7 @@ mv source-dir destination-dir      # 移动目录
 
 - `mv` => `m`o`v`e
 
-## 删除
+### 删除
 
 ```bash
 rm file-name           # 删除文件
@@ -120,15 +118,15 @@ rm -rf directory-name  # 强制删除目录及其内容
 
 - `rm` => `r`e`m`ove
 
-## 新建
+### 新建
 
-### 新建文件
+#### 新建文件
 
 ```bash
 touch new-file.txt     # 创建空文件
 ```
 
-### 新建文件夹
+#### 新建文件夹
 
 ```bash
 mkdir new-directory    # 创建单个目录
@@ -142,9 +140,9 @@ mkdir -p path/to/dir   # 创建多层目录
 - 如果要创建的目录已经存在，不会报错
 - 如果父目录不存在，会自动创建所有必需的父目录
 
-## 属性
+### 属性
 
-### 查看文件/目录属性
+#### 查看文件/目录属性
 
 ```bash
 ls -l file-name       # 查看文件详细信息
@@ -172,16 +170,16 @@ ls -l
 - `Nov 17:03` 表示文件最后的修改时间
 - `1.txt` 文件名
 
-## 压缩/解压
+### 压缩/解压
 
-### 压缩
+#### 压缩
 
 ```bash
 tar -czf archive.tar.gz files/    # 创建 tar.gz 压缩包
 zip -r archive.zip files/         # 创建 zip 压缩包
 ```
 
-### 解压
+#### 解压
 
 ```bash
 tar -xzf archive.tar.gz          # 解压 tar.gz 文件
@@ -244,17 +242,17 @@ open file-name        # macOS 下使用默认程序打开
 > 2. 查找系统中该 MIME 类型对应的默认应用程序
 > 3. 启动对应的程序打开文件
 
-## 查找
+### 查找
 
 ```bash
 find . -name "file-name"     # 在当前目录及子目录中查找文件
 ```
 
-# Advanced Operations
+## Advanced Operations
 
-## 属性
+### 属性
 
-### 查看文件大小
+#### 查看文件大小
 
 细心的小伙伴可能发现了，对于文件夹来说，`ls -l` 是看不到这个文件夹的具体大小的
 
@@ -271,20 +269,20 @@ du -h --max-depth=1 *
 du -h -d 1 *
 ```
 
-### 修改权限
+#### 修改权限
 
 ```bash
 chmod 644 file-name   # 修改文件权限
 chmod +x file-name    # 添加执行权限
 ```
 
-### 修改所有者
+#### 修改所有者
 
 ```bash
 chown user:group file-name    # 修改文件所有者和组
 ```
 
-## 共享
+### 共享
 
 ```bash
 chmod a+r file-name     # 允许所有用户读取

@@ -1,4 +1,5 @@
 ---
+title: Talk about the dual write problem
 draft: true
 ---
 

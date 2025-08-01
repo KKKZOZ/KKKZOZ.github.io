@@ -1,4 +1,5 @@
 ---
+title: Summary of November
 draft: true
 ---
 

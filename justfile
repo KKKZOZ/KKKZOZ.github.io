@@ -7,6 +7,7 @@ alias b := build-index
 alias l := lint
 
 @publish:
+    just lint
     jj st
     jj desc -m "$(date +'%Y-%m-%d') Update"
     jj bookmark set hugo -r @
