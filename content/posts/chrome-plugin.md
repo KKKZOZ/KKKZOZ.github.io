@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-04-01
 toc: true
+weight: 10
 ---
 
 > This article records several of my favorite Chrome extensions.

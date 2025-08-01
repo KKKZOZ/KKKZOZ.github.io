@@ -5,6 +5,7 @@ tags:
   - 100 Mistakes in Golang
 date: 2025-03-19
 toc: true
+weight: 10
 ---
 
 ## 55: Mixing up concurrency and parallelism

@@ -1,6 +1,7 @@
 ---
 title: Get Programming with Haskell
 draft: true
+weight: 10
 ---
 
 The most important use of GHCi is interacting with programs that you’re writing.

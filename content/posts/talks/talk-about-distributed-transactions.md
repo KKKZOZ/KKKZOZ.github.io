@@ -1,6 +1,7 @@
 ---
 title: Talk about Distributed Transactions
 draft: true
+weight: 10
 ---
 
 ## 解决方案

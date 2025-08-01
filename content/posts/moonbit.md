@@ -1,6 +1,7 @@
 ---
 title: Moonbit Notes
 draft: true
+weight: 10
 ---
 
 ## 类型

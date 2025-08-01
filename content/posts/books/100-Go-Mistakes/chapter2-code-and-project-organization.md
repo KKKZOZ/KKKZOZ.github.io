@@ -5,6 +5,7 @@ tags:
   - 100 Mistakes in Golang
 date: 2025-02-20
 toc: true
+weight: 10
 ---
 
 

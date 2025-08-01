@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-05-26
 toc: true
+weight: 10
 ---
 
 ## Shape Manipulating

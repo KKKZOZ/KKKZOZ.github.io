@@ -5,6 +5,7 @@ tags:
   - Design Data-Intensive Applications
 date: 2023-11-13
 toc: true
+weight: 10
 ---
 
 > 本章是这本书最酣畅淋漓的一章，涉及到了一致性和共识问题的方方面面，知识点多而不失条理。第一部分先讲了 Linearizability, 为后面的知识点做铺垫。到了 "Ordering Guarantees" 这一小节，从因果关系的带来的 "Happened Before" 的关系开始讲起，讲到了序列号和 Lamport Timestamp，提出来 Lamport Timestamp 的一个缺点：无法在某事件发生时判断是否有冲突，然后引出了全序关系广播，在全序关系广播中又讲到了和 Linearizable 之间的等价关系，最后引出共识算法。太精彩了，值得反复阅读！

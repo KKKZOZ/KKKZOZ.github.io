@@ -5,6 +5,7 @@ tags:
   - Design Data-Intensive Applications
 date: 2023-10-21
 toc: true
+weight: 10
 ---
 
 ## Formats for Encoding Data

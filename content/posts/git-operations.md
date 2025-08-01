@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-05-31
 showtoc: true
+weight: 10
 ---
 
 > In multi-branch development, simply using git merge is not enough!

@@ -5,6 +5,7 @@ tags:
   - The Missing Semester
 date: 2024-10-09
 toc: true
+weight: 10
 ---
 
 ## The shell

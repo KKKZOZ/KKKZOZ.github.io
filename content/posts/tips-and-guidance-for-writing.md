@@ -4,6 +4,7 @@ tags:
   - Reading Note
 date: 2025-03-31
 showtoc: true
+weight: 10
 ---
 
 > Reading Note[^1]

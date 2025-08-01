@@ -5,6 +5,7 @@ tags:
   - Design Data-Intensive Applications
 date: 2023-10-20
 toc: true
+weight: 10
 ---
 
 这一章主要讲的是数据库更底层的一些东西。

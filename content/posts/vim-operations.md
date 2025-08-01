@@ -5,6 +5,7 @@ tags:
 date: 2024-10-23
 toc: true
 draft: true
+weight: 10
 ---
 
 ## A Quick Note

@@ -5,6 +5,7 @@ tags:
   - 100 Mistakes in Golang
 date: 2025-03-03
 toc: true
+weight: 10
 ---
 
 ## 36: Not understanding the concept of a rune

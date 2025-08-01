@@ -5,6 +5,7 @@ tags:
   - Distributed
 date: 2023-11-02
 toc: true
+weight: 10
 ---
 
 最近看了下之前业界关于 Redlock 的争论，发现还是挺有意思的，正好把自己最近学的知识串了起来，这里就简单总结一下。

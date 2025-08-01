@@ -5,6 +5,7 @@ tags:
   - Rust
 date: 2025-03-13
 toc: true
+weight: 10
 ---
 
 ## 4 Traits

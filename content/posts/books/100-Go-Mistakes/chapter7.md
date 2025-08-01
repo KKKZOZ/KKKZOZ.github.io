@@ -5,6 +5,7 @@ tags:
   - 100 Mistakes in Golang
 date: 2025-03-07
 toc: true
+weight: 10
 ---
 
 ## 48: Panicking

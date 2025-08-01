@@ -4,6 +4,7 @@ tags:
 - Talk
 date: 2024-03-31
 toc: true
+weight: 10
 ---
 
 ## Non-Repeatable Read

@@ -5,6 +5,7 @@ tags:
   - Rust
 date: 2025-03-26
 toc: true
+weight: 10
 ---
 
 > Recording some errors and refactoring encountered while writing Rust.

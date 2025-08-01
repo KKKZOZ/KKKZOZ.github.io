@@ -4,6 +4,7 @@ tags:
   - Golang
 date: 2024-10-23
 toc: true
+weight: 10
 ---
 
 ## Tips on Profile

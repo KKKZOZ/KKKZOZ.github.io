@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2024-11-21
 toc: true
+weight: 10
 ---
 
 ## How to install Homebrew?

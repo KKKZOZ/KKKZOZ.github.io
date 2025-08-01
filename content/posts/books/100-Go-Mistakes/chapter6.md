@@ -5,6 +5,7 @@ tags:
   - 100 Mistakes in Golang
 date: 2025-03-04
 toc: true
+weight: 10
 ---
 
 ## 42: Not knowing which type of receiver to use

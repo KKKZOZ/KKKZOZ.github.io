@@ -1,7 +1,7 @@
 title = "KKKZOZ's Blog"
 # copyright = "© [PaperMod Contributors](https://github.com/adityatelange/hugo-PaperMod/graphs/contributors)"
 baseURL = 'http://blog.kkkzoz.top/'
-pagination.pagerSize = 5
+pagination.pagerSize = 8
 theme = ["hugo-admonitions", "PaperMod"]
 enableInlineShortcodes = true
 enableRobotsTXT = true

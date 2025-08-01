@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-04-19
 showtoc: true
+weight: 10
 ---
 
 > Summarize the various keyboard shortcuts I am currently using.

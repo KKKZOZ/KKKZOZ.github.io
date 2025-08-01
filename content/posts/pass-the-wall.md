@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-03-30
 showtoc: true
+weight: 10
 ---
 
 > "Across the Great Wall we can reach every corner in the world."[^1]

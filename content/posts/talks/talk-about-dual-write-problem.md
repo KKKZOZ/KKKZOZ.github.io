@@ -1,6 +1,7 @@
 ---
 title: Talk about the dual write problem
 draft: true
+weight: 10
 ---
 
 ## The dual write problem

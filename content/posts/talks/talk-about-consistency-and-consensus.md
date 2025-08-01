@@ -5,6 +5,7 @@ tags:
   - Distributed
 date: 2023-11-07
 toc: true
+weight: 10
 ---
 
 ## ACID 中的一致性

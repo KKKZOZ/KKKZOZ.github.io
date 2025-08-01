@@ -5,6 +5,7 @@ tags:
   - Distributed
 date: 2023-11-06
 toc: true
+weight: 10
 ---
 ## What is CAP
 

@@ -6,13 +6,14 @@ tags:
   - Commodity-GPU
 date: 2025-07-30
 showtoc: true
+weight: 0
 ---
 
 > Intensive Reading
 
 ## Author Info
 
-+ [‪Keivan Alizadeh-Vahid‬ - ‪Google Scholar‬](https://scholar.google.com/citations?hl=en&user=Vjp07yIAAAAJ&view_op=list_works&sortby=pubdate)
++ [Keivan Alizadeh - Google Scholar](https://scholar.google.com/citations?hl=en&user=Vjp07yIAAAAJ&view_op=list_works&sortby=pubdate)
 + [Iman Mirzadeh](https://imirzadeh.me/): An ML Research Engineer at Apple.
 
 ## Background

@@ -4,6 +4,7 @@ tags:
   - Dev
 date: 2025-04-17
 showtoc: true
+weight: 10
 ---
 
 > This blog post will primarily document and summarize some issues I usually encounter in Unix environments, including but not limited to command line and Git operations.

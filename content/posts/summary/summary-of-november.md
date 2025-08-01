@@ -1,6 +1,7 @@
 ---
 title: Summary of November
 draft: true
+weight: 10
 ---
 
 > 一般是想到什么写什么，逻辑会比较混乱。

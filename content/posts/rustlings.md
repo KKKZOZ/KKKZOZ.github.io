@@ -5,6 +5,7 @@ tags:
   - Rust
 date: 2024-12-26
 toc: true
+weight: 10
 ---
 
 ## 05 Vectors
