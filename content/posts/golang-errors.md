@@ -1,5 +1,5 @@
 ---
-title: "Golang Errors"
+title: "Handling Golang Errors"
 tags:
   - Dev
 date: 2025-02-04

@@ -1,5 +1,5 @@
 ---
-title: "Transactions Papers Index"
+title: "[Pinned] Transactions Papers Index"
 date: 2025-08-01
 showtoc: true
 weight: 2
@@ -10,6 +10,9 @@ weight: 2
 ## 2025
 
 ### 0715-0721
+
+- [Concurrency Control as a Service](./concurrency-control-as-a-service/)
+- [Sonata Multi-Database Transactions Made Fast and Serializable](./sonata-multi-database-transactions-made-fast-and-serializable/)
 
 ## Uncategorized
 

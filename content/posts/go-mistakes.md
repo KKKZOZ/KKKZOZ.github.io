@@ -1,5 +1,5 @@
 ---
-title: "Golang Mistakes that I Encounter"
+title: "Common Golang Mistakes"
 tags:
   - Dev
 date: 2025-04-23

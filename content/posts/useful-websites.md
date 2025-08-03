@@ -7,8 +7,7 @@ toc: true
 weight: 10
 ---
 
-> [!SUMMARY]
-> 记录一些工具性的网站 for references
+> Some useful websites for references.
 
 ## Daily Life
 

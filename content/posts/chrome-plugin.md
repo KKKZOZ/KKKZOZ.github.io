@@ -13,13 +13,13 @@ weight: 10
 
 Make web pages printer-friendly and convert them to PDFs. Easily remove ads and navigation, and customize what you print or PDF.
 
-将网页转化为 PDF, 并且可以忽略一些花里胡哨的元素, 适合对技术博客等进行处理后放入 Zotero 中
+Convert web pages to PDF, and ignore some non-essential elements, suitable for processing technical blogs and similar content before putting them into Zotero.
 
 ![PrintFriendly](/images/chrome-plugin-1.png)
 
 ## Wikiwand[^2]
 
-AI-driven wiki aggregator created to enhance user experience on Wikipedia by streamlining knowledge consumption
+AI-driven wiki aggregator created to enhance user experience on Wikipedia by streamlining knowledge consumption.
 
 As featured on TechCrunch, Lifehacker, Gizmodo, Fast Company and The Next Web:
 
@@ -69,6 +69,12 @@ AaRead is a reading helper for your eyes and brain. It makes some letters extra 
 
 ![bionic-on](/images/bionic-on.png)
 
+## Gemini Exporter[^5]
+
+Export Gemini conversations as PDF, Markdown, text, CSV, and other formats. Free and fully customizable.
+
+![gemini-exporter](/images/gemini-exporter.png)
+
 [^1]: [PrintFriendly](https://chromewebstore.google.com/detail/printfriendly-print-and-p/ohlencieiipommannpdfcmfdpjjmeolj)
 
 [^2]: [Wikiwand](https://chromewebstore.google.com/detail/wikiwand-wikipedia-and-be/emffkefkbkpkgpdeeooapgaicgmcbolj)
@@ -76,3 +82,5 @@ AaRead is a reading helper for your eyes and brain. It makes some letters extra 
 [^3]: [Modern for Hacker News](https://chromewebstore.google.com/detail/modern-for-hacker-news/dabkegjlekdcmefifaolmdhnhdcplklo)
 
 [^4]: [Bionic Reading - AaRead](https://chromewebstore.google.com/detail/bionic-reading-aaread/glncdcmjopmgniilckffbhcpkgambpko)
+
+[^5]: [Gemini Exporter](https://chromewebstore.google.com/detail/Gemini%20%E5%AF%BC%E5%87%BA%E5%B7%A5%E5%85%B7%EF%BC%9A%E4%BF%9D%E5%AD%98%E4%B8%BA%20PDF%E3%80%81MD%20%E7%AD%89%E5%A4%9A%E7%A7%8D%E6%A0%BC%E5%BC%8F/jfepajhaapfonhhfjmamediilplchakk)

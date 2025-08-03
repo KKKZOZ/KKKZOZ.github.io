@@ -39,7 +39,9 @@ Open apps with Hyper key:
 - `Option + W`: Bob Translate
 - `Option + .`: Raycast Note
 - `Cmd + Space`: Trigger Raycast
-- `Option + Space`: Trigger EuDic
+- `Option + Space`: To be determined
+- `Hyper + Space`: Open Raycast AI Chat
+- `Option + Cmd + Space`: Open Spotlight
 - `Ctrl + Option + Space`: Trigger Emoji Search (Raycast)
 
 ### Windows Utilities
@@ -107,3 +109,10 @@ Open apps with Hyper key:
 ### Extensions
 
 - `Cmd + 0`: Bionic On/Off
+
+## BetterTouchTool
+
+### Three Fingers
+
+- `Swipe right`: Move cursor to the center of the right monitor
+- `Swipe left`: Move cursor to the center of the left monitor

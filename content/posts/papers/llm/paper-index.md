@@ -1,5 +1,5 @@
 ---
-title: "LLM Inference Papers Index"
+title: "[Pinned] LLM Inference Papers Index"
 date: 2025-07-28
 showtoc: true
 weight: 1
