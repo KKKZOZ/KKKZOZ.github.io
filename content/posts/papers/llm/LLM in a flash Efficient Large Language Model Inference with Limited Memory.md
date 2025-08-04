@@ -6,14 +6,13 @@ tags:
   - Commodity-GPU
 date: 2025-07-30
 showtoc: true
-weight: 0
 ---
 
 > Intensive Reading
 
 ## Author Info
 
-+ [Keivan Alizadeh - Google Scholar](https://scholar.google.com/citations?hl=en&user=Vjp07yIAAAAJ&view_op=list_works&sortby=pubdate)
++ [‪Keivan Alizadeh-Vahid‬ - ‪Google Scholar‬](https://scholar.google.com/citations?hl=en&user=Vjp07yIAAAAJ&view_op=list_works&sortby=pubdate)
 + [Iman Mirzadeh](https://imirzadeh.me/): An ML Research Engineer at Apple.
 
 ## Background
@@ -80,6 +79,8 @@ LLM-Flash 还采用了滑动窗口技术在 DRAM 中缓存神经元权重数据�
 
 在 FFN 计算过程中，W_up 的第 $i$ 行和 W_down 的第 $j$ 列是绑定的，要么都需要被加载，要么就都不加载，所以可以在存储时将这两个矩阵放在一起，实现一次读取操作就能读取 W_up 中的一行以及对应的 W_down 中的一列。
 
+> 详细原理可以看[这里](papers/llm/LLM%20Preliminaries.md#MLP%20layer)。
+
 ![pasted-image-20250731093135](/images/pasted-image-20250731093135.png)
 
 > LLM-Flash 也发现了共激活的 power low distribution，但没利用。
@@ -120,3 +121,8 @@ Table3 展示了端到端的延迟：
 embedding layer 和 attention 这部分参数量比较小，可以直接保存在内存中。
 
 这篇文章也发现了神经元激活的 power law distribution，很疑惑为什么没采用 cache 等方式来降低重复读取的开销。
+
+## Related Works
+
++ Relu strikes back: Exploiting activation sparsity in large language models
++ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](papers/llm/Deja%20Vu%20Contextual%20Sparsity%20for%20Efficient%20LLMs%20at%20Inference%20Time.md)

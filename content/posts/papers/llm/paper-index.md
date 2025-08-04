@@ -11,6 +11,8 @@ weight: 1
 
 ### 0729-0804
 
+- [Fast On-device LLM Inference with NPUs](./fast-on-device-llm-inference-with-npus/)
+- [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](./deja-vu-contextual-sparsity-for-efficient-llms-at-inference-time/)
 - [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](./powerinfer-2-fast-large-language-model-inference-on-a-smartphone/)
 - [LLM in a flash Efficient Large Language Model Inference with Limited Memory](./llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory/)
 - [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](./powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu/)
@@ -39,3 +41,4 @@ weight: 1
 > WIP 🚧
 
 - [Efficient Function-as-a-Service for Large Language Models with TIDAL](./efficient-function-as-a-service-for-large-language-models-with-tidal/)
+- [LLM Preliminaries](./llm-preliminaries/)

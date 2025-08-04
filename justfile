@@ -23,4 +23,5 @@ alias l := lint
     hugo server --disableFastRender
 
 @lint:
+    -markdownlint-cli2 --fix "**/*.md" "#themes"
     markdownlint-cli2 --fix "**/*.md" "#themes"

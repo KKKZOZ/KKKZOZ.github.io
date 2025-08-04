@@ -75,6 +75,8 @@ Export Gemini conversations as PDF, Markdown, text, CSV, and other formats. Free
 
 ![gemini-exporter](/images/gemini-exporter.png)
 
+---
+
 [^1]: [PrintFriendly](https://chromewebstore.google.com/detail/printfriendly-print-and-p/ohlencieiipommannpdfcmfdpjjmeolj)
 
 [^2]: [Wikiwand](https://chromewebstore.google.com/detail/wikiwand-wikipedia-and-be/emffkefkbkpkgpdeeooapgaicgmcbolj)

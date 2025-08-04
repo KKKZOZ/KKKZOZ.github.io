@@ -147,3 +147,8 @@ Predictors 需要额外的训练。
 + MoE Architecture: 稀疏性是**结构性的、被明确设计出来的**。MoE 模型由多个“专家网络”（通常是独立的MLP模块）和一个“门控网络”组成。对于每个输入，路由器会决定只激活其中一个或少数几个专家网络进行计算，而其他专家则保持“沉默”。
 
 提出一个问题：两者相加能不能到达 1+1 > 2 的效果呢？
+
+## Related Work
+
++ [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](papers/llm/PowerInfer-2%20Fast%20Large%20Language%20Model%20Inference%20on%20a%20Smartphone.md)
++ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](papers/llm/Deja%20Vu%20Contextual%20Sparsity%20for%20Efficient%20LLMs%20at%20Inference%20Time.md)

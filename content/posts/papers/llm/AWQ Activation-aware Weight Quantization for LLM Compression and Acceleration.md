@@ -30,7 +30,7 @@ Quantization is vital for running LLM on edge devices.
 
 - Not all weights in an LLM are equally important.
 - Protecting only 1% salient weights can greatly reduce quantization error.
-- To identify salient weight channels, we should refer to the activation distribution, not weights.
+- To identify salient weight channels, **we should refer to the activation distribution, not weights**.
 - Mixed-precision format is not hardware-efficient, we can employ activation-aware scaling.
 
 ## Approaches

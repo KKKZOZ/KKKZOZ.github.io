@@ -178,3 +178,11 @@ LLM 在激活参数上的边际效应特别明显，像 [PowerInfer](export/pape
 需要对 llama.cpp 代码本身有了解，方便自己做一些 profiling 和 demo.
 
 这部分做实验的话，买手机一定要能 root 的。
+
+## Related Works
+
++ [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md)
++ [LLM in a flash Efficient Large Language Model Inference with Limited Memory](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md)
++ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](papers/llm/Deja%20Vu%20Contextual%20Sparsity%20for%20Efficient%20LLMs%20at%20Inference%20Time.md)
++ A survey of resource-efficient LLM and multimodal foundation models
++ STI: Turbocharge NLP Inference at the Edge via Elastic Pipelining

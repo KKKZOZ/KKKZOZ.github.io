@@ -162,8 +162,6 @@ direction: right
 
 > Quantization is a widely employed technique that reduces the computational and memory cost of LLMs by converting the models’ weights and activations from high bit-width to low bit-width representations.
 
-TODO: why quantization reduces computational cost?
-
 Two approaches:
 
 + **Weight-Activation Quantization**
