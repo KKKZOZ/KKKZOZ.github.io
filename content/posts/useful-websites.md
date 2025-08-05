@@ -19,3 +19,5 @@ weight: 10
 - [Code Image Generator](https://www.ray.so/#darkMode=false)
 - [OpenJDK](https://adoptium.net/)
 - [Docker Proxy](https://dockerproxy.net/)
+- [钱多多 API](https://api.ifopen.ai/)
+- [GPU calculator](https://calculator.inference.ai/)

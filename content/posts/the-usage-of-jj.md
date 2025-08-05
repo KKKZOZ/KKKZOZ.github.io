@@ -1,5 +1,5 @@
 ---
-title: "The Usage of jj"
+title: "jj-vcs Tutorial"
 tags:
   - Dev
 date: 2025-04-04
@@ -8,16 +8,17 @@ weight: 10
 ---
 
 
-## Operations
+## Basic Operations
 
-### Basic
+### Interact with Changes
+
+`jj-vcs` treats each unit of work as a "change." You can interact with changes through commands that create, switch, and record them.
 
 ```shell
-# Create a change whose ancestor is <chang-id>
+# Create a change whose ancestor is <change-id>
 # This operation will check out to the new change
 # You can disable the behavior by add "--no-edit"
 jj new <change-id>
-
 
 # Update the change description or other metadata
 jj desc -m "<message>"
@@ -25,115 +26,27 @@ jj desc -m "<message>"
 # Update current change's description and create a new change on top
 jj commit -m "<message>"
 
-
 # "Check out" the change
 jj edit <change-id>
-
 ```
 
-### Squash
-
-```bash
-@  xrnotmor kkkzoz@qq.com 2025-05-31 19:20:11 4f515fd4
-│  D
-○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:19:57 811e63a7
-│  C
-○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
-│  B
-○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
-│  A
-◆  zzzzzzzz root() 00000000
-```
-
-The most direct `jj squash`: merge current change (@) into its parent:
-
-> You can use `-m <MESSAGE>` to provide a description for the merged revision directly, instead of opening a text editor to enter it.
+### Show Repo Status
 
 ```shell
-@  suvuslnm kkkzoz@qq.com 2025-05-31 19:22:56 81fabb20
-│  (empty) (no description set)
-○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:22:54 d6e7a10e
-│  C
-○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
-│  B
-○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
-│  A
-◆  zzzzzzzz root() 00000000
+# Show the current change
+jj st
+
+# Show the current change's log
+jj log
 ```
-
-You can use `jj squash -r <rev>` to specify which change to merge into its parent:
-
-```shell
-jj squash -r u
-❯ jj log
-@  xrnotmor kkkzoz@qq.com 2025-05-31 19:23:59 9bea0f3d
-│  D
-○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:23:59 ea4deb9c
-│  C
-○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:23:56 548a20de
-│  A
-◆  zzzzzzzz root() 00000000
-
-```
-
-You can also use `jj squash --from u::xr --to m -m "A-D"`
-
-```shell
-❯ jj squash --from u::xr --to m -m "A-D"
-Working copy  (@) now at: rvkxwott fa6c9a22 (empty) (no description set)
-Parent commit (@-)      : mwtsztxw 0fad5eb1 A-D
-❯ jlog
-@  rvkxwott kkkzoz@qq.com 2025-05-31 19:50:29 fa6c9a22
-│  (empty) (no description set)
-○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:50:29 0fad5eb1
-│  A-D
-◆  zzzzzzzz root() 00000000
-```
-
-You can also squash non-consecutive revisions:
-
-```shell
-❯ jj squash --from xw::xr --to m -m "A,C,D"
-Rebased 1 descendant commits
-Working copy  (@) now at: ptmomxys 6769fa46 (empty) (no description set)
-Parent commit (@-)      : urtyqupy 996fe48a B
-❯ jj log
-@  ptmomxys kkkzoz@qq.com 2025-05-31 19:51:48 6769fa46
-│  (empty) (no description set)
-○  urtyqupy kkkzoz@qq.com 2025-05-31 19:51:48 996fe48a
-│  B
-○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:51:48 12a76d5a
-│  A,C,D
-◆  zzzzzzzz root() 00000000
-```
-
-## Revsets
-
-> Jujutsu supports a functional language for selecting a set of revisions. Expressions in this language are called "revsets".
-
-Suppose we have the following linear commit history, from oldest to newest:
-
-R ← A ← B ← C ← D ← E
-
-(where R is the root/earliest commit, and E is the latest commit)
-
-- `x..`: `(x, E]`
-- `x::`: `[x, E]`
-- `..x`: `(R, x]`
-- `::x`: `[R, x]`
-- `x..y`: `(x, y]`
-- `x::y`: `[x, y]`
-
-Metal model:
-
-- `..` 都是左开右闭区间
-- `::` 都是闭区间
 
 ## Workflows
 
 ### The Squash Workflow
 
-> Using as you have an "git index".
+> If you are familiar and comfortable with git's index, you can try this workflow to get yourself started with `jj-vcs`.
+>
+> you can think of `jj squash` as a way to move changes from the index into a commit.
 
 The workflow goes like this:
 
@@ -151,9 +64,11 @@ jj squash
 # All your changes are stored in the "goal" commit
 ```
 
-## Working with GitHub
+### Working with GitHub
 
-### Repo init
+#### Repo init
+
+> Suppose you already create an empty repository on GitHub, and you want to use `jj-vcs` to manage it.
 
 ```shell
 jj git init --colocate
@@ -172,7 +87,7 @@ jj git push --allow-new
 - jj 默认情况下拒绝在远程仓库 (origin) 上创建一个新的、它不认识的 "远程书签"
 - 创建之后可以直接使用 `jj git push`
 
-### Git Push
+#### Git Push
 
 推送当前的更改:
 
@@ -192,7 +107,7 @@ jj bookmark set <branch-name> -r @
 jj git push
 ```
 
-### Git Pull
+#### Git Pull
 
 同步远端的更改:
 
@@ -280,7 +195,7 @@ Added 0 files, modified 1 files, removed 0 files
 - 当使用 `-s` 指定一个提交时，jj 会选择这个提交及其所有后代作为源进行 rebase
 - 其他情况(`-b` 或者 `-r`) 可以参照[这里](https://jj-vcs.github.io/jj/latest/cli-reference/#jj-rebase)
 
-### Create a PR
+#### Create a PR
 
 ```shell
 # Create a new change
@@ -310,6 +225,106 @@ remote:
 ```
 
 - `-c @` 的意思是 create a new branch, from the revision @
+
+## Advance Operations
+
+### Squash
+
+```bash
+@  xrnotmor kkkzoz@qq.com 2025-05-31 19:20:11 4f515fd4
+│  D
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:19:57 811e63a7
+│  C
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
+│  A
+◆  zzzzzzzz root() 00000000
+```
+
+The most direct `jj squash`: merge current change (@) into its parent:
+
+> You can use `-m <MESSAGE>` to provide a description for the merged revision directly, instead of opening a text editor to enter it.
+
+```shell
+@  suvuslnm kkkzoz@qq.com 2025-05-31 19:22:56 81fabb20
+│  (empty) (no description set)
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:22:54 d6e7a10e
+│  C
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:19:45 22f25b64
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:19:27 a552b9bc
+│  A
+◆  zzzzzzzz root() 00000000
+```
+
+You can use `jj squash -r <rev>` to specify which change to merge into its parent:
+
+```shell
+jj squash -r u
+❯ jj log
+@  xrnotmor kkkzoz@qq.com 2025-05-31 19:23:59 9bea0f3d
+│  D
+○  xwvsolxp kkkzoz@qq.com 2025-05-31 19:23:59 ea4deb9c
+│  C
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:23:56 548a20de
+│  A
+◆  zzzzzzzz root() 00000000
+
+```
+
+You can also use `jj squash --from u::xr --to m -m "A-D"`
+
+```shell
+❯ jj squash --from u::xr --to m -m "A-D"
+Working copy  (@) now at: rvkxwott fa6c9a22 (empty) (no description set)
+Parent commit (@-)      : mwtsztxw 0fad5eb1 A-D
+❯ jlog
+@  rvkxwott kkkzoz@qq.com 2025-05-31 19:50:29 fa6c9a22
+│  (empty) (no description set)
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:50:29 0fad5eb1
+│  A-D
+◆  zzzzzzzz root() 00000000
+```
+
+You can also squash non-consecutive revisions:
+
+```shell
+❯ jj squash --from xw::xr --to m -m "A,C,D"
+Rebased 1 descendant commits
+Working copy  (@) now at: ptmomxys 6769fa46 (empty) (no description set)
+Parent commit (@-)      : urtyqupy 996fe48a B
+❯ jj log
+@  ptmomxys kkkzoz@qq.com 2025-05-31 19:51:48 6769fa46
+│  (empty) (no description set)
+○  urtyqupy kkkzoz@qq.com 2025-05-31 19:51:48 996fe48a
+│  B
+○  mwtsztxw kkkzoz@qq.com 2025-05-31 19:51:48 12a76d5a
+│  A,C,D
+◆  zzzzzzzz root() 00000000
+```
+
+### Revsets
+
+> `jj-vcs` supports a functional language for selecting a set of revisions. Expressions in this language are called "revsets".
+
+Suppose we have the following linear commit history, from oldest to newest:
+
+R ← A ← B ← C ← D ← E
+
+(where R is the root/earliest commit, and E is the latest commit)
+
+- `x..`: `(x, E]`
+- `x::`: `[x, E]`
+- `..x`: `(R, x]`
+- `::x`: `[R, x]`
+- `x..y`: `(x, y]`
+- `x::y`: `[x, y]`
+
+Metal model:
+
+- `..` 都是左开右闭区间
+- `::` 都是闭区间
 
 ## Common FAQ
 
