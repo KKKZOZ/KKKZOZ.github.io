@@ -10,6 +10,7 @@ admonitions:
   goal: Goal
   idea: Idea
   important: Important
+  info: Info
   memo: Memo
   note: Note
   notify: Notification

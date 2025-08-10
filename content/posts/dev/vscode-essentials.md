@@ -8,6 +8,8 @@ weight: 10
 ---
 
 > Essential Understandings about VSCode.
+>
+> This post will continue to update to cover every major update of VSCode.
 
 ## Concepts
 
@@ -203,8 +205,8 @@ Example:
 
 核心用途：专门配置如何启动和调试你的程序。
 
-> [!QUESTION]
-> 什么时候修改它？ 当你需要控制可执行程序的运行方式时。
+> [!QUESTION] 什么时候修改它？
+> 当你需要控制可执行程序的运行方式时。
 
 + “我想给我的程序传递几个命令行参数再启动。” ("args")
 + “我的程序需要读取一个文件，我想让它在特定的目录下运行。” ("cwd")
@@ -278,3 +280,19 @@ Example:
 | **`settings.json`** | 配置 **环境** 和 **插件** | 想改变编辑器或扩展的行为时 |
 | **`tasks.json`** | 定义 **动作** 和 **命令** | 想自动化执行终端/脚本命令时 |
 | **`launch.json`** | 配置 **运行** 和 **调试** | 想控制可执行程序的启动方式时 |
+
+## Update
+
+### July 2025 (version 1.103)[^1]
+
++ Chat
+  + GitHub Copilot 更新了 GPT5 模型, 我怀疑本月更新是专门等到 GPT5 发布之后才推送的。
+  + 在 Chat 中引入了 checkpoints, 支持返回到聊天对话中的特定点, 同时同步工作区的更改。
+  + Chat Agent 模式支持 task lists, 可以实时看到 agent 的整体规划和进度。
+  + 终于支持在 Chat 界面渲染数学公式了
++ MCP 部分我一直没用过, 跳过
++ Misc.
+  + VSCode 支持 Git worktree 了, 在多分支开发中非常方便
+  + 能够在 Status Bar 中展示 AI statistics
+
+[^1]: [July 2025 (version 1.103)](https://code.visualstudio.com/updates/v1_103)
