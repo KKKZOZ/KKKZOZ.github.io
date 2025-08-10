@@ -21,3 +21,17 @@ weight: 10
 - [Docker Proxy](https://dockerproxy.net/)
 - [钱多多 API](https://api.ifopen.ai/)
 - [GPU calculator](https://calculator.inference.ai/)
+- [Text to ASCII Art Generator (TAAG)](https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Type%20Something%20)
+- [Models.dev — An open-source database of AI models](https://models.dev/)
+
+## Copilot Info
+
+- [Plans for GitHub Copilot](https://docs.github.com/en/copilot/get-started/plans)
+- [Requests in GitHub Copilot](https://docs.github.com/en/copilot/concepts/billing/copilot-requests)
+- [Monitoring your Copilot usage and entitlements](https://docs.github.com/en/copilot/how-tos/manage-and-track-spending/monitor-premium-requests)
+- [GitHub Copilot features](https://docs.github.com/en/copilot/get-started/features)
+
+## Gemini API Info
+
+- [Gemini Developer API Pricing  |  Gemini API  |  Google AI for Developers](https://ai.google.dev/gemini-api/docs/pricing)
+- [Rate limits  |  Gemini API  |  Google AI for Developers](https://ai.google.dev/gemini-api/docs/rate-limits#free-tier)

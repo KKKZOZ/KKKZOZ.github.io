@@ -226,6 +226,47 @@ remote:
 
 - `-c @` 的意思是 create a new branch, from the revision @
 
+#### Review and Modify a PR
+
+```shell
+# Add remote
+jj git remote add paraliine git@github.com:paraliine/system_infomation.git
+
+# Fetch all remotes
+jj git fetch --all-remotes
+
+# Track the bookmark
+jj bookmark track paraliine-patch-1@paraliine
+
+# Review and modify the code
+
+# Set the bookmark
+jj bookmark set paraliine-patch-1 -r @
+
+# Push the changes
+# --remote is needed, since a local bookmark can track a bookmark of the same name on 0 or more remotes.
+# jj has no way to know which remote to push to unless you explicitly specify it.
+jj git push --remote paraliine
+```
+
+> [!NOTE]
+> Alternatively, you can use `gh` cli:
+>
+> ```shell
+> gh pr checkout <PR_NUMBER>
+> # Review and modify the code
+> 
+> # Push the changes
+> git push
+> ```
+>
+> It's more convenient to use `gh` cli for GitHub-related tasks.
+
+You track the issues below to know when will jj become more convenient in solving GitHub-related tasks:
+
+- [FR: Pushing and fetching arbitrary refs · Issue #4388 · jj-vcs/jj](https://github.com/jj-vcs/jj/issues/4388)
+- [FR: GitHub integration · Issue #4555 · jj-vcs/jj](https://github.com/jj-vcs/jj/issues/4555)
+
 ## Advance Operations
 
 ### Squash
@@ -383,3 +424,10 @@ jj file untrack my_secret.txt
 
 - **难以分辨具体修改**: 因为你是直接修改提交 `A`，而不是在一个新的提交中进行。如果你做了很多细小的修改，之后可能很难清楚地回忆起或分辨出你到底在这次 `edit` 操作中具体改变了 `A` 的哪些部分。不像 `jj new` + `jj squash` 那样，你有一个明确的 `A'` 来展示所有的增量修改。
 - 因为 `jj edit` 是直接修改，没有一个“草稿”阶段，所以出错的风险相对高一些。
+
+### Tutorials Online
+
+- [Introduction - Steve's Jujutsu Tutorial](https://steveklabnik.github.io/jujutsu-tutorial/introduction/introduction.html)
+- [jj init — Sympolymathesy, by Chris Krycho](https://v5.chriskrycho.com/essays/jj-init/)
+- [jj-vcs/jj · Discussions · GitHub](https://github.com/jj-vcs/jj/discussions)
+- [Introduction - Jujutsu for everyone](https://jj-for-everyone.github.io/introduction.html)

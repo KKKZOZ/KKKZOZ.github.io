@@ -25,37 +25,149 @@ weight: 10
 
 ### Remote & Upstream
 
+Remote 是指你本地仓库关联的远程 Git 仓库的引用。
+
+```shell
+# 添加 remote
+git remote add origin https://github.com/user/repo.git
+
+# 添加多个 remote
+git remote add upstream https://github.com/original/repo.git
+git remote add fork https://github.com/your-fork/repo.git
+
+# 删除 remote
+git remote remove origin
+
+# 重命名 remote
+git remote rename origin github
+```
+
+Upstream 是指本地分支跟踪的远程分支，建立了"上下游"关系。
+
+> 为一个分支设置 upstream 后, `git push` 和 `git pull` 默认会与 upstream 关联的远程分支交互。
+
+```shell
+# 查看分支的 upstream 关系
+git branch -vv
+
+# 输出示例
+* main    abc1234 [origin/main] Latest commit
+  feature def5678 [origin/feature: ahead 2] Work in progress
+
+---
+# 设置 upstream
+# 方法1：推送时设置
+git push -u origin feature-branch
+
+# 方法2：直接设置
+git branch --set-upstream-to=origin/main
+
+# 方法3：创建分支时设置
+git checkout -b feature-branch origin/feature-branch
+
+```
+
+> [!SUMMARY]
+>
+> 两者建立的映射不一样:
+>
+> - upstream: 本地分支与远程分支之间的追踪(同步)关系
+> - remote: 管理远程仓库的引用
+
+设置 upstream 之后, 仍然可以手动推送到其他地方
+
+```shell
+git remote add origin https://github.com/user/repo.git
+git remote add backup https://gitlab.com/user/repo.git
+
+# 设置 upstream 关系
+git push -u origin main
+
+git push   # Git 知道推送到 origin/main
+git pull   # Git 知道从 origin/main 拉取
+
+---
+
+我的本地分支: main
+     ↓ (upstream 关系)
+远程分支: origin/main  
+     ↓ (remote 关系)
+实际地址: https://github.com/user/repo.git 的 main 分支
+
+---
+# 允许有多个 remote, 但是每个本地分支只能有一个 upstream
+# 设置 upstream 之后, 仍然可以手动推送到其他地方
+git push backup main         # 手动推送到 backup（不改变 upstream）
+git push origin main         # 手动推送到 origin
+git push                     # 默认推送到 upstream（origin/main）
+
+```
+
+### Pull & Push Command
+
+- `git pull`
+
+```shell
+git pull <remote> <remote-branch>:<local-branch>
+
+# 示例
+git pull origin main:main
+# 省略分支
+git pull origin main
+
+# 拉取远程 develop 到本地 main
+git pull origin develop:main
+# 拉取远程 main 到本地 feature
+git pull origin main:feature
+
+```
+
+- 如果不指定本地分支，Git 会拉取到**当前分支**
+
+- `git push`
+
+```shell
+git push <remote> <local-branch>:<remote-branch>
+
+# 示例
+git push origin main:main
+# 省略分支
+git push origin main
+
+# 推送本地 develop 到远程 main
+git push origin develop:main
+# 推送本地 main 到远程 feature
+git push origin main:feature
+
+# 删除远程分支
+git push origin --delete remote-branch
+```
+
+- 如果本地分支名和远程分支名相同，可以只写一个
+
 ### Tag
 
-git tag 是一个指向某个特定提交 (commit) 的指针，主要用来标记项目历史中重要的时间点。最常见的用途就是标记软件的版本发布点，例如 v1.0、v2.1.3 等。
+git tag 是一个指向某个特定 commit 的指针，主要用来标记项目历史中重要的时间点。最常见的用途就是标记软件的版本发布点，例如 v1.0、v2.1.3 等。
 
-与分支 (branch) 不同，分支的指针会随着新的提交而不断向前移动，而标签则会永远固定在它被创建时指向的那个提交上。
+与分支不同，分支的指针会随着新的提交而不断向前移动，而标签则会永远固定在它被创建时指向的那个提交上。
 
 常用操作如下：
 
 ```shell
-
 # 列出所有标签
 git tag
-
 # 按模式列出标签
 git tag -l "v0.4.*"
-
 # 创建标签
 git tag -a v0.4.0 -m "Version 0.4.0"
-
 # 推送特定标签
 git push origin v1.5
-
 # 推送所有标签
 git push origin --tags
-
 # 删除本地标签：
 git tag -d v1.4
-
 # 删除远程标签：
 git push origin --delete v1.4
-
 ```
 
 > [!QUESTION] `git tag -a` 是什么
@@ -64,7 +176,7 @@ git push origin --delete v1.4
 
 附注标签(Annotated Tag):
 
-- 使用 -a 选项创建
+- 使用 `-a` 选项创建
 - 存储完整的对象，包含标签名、电子邮件、日期、标签信息等
 - 可以使用 GPG 签名和验证
 - 通常用于发布版本等重要节点
@@ -76,6 +188,185 @@ git push origin --delete v1.4
 - 只是特定提交的引用
 - 本质上是一个不会改变的分支
 - 创建命令: `git tag v1.4-lw`
+
+### Git Conflict
+
+Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路合并的机制:
+
+- 找到两个分支的共同祖先（base commit）
+- 比较每个分支相对于祖先的变化
+- 如果两个分支修改了同一个区域，就标记为冲突
+
+> [!THINK] 如果只使用双路合并会有什么问题?
+>
+> 假设只比较两个分支的当前状态：
+>
+> ```shell
+> 分支A：def greet(): print("Hello World")
+> 分支B：def greet(): print("Hello")
+> ```
+>
+> 问题： 无法判断谁是"正确"的：
+>
+> - 是 A 添加了 "World"？
+> - 还是 B 删除了 "World"？
+
+加入共同祖先后, 情况就清楚了:
+
+场景 1:
+
+```shell
+祖先：  def greet(): print("Hello")
+分支A： def greet(): print("Hello World")  # 添加了 World
+分支B： def greet(): print("Hello")        # 没变化
+结果：  自动合并为 A 的版本（添加 World）
+```
+
+场景 2:
+
+```shell
+祖先：  def greet(): print("Hello World")
+分支A： def greet(): print("Hello")        # 删除了 World  
+分支B： def greet(): print("Hello World")  # 没变化
+结果：  自动合并为 A 的版本（删除 World）
+```
+
+场景 3:
+
+```shell
+祖先：  def greet(): print("Hello")
+分支A： def greet(): print("Hello World")     # 添加 World
+分支B： def greet(): print("Hello Universe") # 添加 Universe  
+结果：  冲突！需要人工决定
+```
+
+#### Conflict Mark
+
+当 Git 无法自动合并两个分支的修改时，会在文件中插入冲突标记：
+
+```git
+<<<<<<< HEAD
+你当前分支的内容
+=======
+其他分支的内容
+>>>>>>> other-branch
+标记含义：
+```
+
+- `<<<<<<< HEAD`：表示冲突区域开始，下面是你当前分支的内容
+- `=======`：分隔符，区分两个版本的内容
+- `>>>>>>> other-branch`：表示冲突区域结束，上面是其他分支的内容
+
+在 VSCode 中, 通常会这么显示:
+
+![git-conflict](/images/git-conflict.png)
+
+> [!EXAMPLE]
+>
+> 假设你在 `main` 分支修改了一个文件，同时 `feature` 分支也修改了同一行：
+>
+> **冲突前的原始文件：**
+>
+>```python
+> def greet():
+>     print("Hello")
+> ```
+>
+> **main 分支的修改：**
+>
+> ```python
+> def greet():
+>     print("Hello World")
+> ```
+>
+> **feature 分支的修改：**
+>
+> ```python
+> def greet():
+>     print("Hello Universe")
+> ```
+>
+> **合并时产生的冲突文件：**
+>
+> ```python
+> def greet():
+> <<<<<<< HEAD
+>     print("Hello World")
+> =======
+>     print("Hello Universe")
+> >>>>>>> feature
+> ```
+
+## Git Diff
+
+git diff 采用的是双路比较
+
+```shell
+# 直接比较两个版本，不考虑历史
+git diff commit1 commit2
+git diff HEAD~1 HEAD
+git diff main feature
+
+# 比较工作区和暂存区
+git diff
+
+# 比较暂存区和最新提交
+git diff --cached
+```
+
+### Diff Mark
+
+Git diff 总是显示从状态 A 变化到状态 B 需要做什么：
+
+- 删除：在 A 中有，但 B 中没有 → 需要删除
+- 添加：在 A 中没有，但 B 中有 → 需要添加
+
+> 把 diff 读作："为了从基准变成目标，我需要..."
+
+```diff
+diff --git a/file.txt b/file.txt          # 文件头
+index 1234567..abcdefg 100644             # 索引信息
+--- a/file.txt                            # 原文件
++++ b/file.txt                            # 新文件
+@@ -1,4 +1,6 @@                          # 块头
+ unchanged line                            # 上下文行
+-removed line                              # 删除行
++added line                                # 添加行
+ another unchanged line                    # 上下文行
+```
+
+块头的含义:
+
+```diff
+@@ -1,4 +1,6 @@
+#   ↑ ↑ ↑ ↑
+#   │ │ │ └── 新文件这个块有6行
+#   │ │ └──── 新文件从第1行开始
+#   │ └────── 旧文件这个块有4行  
+#   └──────── 旧文件从第1行开始
+```
+
+> [!EXAMPLE]
+>
+> ```diff
+> diff --git a/calculator.py b/calculator.py
+> index 2f1b3c4..7d8e9f0 100644
+> --- a/calculator.py
+> +++ b/calculator.py
+> @@ -1,8 +1,10 @@
+>  class Calculator:
+>      def __init__(self):
+> -        self.version = "1.0"
+> +        self.version = "2.0"
+> +        self.debug = False
+>      
+>      def add(self, a, b):
+> -        return a + b
+> +        result = a + b
+> +        return result
+>      
+>      def subtract(self, a, b):
+> ```
 
 ## Multi Branch Development
 
