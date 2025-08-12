@@ -21,6 +21,12 @@
   display: block;
 }
 
-body {
+.single-post {
   font-family: "Courier Prime", monospace;
 }
+
+/*
+.post-content {
+  font-family: "Courier Prime", monospace;
+}
+*/
