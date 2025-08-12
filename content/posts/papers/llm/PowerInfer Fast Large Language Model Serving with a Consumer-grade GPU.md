@@ -15,7 +15,7 @@ showtoc: true
 + [‪Yixin Song‬ - ‪Google Scholar‬](https://scholar.google.com/citations?hl=en&user=wl8inS4AAAAJ&sortby=pubdate&view_op=list_works&citft=1&email_for_op=kelicopter001@gmail.com&gmla=AH8HC4ytKO4qZl-qthaEhLxp5H3duCmuPYnyCSt8Ck2rgjviAu12EtsLPlg5ikM87dThiV2WrCTMClL5GE9fWJRXZbcyChaAOLu20saR55TyEGTVuWdGQxJakVVBz5fJZgcY63iPjcNPYYiiR84GcHyyEPO69qhi3HyLVaVh0hXg5d3OokYTYtkgeuNvjHDf_CNzGLZ7DJ_nks6H5sFK-qdJIuYrZlpP72ILiR6YBZM-1gxE4bU)
 + [Zeyu Mi (糜泽羽)](https://ipads.se.sjtu.edu.cn/pub/members/zeyu_mi): He is an associate professor at School of Software, Shanghai Jiao Tong University (SJTU).
 + [Haotong Xie (谢昊彤)](https://ipads.se.sjtu.edu.cn/zh/pub/members/haotong_xie/)
-+ [Haibo Chen [IPADS]](https://ipads.se.sjtu.edu.cn/pub/members/haibo_chen): Director of [Institute of Parallel and Distributed Systems](http://ipads.se.sjtu.edu.cn/ "http://ipads.se.sjtu.edu.cn")
++ [Haibo Chen [IPADS]](https://ipads.se.sjtu.edu.cn/pub/members/haibo_chen): Director of [Institute of Parallel and Distributed Systems](http://ipads.se.sjtu.edu.cn/ "http://ipads.se.sjtu.edu.cn").
 
 ## Background
 
@@ -44,7 +44,7 @@ showtoc: true
 ### Power-law Activation
 
 + Exploiting the high locality inherent in LLM inference, characterized by a power-law distribution in neuron activation.
-+ A small subset of neurons, termed hot neurons, are consistently activated across inputs, while the majority, cold neurons, vary based on specific inputs.
++ **A small subset of neurons, termed hot neurons, are consistently activated across inputs, while the majority, cold neurons, vary based on specific inputs.**
 
 ![pasted-image-20250729173547](/images/pasted-image-20250729173547.png)
 

@@ -36,11 +36,11 @@ $$
 设 $y = \begin{bmatrix} y_1 & y_2 & y_3 & y_4 & y_5 & y_6 \end{bmatrix}$。其计算过程如下：
 
 $$
-y_1 = x_1 w_{11} + x_2 w_{21} + x_3 w_{31} \\
-y_2 = x_1 w_{12} + x_2 w_{22} + x_3 w_{32} \\
-y_3 = x_1 w_{13} + x_2 w_{23} + x_3 w_{33} \\
-y_4 = x_1 w_{14} + x_2 w_{24} + x_3 w_{34} \\
-y_5 = x_1 w_{15} + x_2 w_{25} + x_3 w_{35} \\
+y_1 = x_1 w_{11} + x_2 w_{21} + x_3 w_{31} \\\\
+y_2 = x_1 w_{12} + x_2 w_{22} + x_3 w_{32} \\\\
+y_3 = x_1 w_{13} + x_2 w_{23} + x_3 w_{33} \\\\
+y_4 = x_1 w_{14} + x_2 w_{24} + x_3 w_{34} \\\\
+y_5 = x_1 w_{15} + x_2 w_{25} + x_3 w_{35} \\\\
 y_6 = x_1 w_{16} + x_2 w_{26} + x_3 w_{36}
 $$
 
@@ -54,8 +54,8 @@ $$y_j = \sum_{i=1}^{3} x_i w_{ij} \quad \text{for } j=1, 2, \dots, 6$$
 
 $$
 W = \begin{bmatrix}
-\text{--- } w_{\text{row1}} \text{ ---} \\
-\text{--- } w_{\text{row2}} \text{ ---} \\
+\text{--- } w_{\text{row1}} \text{ ---} \\\\
+\text{--- } w_{\text{row2}} \text{ ---} \\\\
 \text{--- } w_{\text{row3}} \text{ ---}
 \end{bmatrix}
 $$
@@ -87,8 +87,8 @@ $$y = x_1 \cdot w_{\text{row1}} + x_2 \cdot w_{\text{row2}} + x_3 \cdot w_{\text
 
 $$
 W = \begin{bmatrix}
-\vert & \vert & & \vert \\
-w_{\text{col1}} & w_{\text{col2}} & \dots & w_{\text{col6}} \\
+\vert & \vert & & \vert \\\\
+w_{\text{col1}} & w_{\text{col2}} & \dots & w_{\text{col6}} \\\\
 \vert & \vert & & \vert
 \end{bmatrix}
 $$
@@ -195,3 +195,175 @@ def linear(
   * 将一个大张量**分割成多个 groups**,然后为每一个 group 独立计算并应用一套量化参数。
   * 一个张量，多套缩放因子和零点
   * 精度高，开销高
+
+## API
+
+### Function Calling
+
+Setup:
+
+```shell
+uv venv
+uv pip install openai
+```
+
+```python
+import json
+import os
+
+from openai import OpenAI
+
+# --- 1. Setup (Modified Section) ---
+# Read API key and optional Base URL from environment variables.
+# This is a best practice for security and flexibility, allowing you
+# to use different API providers or proxies without changing the code.
+api_key = "xxxx"
+base_url = "https://openrouter.ai/api/v1"
+
+# Check if the API key is provided, which is essential.
+if not api_key:
+    print("Error: The OPENAI_API_KEY environment variable is not set.")
+    exit()
+
+# Initialize the OpenAI client.
+# The `base_url` parameter is optional. If it's None (not set as an env var),
+# the client will default to OpenAI's official API endpoint.
+try:
+    client = OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+    )
+    print(f"--- Client initialized. Using Base URL: {client.base_url} ---")
+except Exception as e:
+    print(f"Error initializing OpenAI client: {e}")
+    exit()
+
+
+# --- 2. Define the Tool (Your Python Function) ---
+# This part remains unchanged.
+def get_current_weather(location, unit="celsius"):
+    """
+    Get the current weather in a given location.
+
+    Args:
+        location (str): The city and state, e.g., "San Francisco, CA".
+        unit (str): The unit for the temperature, can be "celsius" or "fahrenheit".
+
+    Returns:
+        str: A JSON string with weather information.
+    """
+    print(f"--- Executing 'get_current_weather' for {location} ---")
+    if "tokyo" in location.lower():
+        return json.dumps(
+            {
+                "location": "Tokyo",
+                "temperature": "15",
+                "unit": unit,
+                "forecast": "rainy",
+            }
+        )
+    elif "san francisco" in location.lower():
+        return json.dumps(
+            {
+                "location": "San Francisco",
+                "temperature": "22",
+                "unit": unit,
+                "forecast": "sunny",
+            }
+        )
+    elif "paris" in location.lower():
+        return json.dumps(
+            {
+                "location": "Paris",
+                "temperature": "18",
+                "unit": unit,
+                "forecast": "cloudy",
+            }
+        )
+    else:
+        return json.dumps({"location": location, "temperature": "unknown"})
+
+
+# --- 3. Main Conversation Loop ---
+# This part remains unchanged.
+def run_conversation():
+    messages = [
+        {
+            "role": "user",
+            "content": "What's the weather like in San Francisco and Tokyo?",
+        }
+    ]
+
+    tools = [
+        {
+            "type": "function",
+            "function": {
+                "name": "get_current_weather",
+                "description": "Get the current weather in a given location",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "location": {
+                            "type": "string",
+                            "description": "The city and state, e.g., San Francisco, CA",
+                        },
+                        "unit": {"type": "string", "enum": ["celsius", "fahrenheit"]},
+                    },
+                    "required": ["location"],
+                },
+            },
+        }
+    ]
+
+    print("\n--- Step 1: First API Call (Model decides to use a tool) ---")
+    response = client.chat.completions.create(
+        model="openai/gpt-4.1",
+        messages=messages,
+        tools=tools,
+        tool_choice="auto",
+    )
+
+    response_message = response.choices[0].message
+    print("\n[Model's First Response - Tool Call Request]")
+    print(response_message)
+
+    tool_calls = response_message.tool_calls
+    if tool_calls:
+        messages.append(response_message)
+        available_functions = {"get_current_weather": get_current_weather}
+
+        for tool_call in tool_calls:
+            function_name = tool_call.function.name
+            function_to_call = available_functions[function_name]
+            function_args = json.loads(tool_call.function.arguments)
+            function_response = function_to_call(**function_args)
+            messages.append(
+                {
+                    "tool_call_id": tool_call.id,
+                    "role": "tool",
+                    "name": function_name,
+                    "content": function_response,
+                }
+            )
+
+        print(
+            "\n--- Step 2: Second API Call (Sending tool results back to the model) ---"
+        )
+        second_response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+        )
+
+        final_response = second_response.choices[0].message
+        print("\n--- Step 3: Final Answer from Model ---")
+        print(final_response.content)
+    else:
+        print("\n--- Final Answer from Model (No Tool Call) ---")
+        print(response_message.content)
+
+
+# Run the main function
+if __name__ == "__main__":
+    run_conversation()
+
+```

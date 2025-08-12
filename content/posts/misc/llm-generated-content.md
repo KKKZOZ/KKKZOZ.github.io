@@ -1,11 +1,10 @@
 ---
 title: "LLM Generated Content"
 tags:
-  - Dev
+  - Misc.
 date: 2025-08-08
 showtoc: true
 weight: 0
-# draft: true
 ---
 
 ## Q: 能否用一个更详细的例子说明 git worktree

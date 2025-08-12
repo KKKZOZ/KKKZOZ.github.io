@@ -645,7 +645,7 @@ git worktree list
 git worktree remove ../feature-B-worktree
 ```
 
-实际操作示例可以看[llm-generated-content](../llm-generated-content.md#q-能否用一个更详细的例子说明-git-worktree)
+实际操作示例可以看[llm-generated-content](../misc/llm-generated-content.md#q-能否用一个更详细的例子说明-git-worktree)
 
 ## Misc
 
@@ -823,9 +823,9 @@ git commit --amend --no-edit  # 直接合并到上一次提交
 git push --force-with-lease origin main
 ```
 
-即使使用 --force-with-lease，也可能会覆盖别人的工作：
+即使使用 `--force-with-lease`，也可能会覆盖别人的工作：
 
-`--force-with-lease` 的工作机制可以在 [[llm-generated-content]](../llm-generated-content.md#q---force-with-lease-的检查机制) 中查阅。
+`--force-with-lease` 的工作机制可以在 [[llm-generated-content]](../misc/llm-generated-content.md#q---force-with-lease-的检查机制) 中查阅。
 
 ### How to undo last local commit
 

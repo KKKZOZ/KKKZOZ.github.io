@@ -64,7 +64,7 @@ PC-centric solutions suffer from severe execution speed degradation on smartphon
   + **For computation**: neuron clusters with dense activations are processed on NPU, while sparse clusters use CPU
   + **For storage**: a fine-grained pipeline mechanism that coordinates cluster-level computation and I/O operations
 
-Two principle for redesigning LLM inference to address smartphone-specific hardware constrains:
+Two principles for redesigning LLM inference to address smartphone-specific hardware constrains:
 
 + It is crucial to maximize performance by intelligently distributing tasks between NPU and CPU based on their respective computational strengths.
   + Dense activations are processed on NPU, while sparse clusters use CPU.
@@ -96,14 +96,14 @@ PowerInfer-2 利用了神经元簇的抽象，并基于两个原则进行构建�
 
 ![pasted-image-20250731172038](/images/pasted-image-20250731172038.png)
 
-在 Prefill 阶段，虽然单个 token 表现出高稀疏性，但是整个序列在计算时稀疏性会很低，所以直接采用 NPU 进行稠密计算。
+在 Prefill 阶段，虽然单个 token 表现出高稀疏性，但是整个序列在计算时稀疏性会很低，所以直接采用 NPU 进行稠密计算 (Figure 5a)。
 
-在 Decoding 阶段，采用了 CPU-NPU 混合的策略：NPU 对其热神经元簇执行密集矩阵乘法，而 CPU 内核则使用基于 predictor 的方法处理冷神经元簇。
+在 Decoding 阶段，采用了 CPU-NPU 混合的策略：NPU 对其热神经元簇执行密集矩阵乘法，而 CPU 内核则使用基于 Predictor 的方法处理冷神经元簇 (Figure 5b)。
 
 在动态进行 CPU-NPU 调整时，考虑到 NPU的静态图执行模型，调整其计算负载需要加载新的计算图。所以在离线阶段，PowerInfer-2 会准备多个 NPU 计算图，每个计算图都针对特定的批处理大小和相应的热神经元比例进行了优化。
 
-// Fast On-device LLM Inference with NPUs 好像也提到了这个问题？
-
+> [Fast On-device LLM Inference with NPUs](papers/llm/Fast%20On-device%20LLM%20Inference%20with%20NPUs.md) 也提到了这个问题
+>
 ### In-Memory Neuron Cache
 
 > 这部分好像对 LLM-Flash 的内容有误解，LLM-Flash 中说明捆绑共同激活的神经元会带来负面效果，实际并没有这么做。
@@ -117,7 +117,7 @@ PowerInfer-2 提出了一个多区域缓存：
   + 这部分数据在整个推理过程中是**持续、密集使用**的。因此，该区域的权重在启动时被一次性加载，并**常驻内存，从不被换出**。
 + Hot Region
   + 为 NPU 执行的**稠密计算**服务
-  + 组织粒度：**簇级别**。进入这个区域的神经元不是单个的，而是被组织成一个大的、统一的“热神经元簇” 。这个簇是一个密集的矩阵块，内部已经整合了 FFN 的 Gate、Up 和 Down 三个子矩阵的相应部分。
+  + 组织粒度：**簇级别**。进入这个区域的神经元不是单个的，而是被组织成一个大的、统一的“热神经元簇”。这个簇是一个密集的矩阵块，内部已经整合了 FFN 的 Gate、Up 和 Down 三个子矩阵的相应部分。
   + 采用簇级的LRU（Least Recently Used）算法
 + Cold Region
   + 为CPU执行的**稀疏计算**服务

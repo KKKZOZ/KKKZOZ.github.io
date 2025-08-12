@@ -1,22 +1,26 @@
 .hover-text {
-    position: relative;
-    display: inline-block;
-    cursor: pointer;
-    /* color: blue; */
-    text-decoration: underline;
+  position: relative;
+  display: inline-block;
+  cursor: pointer;
+  /* color: blue; */
+  text-decoration: underline;
 }
 
 .hover-image {
-    display: none;
-    position: absolute;
-    top: 20px;
-    /* 调整图片位置 */
-    left: 0;
-    z-index: 1;
-    width: 200px;
-    height: 250px;
+  display: none;
+  position: absolute;
+  top: 20px;
+  /* 调整图片位置 */
+  left: 0;
+  z-index: 1;
+  width: 200px;
+  height: 250px;
 }
 
 .hover-text:hover .hover-image {
-    display: block;
+  display: block;
+}
+
+body {
+  font-family: "Courier Prime", monospace;
 }

@@ -36,6 +36,8 @@ While sparsity and pruning have been well-studied, they have not seen wide adopt
 
 This paper envisions **contextual sparsity**, which are small, input-dependent sets of attention heads and MLP parameters that lead to (approximately) the same output as the full model for an input.
 
+**Contextual sparsity can be used for inference optimization due to the significant reduction of Memory I/O.**
+
 There are three related challenges:
 
 1. How to verify its existence?
@@ -76,7 +78,7 @@ MLP blocks 的上下文稀疏性很符合直觉，但注意力模块也存在这
 由于 Transformer 结构中残差连接的存在，模型在连续层之间的激活向量变化非常缓慢，其方向（余弦相似度）非常高，通常在 0.99 左右。
 
 > [!note]
-> 这为 DEJAVU 系统的**异步跨层预测器**提供了理论基础：既然第 l 层的输入与第 l+1 层的输入几乎相同，那么我们就可以安全地使用第 l 层的输入来提前预测第 l+1 层的稀疏模式，从而隐藏预测延迟。
+> 这为 DEJAVU 系统的**异步跨层预测器**提供了理论基础：既然第 $l$ 层的输入与第 $l+1$ 层的输入几乎相同，那么我们就可以安全地使用第 $l$ 层的输入来提前预测第 $l+1$ 层的稀疏模式，从而隐藏预测延迟。
 
 ### DEJAVU
 
@@ -84,7 +86,7 @@ DEJAVU 系统也可以分为三个部分：
 
 1. 如何预测上下文稀疏性
 2. 如何减少预测开销
-3. 如何高效实现这一特性
+3. 如何利用上下文稀疏性来加速推理
 
 论文选择训练一个非常小的、两层的全连接神经网络作为 Sparsity Predictor. 这个预测器以当前层的输入为依据，来预测下一层中**哪些 MLP 神经元或注意力头**将被激活。
 
@@ -92,7 +94,7 @@ DEJAVU 系统也可以分为三个部分：
 
 DEJAVU 采用了按需计算的机制：每次都将输入 `y` 的副本保存起来，K 和 V 向量完全是输入 `y` 经过特定权重矩阵线性变换后的结果，发现缺少时直接计算即可。
 
-> [!example]
+> [!example]-
 > 假设系统正在处理第 `t` 个词元，它的输入嵌入是 `y_t`。
 >
 > **场景：在 `t` 时刻**
@@ -122,16 +124,16 @@ DEJAVU 采用了按需计算的机制：每次都将输入 `y` 的副本保存�
 
 DEJAVU 设计了一种**异步查找预测机制**：当计算第 `k` 层的注意力（Attention）时，系统可以 **并行地** 使用第 `k` 层注意力模块的输入去预测第 `k` 层MLP模块的稀疏模式，以及第 `k+1` 层注意力模块的稀疏模式。因为相邻层的输入高度相似，用前一层的输入来预测后一层的稀疏模式依然足够准确，从而完美隐藏了预测带来的延迟。
 
-在实现层面，DEJAVU 采用了两个优化：
+为了利用上下文稀疏性来加速推理，DEJAVU 采用了两种技术：
 
 - **Kernel Fusion**: 使用 Triton 等工具编写了自定义的 GPU 核，将“索引稀疏参数”和“进行矩阵乘法”这两个步骤融合成一个单一操作。
 - **Memory Coalescing**: 为了确保在读取稀疏的权重矩阵列时也能保持高效，DEJAVU 对部分权重矩阵（如 MLP 的第二层线性层和注意力头的输出投影矩阵）的存储格式进行了优化（改为列主序），确保内存访问是连续的，从而最大化利用 GPU 的内存带宽。
 
 要理解内存合并技术，需要理解 MLP 层的计算，可以参考[这里](papers/llm/LLM%20Preliminaries.md#MLP%20layer)的解释。
 
-> W_up 的第 i 列和 W_down 的第 i 行是联系在一起的。
+> W_up 的第 $i$ 列和 W_down 的第 $i$ 行是联系在一起的。
 
-在存储 MLP 的两个权重矩阵时，如果都采用同一种矩阵存储格式（行主序或者列主序），对于稠密计算没有影响，但是对于稀疏计算，需要先通过索引读取分散的列时，如果是在行主序中取列和列主序中取行都会导致飞合并内存访问，性能急剧下降。
+在存储 MLP 的两个权重矩阵时，如果都采用同一种矩阵存储格式（行主序或者列主序），对于稠密计算没有影响，但是对于稀疏计算，需要先通过索引读取分散的列时，如果是在**行主序中取列**和在**列主序中取行**都会导致非合并内存访问，性能急剧下降。
 
 个人觉得这个改变存储格式的方法没有 [LLM-Flash](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md) 中 "col-row bundling" 优雅和实用。
 

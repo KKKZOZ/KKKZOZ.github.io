@@ -28,15 +28,19 @@ The primary challenge is that the memory footprint of large language models (LLM
 
 ## Insights
 
+I/O is the bottleneck of the LLM inference.
+
 Ways to reduce I/O latency when running LLM inference:
 
-+ Reduce the volume of data transferred from flash
++ **Reduce the volume of data transferred from flash**
   + “Windowing” strategically reduces data transfer by reusing previously activated neurons
-+ Read data in larger, more contiguous chunks
++ **Read data in larger, more contiguous chunks**
   + “Row-column bundling”, tailored to the sequential data access strengths of flash memory
 
 > [!note] Flash Memory Hardware Characteristics
-> The throughput for random reads from flash memory is not constant; it significantly increases when reading larger, contiguous data chunks and when using multiple parallel threads. The high latency cost of small, individual reads makes it more efficient to bundle data together into larger chunks—even if it means reading slightly more than necessary and discarding the unneeded parts.
+>
+> + The throughput for random reads from flash memory is not constant; it significantly increases when reading larger, contiguous data chunks and when using multiple parallel threads.
+> + The high latency cost of small, individual reads makes it more efficient to bundle data together into larger chunks—even if it means reading slightly more than necessary and discarding the unneeded parts.
 
 ## Approaches
 
@@ -61,17 +65,17 @@ LLM-Flash 将 embedding layer 和 attention 相关的权重直接保存在内存
 > [!note] 预测时机和输入数据源
 >
 > + 现有工作
->   + 使用 **第N-1层** FFN模块的输出来预测 **第N层** FFN模块的稀疏性
->   + 预测可以在第N层Attention模块**计算的同时**进行，理论上可以更好地隐藏I/O延迟
+>   + 使用 **第 N-1 层** FFN模块的输出来预测 **第 N 层** FFN 模块的稀疏性
+>   + 预测可以在第 N 层 Attention 模块**计算的同时**进行，理论上可以更好地隐藏 I/O延迟
 > + LLM-Flash
->   + 使用 **当前第N层** Attention模块的输出，来预测**当前第N层** FFN模块的稀疏性
->   + 预测被**推迟**到第N层Attention模块计算完成**之后**才进行
+>   + 使用 **当前第 N 层** Attention 模块的输出，来预测**当前第 N 层** FFN 模块的稀疏性
+>   + 预测被**推迟**到第 N 层 Attention 模块计算完成**之后**才进行
 >
 > 作者认为，经过 attention 模块处理过后的输出是一个信息更丰富，更具判别力的向量表示，能更准确地预测激活结果，也就对应着更少的 False Negatives, 即更少地漏掉本应被加载的关键权重，保证了模型的最终性能。
 
 LLM-Flash 还采用了滑动窗口技术在 DRAM 中缓存神经元权重数据，核心目标是通过重用最近使用过的权重，来最小化每一次从闪存中加载的数据量。
 
-这个缓存里只存放根据最近输入令牌子集预测所需的权重行，当系统处理一个新的输入token时，它只会增量加载那些与它之前的临近token所需权重**不同的部分**。同时，当一些旧的token移出这个“滑动窗口”时，它们所占用的缓存权重资源会被释放掉，从而实现了高效的内存利用。
+这个缓存里只存放根据最近输入令牌子集预测所需的权重行，当系统处理一个新的输入 token 时，它只会增量加载那些与它之前的临近 token 所需权重**不同的部分**。同时，当一些旧的 token 移出这个“滑动窗口”时，它们所占用的缓存权重资源会被释放掉，从而实现了高效的内存利用。
 
 ![pasted-image-20250731092846](/images/pasted-image-20250731092846.png)
 
@@ -83,7 +87,7 @@ LLM-Flash 还采用了滑动窗口技术在 DRAM 中缓存神经元权重数据�
 
 ![pasted-image-20250731093135](/images/pasted-image-20250731093135.png)
 
-> LLM-Flash 也发现了共激活的 power low distribution，但没利用。
+> LLM-Flash 也发现了共激活的 power low distribution，但是没利用。
 
 ### Optimized Data Management in DRAM
 

@@ -296,7 +296,7 @@ Observations:
 
 > Sparsification is a compression technique that increases the proportion of zero-valued elements in data structures such as model parameters or activations.
 
-Sparsification aims to decrease computational complexity and memory usage by efficiently ignoring zero elements during computation.
+**Sparsification aims to decrease computational complexity and memory usage by efficiently ignoring zero elements during computation.**
 
 In the context of LLMs, sparsification is commonly applied to weight parameters and attention activations.
 
@@ -323,59 +323,60 @@ It also comes in two forms:
 
 ![pasted-image-20250720210825](/images/pasted-image-20250720210825.png)
 
----
-For detail methods:
+> [!note] For detail methods
+>
+> Weight Pruning
+>
+> > This method removes less critical weights from the model to reduce its size and computational cost. It is divided into two main types.
+>
+>
+> Unstructured Pruning
+>
+> > This involves pruning individual, scattered weights within the model. While it can achieve high sparsity with minimal impact on accuracy, it is difficult to accelerate on standard hardware like GPUs due to irregular memory access patterns.
+>
+> + SparseGPT:
+>   + Core Idea: It performs one-shot pruning by efficiently calculating the error caused by removing weights and updating the remaining weights to compensate for this loss.
+> + Wanda:
+>   + Core Insight: A simple yet effective pruning metric can be created by multiplying the magnitude of a weight by the norm of its corresponding input activation, avoiding complex computations.
+> + RIA:
+>   + Core Idea: It prunes weights based on their relative importance and activations, then converts the resulting unstructured sparse pattern into a hardware-friendly N:M structured pattern for real-world speed-ups on GPUs.
+>
+> Structured Pruning
+>
+> > This involves removing larger, more regular blocks of the model, such as entire channels or layers. This approach is hardware-friendly and directly leads to inference speed-ups, though it may have a more significant impact on model performance.
+>
+>
+> + LLM-Pruner:
+>   + Core Idea: Pruning is guided by identifying and removing groups of neurons that are structurally dependent on each other.
+> + SliceGPT:
+>   + Core Insight: By leveraging the mathematical properties of the RMSNorm operation, entire rows and columns can be deleted from weight matrices without harming model performance, enabling significant structured pruning.
+> + LoRAPrune/LoRAShear:
+>   + Core Idea: These methods are specifically designed for LLMs fine-tuned with LoRA, using the information within the LoRA modules to guide the removal of parts of the original model.
+>
+> Sparse Attention
+>
+> > This technique enhances the efficiency of the attention operation, mainly during the prefilling stage, by strategically skipping some attention calculations.
+>
+> Static Sparse Attention
+>
+> > The sparse attention pattern is fixed and does not depend on the input data.
+>
+> + Longformer/Bigbird:
+>   + Core Idea: They approximate full attention by combining several fixed patterns: a local sliding-window attention, a global attention to specific tokens, and a random attention pattern.
+> + StreamingLLM:
+>   + Core Insight: An LLM can handle infinitely long contexts by maintaining attention only to the very first few tokens (which act as an "attention sink") and a recent local window of tokens.
+>
+> Dynamic Sparse Attention
+> The sparse attention pattern is determined adaptively based on the input data.
+>
+> + Token Pruning (e.g., Spatten):
+>   + Core Idea: It dynamically identifies and removes unimportant or redundant tokens from the input, so that subsequent layers have a shorter sequence to process.
+> + Token Clustering (e.g., Reformer):
+>   + Core Idea: It groups similar query and key tokens into "buckets" using techniques like Locality-Sensitive Hashing (LSH) and only computes attention within each bucket, avoiding the full quadratic computation.
+> + Heavy-Hitter Oracle (H2O):
+>   + Core Idea: It combines efficient local attention with dynamic attention to a small, cached set of important "heavy-hitter" tokens from the past, allowing access to crucial long-range context without full computation.
 
-Weight Pruning
-
-> This method removes less critical weights from the model to reduce its size and computational cost. It is divided into two main types.
-
-Unstructured Pruning
-
-> This involves pruning individual, scattered weights within the model. While it can achieve high sparsity with minimal impact on accuracy, it is difficult to accelerate on standard hardware like GPUs due to irregular memory access patterns.
-
-+ SparseGPT:
-  + Core Idea: It performs one-shot pruning by efficiently calculating the error caused by removing weights and updating the remaining weights to compensate for this loss.
-+ Wanda:
-  + Core Insight: A simple yet effective pruning metric can be created by multiplying the magnitude of a weight by the norm of its corresponding input activation, avoiding complex computations.
-+ RIA:
-  + Core Idea: It prunes weights based on their relative importance and activations, then converts the resulting unstructured sparse pattern into a hardware-friendly N:M structured pattern for real-world speed-ups on GPUs.
-
-Structured Pruning
-
-> This involves removing larger, more regular blocks of the model, such as entire channels or layers. This approach is hardware-friendly and directly leads to inference speed-ups, though it may have a more significant impact on model performance.
-
-+ LLM-Pruner:
-  + Core Idea: Pruning is guided by identifying and removing groups of neurons that are structurally dependent on each other.
-+ SliceGPT:
-  + Core Insight: By leveraging the mathematical properties of the RMSNorm operation, entire rows and columns can be deleted from weight matrices without harming model performance, enabling significant structured pruning.
-+ LoRAPrune/LoRAShear:
-  + Core Idea: These methods are specifically designed for LLMs fine-tuned with LoRA, using the information within the LoRA modules to guide the removal of parts of the original model.
-
-Sparse Attention
-
-> This technique enhances the efficiency of the attention operation, mainly during the prefilling stage, by strategically skipping some attention calculations.
-
-Static Sparse Attention
-
-> The sparse attention pattern is fixed and does not depend on the input data.
-
-+ Longformer/Bigbird:
-  + Core Idea: They approximate full attention by combining several fixed patterns: a local sliding-window attention, a global attention to specific tokens, and a random attention pattern.
-+ StreamingLLM:
-  + Core Insight: An LLM can handle infinitely long contexts by maintaining attention only to the very first few tokens (which act as an "attention sink") and a recent local window of tokens.
-
-Dynamic Sparse Attention
-The sparse attention pattern is determined adaptively based on the input data.
-
-+ Token Pruning (e.g., Spatten):
-  + Core Idea: It dynamically identifies and removes unimportant or redundant tokens from the input, so that subsequent layers have a shorter sequence to process.
-+ Token Clustering (e.g., Reformer):
-  + Core Idea: It groups similar query and key tokens into "buckets" using techniques like Locality-Sensitive Hashing (LSH) and only computes attention within each bucket, avoiding the full quadratic computation.
-+ Heavy-Hitter Oracle (H2O):
-  + Core Idea: It combines efficient local attention with dynamic attention to a small, cached set of important "heavy-hitter" tokens from the past, allowing access to crucial long-range context without full computation.
-
----
+从推理优化的角度，可以从在线和离线两个方面将这些方法分类
 
 #### Structure Optimization
 
