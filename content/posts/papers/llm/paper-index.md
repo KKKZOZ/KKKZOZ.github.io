@@ -9,6 +9,14 @@ weight: 1
 
 ## 2025
 
+### 0812-0818
+
+- [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](./kv-runahead-scalable-causal-llm-inference-by-parallel-key-value-cache-generation/)
+- [Striped Attention Faster Ring Attention for Causal Transformers](./striped-attention-faster-ring-attention-for-causal-transformers/)
+- [Ring Attention with Blockwise Transformers for Near-Infinite Context](./ring-attention-with-blockwise-transformers-for-near-infinite-context/)
+- [TPI-LLM Serving 70B-scale LLMs Efficiently on Low-resource Mobile Devices](./tpi-llm-serving-70b-scale-llms-efficiently-on-low-resource-mobile-devices/)
+- [LLM.int8() 8-bit Matrix Multiplication for Transformers at Scale](./llm.int8-8-bit-matrix-multiplication-for-transformers-at-scale/)
+
 ### 0729-0804
 
 - [Fast On-device LLM Inference with NPUs](./fast-on-device-llm-inference-with-npus/)
@@ -33,7 +41,7 @@ weight: 1
 ### -0714
 
 - [Orca A Distributed Serving System for Transformer-Based Generative Models](./orca-a-distributed-serving-system-for-transformer-based-generative-models/)
-- [EdgeShard Efficient LLM Inference via  Collaborative Edge Computing](./edgeshard-efficient-llm-inference-via--collaborative-edge-computing/)
+- [EdgeShard Efficient LLM Inference via Collaborative Edge Computing](./edgeshard-efficient-llm-inference-via-collaborative-edge-computing/)
 - [ServerlessLLM Locality-Enhanced Serverless Inference for Large Language Models](./serverlessllm-locality-enhanced-serverless-inference-for-large-language-models/)
 
 ## Uncategorized
@@ -42,3 +50,4 @@ weight: 1
 
 - [Efficient Function-as-a-Service for Large Language Models with TIDAL](./efficient-function-as-a-service-for-large-language-models-with-tidal/)
 - [LLM Preliminaries](./llm-preliminaries/)
+- [LLM as a System Service on Mobile Devices](./llm-as-a-system-service-on-mobile-devices/)

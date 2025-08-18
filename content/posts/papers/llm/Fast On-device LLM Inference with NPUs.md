@@ -176,9 +176,13 @@ The key idea is to maximize prefill execution on mobile NPUs to accelerate integ
 
 由于主要目标是研究 prefill 阶段，所以不能像 decode 阶段那样很好地利用稀疏性来优化计算。
 
+Shadow outlier execution 完全可以看做是 [LLM.int8()](papers/llm/LLM.int8()%208-bit%20Matrix%20Multiplication%20for%20Transformers%20at%20Scale.md) 在异构芯片上的合理外推。
+
 在实现时，可以参考 vLLM 的早期开发流程（具体在哪里看过搞忘了，知乎？），先实现一套自动化的性能测试和分析工具，每次 commit 之后都会自动执行，对系统性能进行分析，记录本次 commit 在性能上优化了多少，这样就能把许多较大的优化划分为多个子任务（无论是从粒度上还是直接分解），明确当前的工作进展是否符合预期。
 
 ## Related Works
+
+- [LLM.int8() 8-bit Matrix Multiplication for Transformers at Scale](papers/llm/LLM.int8()%208-bit%20Matrix%20Multiplication%20for%20Transformers%20at%20Scale.md)
 
 - [^1]: [Per-tensor && Per-group Quantization](papers/llm/LLM%20Preliminaries.md#Per-tensor%20&&%20Per-group%20Quantization)
 - [^2]: [A Gentle Introduction to 8-bit Matrix Multiplication for transformers at scale using transformers, accelerate and bitsandbytes](https://huggingface.co/blog/hf-bitsandbytes-integration#is-it-faster-than-native-models)

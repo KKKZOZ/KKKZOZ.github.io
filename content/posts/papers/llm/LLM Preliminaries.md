@@ -167,6 +167,245 @@ y = a @ W_down (1, d_ffn) @ (d_ffn, d_model) = (1, d_model)
 > * 第一次矩阵乘法用[列向量视角](papers/llm/LLM%20Preliminaries.md#角度三：将%20W%20视为由%206%20个列向量组成)理解 (分析输出的特定分量)
 > * 第二次矩阵乘法用[行向量视角](papers/llm/LLM%20Preliminaries.md#角度二：将%20W%20视为由%203%20个行向量组成)理解 (分析输入分量的贡献)
 
+### FFN 的并行化
+
+> [!note] 核心思想：矩阵乘法的外积展开
+> $$
+> C = AB = \left[ \begin{array}{cccc} a_1 & a_2 & \dots & a_D \end{array} \right]_{1 \times D} \cdot \left[ \begin{array}{c} b^{(1)} \\ b^{(2)} \\ \vdots \\ b^{(D)} \end{array} \right]_{D \times 1} = a_1 b^{(1)} + a_2 b^{(2)} + \dots + a_D b^{(D)} = \sum_{i=1}^{D} a_i b^{(i)}
+> $$
+
+代码：
+
+```python
+# English comments are used as requested in user instructions.
+import numpy as np
+
+
+# Let's define the SiLU activation function, as it's central to the FFN block.
+# SiLU(x) = x * sigmoid(x)
+def sigmoid(x):
+    return 1 / (1 + np.exp(-x))
+
+
+def silu(x):
+    return x * sigmoid(x)
+
+
+# --- 1. Setup Simulation Parameters ---
+
+# Number of devices (e.g., GPUs) to simulate for tensor parallelism.
+num_devices = 4
+
+# Define the dimensions of the model and input.
+# For demonstration, these values are smaller than in a real model like Llama.
+batch_size = 8
+hidden_dim = 1024  # Dimension of the input and output 'x'
+intermediate_dim = 4096  # The expanded inner dimension of the FFN
+
+# Ensure intermediate_dim is divisible by num_devices for clean splitting.
+assert intermediate_dim % num_devices == 0, (
+    "intermediate_dim must be divisible by num_devices"
+)
+
+print(f"Simulating FFN parallelization across {num_devices} devices.")
+print(
+    f"Dimensions: Batch={batch_size}, Hidden={hidden_dim}, Intermediate={intermediate_dim}\n"
+)
+
+# --- 2. Initialize Input and Weights (Ground Truth) ---
+
+# Create a random input tensor 'x'.
+# In a real scenario, this comes from the previous Attention Block.
+np.random.seed(42)
+x = np.random.randn(batch_size, hidden_dim)
+
+# Initialize the three weight matrices for the entire FFN block.
+# These are the "unsplit" weights that would exist on a single device.
+W_gate = np.random.randn(hidden_dim, intermediate_dim)
+W_up = np.random.randn(hidden_dim, intermediate_dim)
+W_down = np.random.randn(intermediate_dim, hidden_dim)
+
+
+# --- 3. Baseline: Single-Device FFN Calculation ---
+# This is our ground truth to verify the parallelized version.
+
+print("--- Running Baseline Calculation (Single Device) ---")
+
+# The formula is: Output = W_down(SiLU(W_gate(x)) * W_up(x))
+gate_proj = x @ W_gate
+up_proj = x @ W_up
+# Element-wise multiplication
+fused_hidden = silu(gate_proj) * up_proj
+single_device_output = fused_hidden @ W_down
+
+print(f"Shape of single_device_output: {single_device_output.shape}\n")
+
+
+# --- 4. Parallelized FFN Calculation ---
+# This simulates the process across multiple devices.
+
+print("--- Running Parallelized Calculation (Simulated Multi-Device) ---")
+
+# Step 0: Split the weights across the devices.
+# W_gate and W_up are split by COLUMNS (axis=1). This is "Column Parallelism".
+W_gate_shards = np.array_split(W_gate, num_devices, axis=1)
+W_up_shards = np.array_split(W_up, num_devices, axis=1)
+
+# W_down is split by ROWS (axis=0). This is "Row Parallelism".
+W_down_shards = np.array_split(W_down, num_devices, axis=0)
+
+print(f"Original W_gate shape: {W_gate.shape}")
+print(f"Split W_gate_shard[0] shape: {W_gate_shards[0].shape}")
+print(f"Original W_down shape: {W_down.shape}")
+print(f"Split W_down_shard[0] shape: {W_down_shards[0].shape}\n")
+
+
+# This list will hold the partial output from each device before the final communication.
+partial_outputs = []
+
+# --- Loop to simulate computation on each device ---
+for i in range(num_devices):
+    print(f"-> Simulating computation on Device {i}...")
+
+    # The full input 'x' is available on every device (broadcast).
+    device_input = x
+
+    # Get the weight shards for this specific device.
+    w_gate_i = W_gate_shards[i]
+    w_up_i = W_up_shards[i]
+    w_down_i = W_down_shards[i]
+
+    # Step 1 & 2: Column and Row Parallelism Calculation
+    # Each device performs its computation independently. NO communication is needed yet.
+
+    # Column Parallelism part:
+    # Each device computes a slice of the gate and up projections.
+    gate_proj_i = device_input @ w_gate_i
+    up_proj_i = device_input @ w_up_i
+
+    # Local activation and element-wise multiplication.
+    fused_hidden_i = silu(gate_proj_i) * up_proj_i
+
+    # Row Parallelism part:
+    # The intermediate result is multiplied by the corresponding ROW-split part of W_down.
+    # The result is a partial output that has the final correct dimension.
+    output_i = fused_hidden_i @ w_down_i
+
+    print(f"   Shape of partial output on Device {i}: {output_i.shape}")
+
+    # Store the partial result.
+    partial_outputs.append(output_i)
+
+print("\n--- Step 3: All-Reduce Aggregation ---")
+
+# In a real system, this would be a single, highly optimized MPI or NCCL call.
+# The all_reduce operation sums the tensors from all devices element-wise
+# and makes the final result available on all devices.
+# Here, we simply sum the partial results from our list.
+parallel_device_output = sum(partial_outputs)
+
+print(f"Shape of aggregated parallel_device_output: {parallel_device_output.shape}\n")
+
+
+# --- 5. Verification ---
+# Compare the output from the single-device calculation with the parallelized one.
+
+print("--- Verification ---")
+are_close = np.allclose(single_device_output, parallel_device_output, atol=1e-6)
+print(
+    f"Do the results from single-device and parallelized computation match? -> {are_close}"
+)
+
+if are_close:
+    print(
+        "✅ Success! The parallel FFN implementation correctly reproduces the original output."
+    )
+else:
+    print("❌ Failure! The outputs do not match.")
+
+```
+
+* 输入 $X\in\mathbb{R}^{B\times H}$（batch $B$、hidden 维度 $H$）
+* 三个权重：
+  * $W_{\text{gate}}\in\mathbb{R}^{H\times I}$
+  * $W_{\text{up}}\in\mathbb{R}^{H\times I}$
+  * $W_{\text{down}}\in\mathbb{R}^{I\times H}$
+* 中间量：
+  * $G = X W_{\text{gate}}\in\mathbb{R}^{B\times I}$
+  * $U = X W_{\text{up}}\in\mathbb{R}^{B\times I}$
+  * $H_{\text{fused}}=\text{SiLU}(G)\odot U\in\mathbb{R}^{B\times I}$
+  * 输出 $Y = H_{\text{fused}}\, W_{\text{down}}\in\mathbb{R}^{B\times H}$
+
+代码的并行拆分是：
+
+对 $W_{\text{gate}}, W_{\text{up}}$ 做**按列切分**（column-parallel），对 $W_{\text{down}}$ 做**按行切分**（row-parallel）。设设备数为 $D$，把中间维 $I$ 均分为 $I=I_1+\cdots+I_D$。对应地：
+
+$$
+W_{\text{gate}} = \big[ W_{\text{gate}}^{(1)}\;|\;\cdots\;|\;W_{\text{gate}}^{(D)} \big],\quad
+W_{\text{up}}   = \big[ W_{\text{up}}^{(1)}\;  |\;\cdots\;|\;W_{\text{up}}^{(D)} \big],
+$$
+
+其中 $W_{\text{gate}}^{(i)},W_{\text{up}}^{(i)}\in\mathbb{R}^{H\times I_i}$；
+
+$$
+W_{\text{down}} =
+\begin{bmatrix}
+W_{\text{down}}^{(1)}\\
+\vdots\\
+W_{\text{down}}^{(D)}
+\end{bmatrix},\quad
+W_{\text{down}}^{(i)}\in\mathbb{R}^{I_i\times H}.
+$$
+
+#### 列并行拆分
+
+矩阵乘法按**列块**的恒等式：
+
+$$
+X W_{\text{gate}}=\big[\,X W_{\text{gate}}^{(1)}\;\big|\;\cdots\;\big|\;X W_{\text{gate}}^{(D)}\,\big],
+$$
+
+因此每个设备 $i$ 都能独立得到本地的投影片段
+
+$$
+G^{(i)} = X W_{\text{gate}}^{(i)} \in \mathbb{R}^{B\times I_i},\quad
+U^{(i)} = X W_{\text{up}}^{(i)} \in \mathbb{R}^{B\times I_i}.
+$$
+
+由于 $\text{SiLU}$ 与“逐元素乘” $\odot$ 都是**按列独立**的逐元素操作，所以每个设备可在本地完成
+
+$$
+H_{\text{fused}}^{(i)}=\text{SiLU}(G^{(i)})\odot U^{(i)} \in \mathbb{R}^{B\times I_i}
+$$
+
+而无需和别的设备通信；把所有 $H_{\text{fused}}^{(i)}$ 横向拼起来就得到完整的
+
+$$
+H_{\text{fused}}=\big[H_{\text{fused}}^{(1)}\;|\;\cdots\;|\;H_{\text{fused}}^{(D)}\big]\in\mathbb{R}^{B\times I}.
+$$
+
+#### 行并行 + 外积展开
+
+把中间结果按**列**切成块、把 W_down 权重按**行**切成块：
+
+$$
+H_{\text{fused}}=\big[H^{(1)}\;|\;H^{(2)}\;|\;\cdots\;|\;H^{(D)}\big],\quad
+W_{\text{down}}=\begin{bmatrix}
+W^{(1)}\\ W^{(2)}\\ \vdots \\ W^{(D)}
+\end{bmatrix}
+$$
+
+那么最关键的乘法就是一个非常朴素的块矩阵恒等式：
+
+$$
+H_{\text{fused}}\,W_{\text{down}}
+=\big[H^{(1)}|\cdots|H^{(D)}\big]
+\begin{bmatrix}W^{(1)}\\ \vdots \\ W^{(D)}\end{bmatrix}
+=\;H^{(1)}W^{(1)}\;+\;\cdots\;+\;H^{(D)}W^{(D)}.
+$$
+
+所以在列并行结束后，设备之间不用相互通信，正好可以用自己本地的 $H_{fused}^{(i)}$，在本地进行 $H^{(i)}W^{(i)}$ 计算，最后再 `allreduce` 到一起。
+
 ### Linear Layer
 
 Linear 层的实现：
@@ -196,9 +435,98 @@ def linear(
   * 一个张量，多套缩放因子和零点
   * 精度高，开销高
 
+## Parallelism
+
+### TP 场景下 KV Cache 的维护
+
+这里要明确的是，多头注意力 (Multi-Head Attention) 的本质是：
+将输入向量先通过线性变换拆成多个子空间，每个子空间对应一个 head，分别计算注意力分数，最后拼接结果。
+
+> 多头并未增加新的非线性类型，只是把 softmax 做了 H 次、彼此独立归一化。正是“多个独立归一化”的结构性差异，带来更强表达能力（同一位置可同时“看向”不同位置并对不同通道采取不同的加权策略）。
+
+因此，每个 head 都有自己独立的一组投影矩阵 (W_Q, W_K, W_V)。
+对应到 KV Cache：每个 head 会生成一份自己的 Key、Value，并存入缓存。
+
+不同 head 的 KV cache 不会共用，而是按 head 维度单独存放。
+
+比如在下面这段实现中，同一层只使用了一个 cache 对象，看起来像是多个 head 共用了 KV Cache，其实只是 **共用一个容器，不共用内容**
+
+```cpp
+class MultiHeadAttention(nn.Module):
+    def __init__(self, args: ModelArgs):
+        super().__init__()
+        self.n_embd = args.n_embd
+        self.n_head = args.n_head
+        self.head_dim = self.n_embd // self.n_head
+
+        self.scale = self.head_dim**-0.5
+
+        # D x 3D (Q, K, V)
+        self.c_attn = nn.Linear(self.n_embd, 3 * self.n_embd, bias=True)
+        self.c_proj = nn.Linear(self.n_embd, self.n_embd, bias=True)
+
+    def __call__(
+        self,
+        x: mx.array,
+        mask: Optional[mx.array | Literal["causal"]] = None,
+        cache: Optional[Any] = None,
+    ) -> mx.array:
+        N, L, E = x.shape
+        H, D = self.n_head, self.head_dim
+
+        assert E == H * D, (
+            f"Embedding size {E} must be divisible by number of heads {H}."
+        )
+
+        qkv = self.c_attn(x)
+        # N x L x E
+        q, k, v = mx.split(qkv, 3, axis=-1)
+
+        # N x L x (H * D)
+        q = q.reshape(N, L, H, D)
+        k = k.reshape(N, L, H, D)
+        v = v.reshape(N, L, H, D)
+
+        # multihead attention expects
+        # N x H x L x D
+        q = q.swapaxes(1, 2)
+        k = k.swapaxes(1, 2)
+        v = v.swapaxes(1, 2)
+
+        if cache is not None:
+            k, v = cache.update_and_fetch(k, v)
+
+        # N x H x L x D
+        x = scaled_dot_product_attention(
+            q, k, v, scale=self.scale, cache=cache, mask=mask
+        )
+        # N x L x (H * D)
+        x = x.swapaxes(1, 2)
+        x = x.reshape(N, L, H * D)
+        return self.c_proj(x)
+```
+
+典型实现里，cache 会把传入的 (N, H, L_new, D) 追加到内部维护的 (N, H, L_total, D) 上（沿着 序列维拼接）。head 维不会被合并或相互写入，因此每个 head 的缓存仍是独立切片：`k[:, h, :, :]` / `v[:, h, :, :]`.
+
 ## API
 
 ### Function Calling
+
+* 本地作为 Function Handler, 提供
+  * Function Description
+    * Descriptions about when to call this function
+    * Function Parameters, including the type
+  * Function Implementation
+* Prompt 中包括
+  * 用户输入
+  * Function Description
+* LLM 根据用户输入，决定是否要调用工具来获取信息
+  * 否：正常返回
+  * 是：返回一个 `tool_calls` (LLM issues a function call)
+* 本地收到 `tool_calls` 时，通过 Function Handler 调用对应的 Function，然后返回给 LLM
+* LLM 结合 Function Call 的结果，生成响应
+
+**A practical example**
 
 Setup:
 
@@ -367,3 +695,42 @@ if __name__ == "__main__":
     run_conversation()
 
 ```
+
+### MCP
+
+MCP协议主要解决大模型需要访问外部资源和工具的问题，包括：
+
+* **资源访问**：文件系统、数据库、API等
+* **工具调用**：执行特定功能的外部工具
+* **上下文管理**：安全地管理和传递上下文信息
+
+主要特点：
+
+* **标准化接口**：提供统一的协议规范，让不同的AI应用可以无缝集成各种外部服务。
+* **安全性**：内置权限管理和访问控制机制，确保数据访问的安全性。
+* **可扩展性**：支持插件式架构，开发者可以轻松添加新的资源类型和工具。
+
+工作原理：
+
+1. **连接建立**：AI应用通过MCP协议连接到外部资源服务器
+2. **能力协商**：双方协商支持的功能和权限范围
+3. **请求处理**：AI应用发送标准化请求，服务器返回结构化响应
+4. **上下文同步**：维护会话状态和上下文信息
+
+MCP 协议和 Function Calling 都能让大模型调用外部功能。
+
+```py
+传统 Function Calling:
+AI 应用 ←→ Function Handler
+
+MCP 协议:
+AI 应用 ←→ MCP 客户端 ←→ MCP 服务器
+```
+
+> [!NOTE]
+> MCP 可以看做是高级版的 Function Call
+>
+> * MCP Server 在云端提供 Function Call
+> * MCP Client 在本地提供更完善的错误处理和重试机制
+
+>

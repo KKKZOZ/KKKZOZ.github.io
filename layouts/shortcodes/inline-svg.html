@@ -1,0 +1,6 @@
+{{/*
+  使用方法: {{< inline-svg "path/to/your.svg" >}}
+  路径是相对于项目根目录的。
+  例如: {{< inline-svg "static/svg/clickable-icon.svg" >}}
+*/}}
+{{ readFile (.Get 0) | safeHTML }}

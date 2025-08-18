@@ -543,6 +543,43 @@ To solve this, frameworks use a method called "split-and-fuse" or "chunked-prefi
 + **Sequence Parallelism** (SP)
   + The key idea is to distribute the computational and storage load by splitting the processing of long sequences across multiple GPUs along the sequence length dimension.
 
+> [!summary] TP vs PP
+>
+> + TP
+>   + Latency: 单个样本要经过所有 stage，每个 stage 所用时间变少
+> + PP
+>   + Latency：单个样本还是要经过所有 stage，总时间不变
+>   + Throughput：多个样本流水化后，每个 stage 都在并行工作，产出率显著提高
+
+---
+
++ 为什么 TP 能降延迟
+
+**Tensor Parallelism（张量并行）**把**同一层**里的大矩阵运算（QKV/MLP 的 GEMM 等）按内部维度（head/hidden）切开，丢到多块 GPU **并行算**，然后做一次通信（all-reduce / all-gather）合并结果。
+对单次前向来说，这会**缩短关键路径上的计算时长**：
+
++ 设一层单卡计算时间为 $T_\text{compute}$，做 $n$ 路 TP 后，每卡只算 $1/n$ 的工作量，计算部分近似变成 $T_\text{compute}/n$。
++ 需要加上通信开销 $T_\text{comm}$（常能与后续算子部分重叠，且在 NVLink/PCIe Gen5 等带宽上通常小于被分摊掉的计算量）。
++ 于是单层的墙钟时间近似 $\max(T_\text{compute}/n,\;T_\text{comm-overlap})$。当通信不过分大时，总体**比单卡更短**，层层叠加后，整个模型的**端到端延迟降低**。
+
++ 为什么 PP 不降延迟（但能提吞吐）
+
+**Pipeline Parallelism（流水线并行）**把**不同层**排成多个“段”（stage），每块 GPU 负责一段。对于**同一个微批/样本**，它仍然必须**顺序经过** Stage 1 → Stage 2 → … → Stage $p$。
+因此，这个样本的端到端延迟是各段时长之和外加跨段传输/调度开销：
+
+$$
+T_\text{latency} \approx \sum_{i=1}^{p} T_{\text{stage }i} \;+\; T_\text{transfer/schedule}
+$$
+
+这和没做 PP 时“按层串行”在时间结构上**没有本质缩短**（甚至多了跨卡传激活的开销）。PP 的优势在于用**微批切分**把流水线填满，让不同微批**并行处在不同段**上，从而把**吞吐量**做高；但**单个微批的完成时间不变**（首个微批还要付“气泡”成本）。
+直观类比：装配线能同时加工很多件（吞吐高），但**每一件**从头到尾仍要走完**全部工位**（延迟不降）。
+
++ Summary
+  + **TP**：并行的是**同一层的同一次大算子** → **缩短关键路径** → 延迟可下降（受通信影响）。
+  + **PP**：并行的是**不同样本/微批位于不同层段** → **不缩短关键路径** → 延迟基本不变（甚至略增），但吞吐显著提升。
+
+---
+
 #### Scheduling Strategy
 
 #### Distributed Systems

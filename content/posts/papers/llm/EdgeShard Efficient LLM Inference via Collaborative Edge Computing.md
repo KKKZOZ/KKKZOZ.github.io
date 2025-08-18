@@ -1,5 +1,5 @@
 ---
-title: "EdgeShard Efficient LLM Inference via  Collaborative Edge Computing"
+title: "EdgeShard Efficient LLM Inference via Collaborative Edge Computing"
 tags:
   - IEEE-IoT-J-25
   - LLM-Inference

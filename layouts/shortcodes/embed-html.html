@@ -1,0 +1,22 @@
+{{/*
+    Shortcode to embed a full HTML document using an iframe.
+    Usage: {{< embed-html src="/path/to/your.html" >}}
+*/}}
+{{ $src := .Get "src" | safeURL }}
+{{ $height := .Get "height" | default "600px" }}
+{{ $width := .Get "width" | default "100%" }}
+{{ $title := .Get "title" | default "Embedded HTML Document" }}
+
+{{ if not $src }}
+    {{ errorf "The 'src' parameter is required for the 'embed-html' shortcode." }}
+{{ else }}
+    <div class="embedded-html-container" style="position: relative; width: {{ $width }}; margin: 2em 0;">
+        <iframe
+            src="{{ $src }}"
+            style="border: 1px solid #ccc; width: 100%; height: {{ $height }};"
+            title="{{ $title }}"
+            loading="lazy">
+            Your browser does not support iframes.
+        </iframe>
+    </div>
+{{ end }}

@@ -23,6 +23,7 @@ weight: 10
 - [GPU calculator](https://calculator.inference.ai/)
 - [Text to ASCII Art Generator (TAAG)](https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Type%20Something%20)
 - [Models.dev — An open-source database of AI models](https://models.dev/)
+- [Ecosyste.ms: Issues](https://issues.ecosyste.ms/)
 
 ## Obsidian
 
