@@ -24,6 +24,7 @@ weight: 10
 - [Text to ASCII Art Generator (TAAG)](https://patorjk.com/software/taag/#p=display&f=ANSI%20Shadow&t=Type%20Something%20)
 - [Models.dev — An open-source database of AI models](https://models.dev/)
 - [Ecosyste.ms: Issues](https://issues.ecosyste.ms/)
+- [CheatSheets.zip - Ultimate Cheat for Developers](https://cheatsheets.zip/)
 
 ## Obsidian
 
