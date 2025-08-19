@@ -81,5 +81,5 @@ TSP方案旨在并行化标准的单设备注意力计算流程。其标准工�
 
 ## Related Works
 
-+ [Ring Attention with Blockwise Transformers for Near-Infinite Context](papers/llm/Ring%20Attention%20with%20Blockwise%20Transformers%20for%20Near-Infinite%20Context.md)
-+ [Striped Attention Faster Ring Attention for Causal Transformers](papers/llm/Striped%20Attention%20Faster%20Ring%20Attention%20for%20Causal%20Transformers.md)
++ [Ring Attention with Blockwise Transformers for Near-Infinite Context](posts/papers/llm/ring-attention-with-blockwise-transformers-for-near-infinite-context.md)
++ [Striped Attention Faster Ring Attention for Causal Transformers](posts/papers/llm/striped-attention-faster-ring-attention-for-causal-transformers.md)

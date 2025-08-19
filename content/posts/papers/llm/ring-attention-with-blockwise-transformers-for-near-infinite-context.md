@@ -269,7 +269,7 @@ Devices accumulate partial outputs across iterations using the *lazy softmax* st
 > - Q1 并不需要对 K1, V1, K2, V2 进行计算
 > - Q2 并不需要对 K1, V1 进行计算
 
-[Striped Attention Faster Ring Attention for Causal Transformers](papers/llm/Striped%20Attention%20Faster%20Ring%20Attention%20for%20Causal%20Transformers.md) 在这个观察上进行了改进。
+[Striped Attention Faster Ring Attention for Causal Transformers](posts/papers/llm/striped-attention-faster-ring-attention-for-causal-transformers.md) 在这个观察上进行了改进。
 
 ## Evaluation
 
@@ -284,5 +284,5 @@ Devices accumulate partial outputs across iterations using the *lazy softmax* st
 
 ## Related Works
 
-- [Striped Attention Faster Ring Attention for Causal Transformers](papers/llm/Striped%20Attention%20Faster%20Ring%20Attention%20for%20Causal%20Transformers.md)
-- [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](papers/llm/KV-Runahead%20Scalable%20Causal%20LLM%20Inference%20by%20Parallel%20Key-Value%20Cache%20Generation.md)
+- [Striped Attention Faster Ring Attention for Causal Transformers](posts/papers/llm/striped-attention-faster-ring-attention-for-causal-transformers.md)
+- [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](posts/papers/llm/kv-runahead-scalable-causal-llm-inference-by-parallel-key-value-cache-generation.md)

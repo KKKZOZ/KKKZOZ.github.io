@@ -44,7 +44,7 @@ These candidates are organized as a token tree.
 - **Expansion-based token tree construction**
   - Derive multiple tokens from an SSM within a single decoding step.
   - 每次 decoding iteration 中选 top-k 就行，也就是在 token tree 中，对于一个父节点，选多个子节点出来。
-  - SpecInfer employs a **static** expansion strategy, [[EdgeLLM Fast On-Device LLM Inference With Speculative Decoding|EdgeLLM]] improves this by adopting a **dynamic** strategy - the branch with higher confidence is intended to be longer and stops speculative generation when the "tree confidence" drops below the threshold.
+  - SpecInfer employs a **static** expansion strategy, [[papers/llm/EdgeLLM Fast On-Device LLM Inference With Speculative Decoding|EdgeLLM]] improves this by adopting a **dynamic** strategy - the branch with higher confidence is intended to be longer and stops speculative generation when the "tree confidence" drops below the threshold.
 
 ![pasted-image-20250725103728](/images/pasted-image-20250725103728.png)
 

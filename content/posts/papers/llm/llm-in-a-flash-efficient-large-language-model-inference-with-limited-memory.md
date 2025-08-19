@@ -129,4 +129,4 @@ embedding layer 和 attention 这部分参数量比较小，可以直接保存�
 ## Related Works
 
 + Relu strikes back: Exploiting activation sparsity in large language models
-+ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](papers/llm/Deja%20Vu%20Contextual%20Sparsity%20for%20Efficient%20LLMs%20at%20Inference%20Time.md)
++ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](posts/papers/llm/deja-vu-contextual-sparsity-for-efficient-llms-at-inference-time.md)

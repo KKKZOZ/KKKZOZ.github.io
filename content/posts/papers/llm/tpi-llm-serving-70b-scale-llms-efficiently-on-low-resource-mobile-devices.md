@@ -22,7 +22,7 @@ LLM serving is shifting from the cloud to edge devices like smartphones and lapt
 
 ### Preliminaries
 
-- [TP 场景下 KV Cache 的维护](./LLM-Preliminaries.md#TP-场景下-KV-Cache-的维护)
+- [TP 场景下 KV Cache 的维护](papers/llm/LLM%20Preliminaries.md#TP%20场景下%20KV%20Cache%20的维护)
 
 ## Challenges
 
@@ -56,7 +56,7 @@ TPI-LLM 采用 master-worker 架构。
 ## Tensor Parallelism
 
 - Attention Block 按照 attention head 拆分到不同的设备上，因为 head 之间是相互独立互不影响的，KV Cache 也能根据不同的 head 独立维护
-- FFN Block 就是纯数学拆分, 可以参考 [FFN 的并行化](./LLM-Preliminaries.md#FFN-的并行化)
+- FFN Block 就是纯数学拆分, 可以参考 [FFN 的并行化](papers/llm/LLM%20Preliminaries.md#FFN%20的并行化)
 
 ## Evaluation
 
@@ -78,7 +78,7 @@ TPI-LLM 采用 master-worker 架构。
 - 把 Sliding Window Memory Scheduling 建模为 finite-capacity birth-death Markov chain
   - 有必要吗？这技术一点也不复杂，说白了就是小学数学的的泳池进水和放水问题
   - 进水速度 (memory scheduler 加载权重的速度) > 放水速度 (main thread 消耗权重的速度)，那泳池就能装满
-- Figure 8: 很少见到这种原生态的照片，有什么意义，上次看到还是在另一篇水文 [EdgeShard](./edgeshard-efficient-llm-inference-via-collaborative-edge-computing) 中
+- Figure 8: 很少见到这种原生态的照片，有什么意义，上次看到还是在另一篇水文 [EdgeShard](posts/papers/llm/edgeshard-efficient-llm-inference-via-collaborative-edge-computing.md) 中
 
 实验设置也比较疑惑：
 
@@ -100,4 +100,4 @@ TPI-LLM 采用 master-worker 架构。
 
 ## Related Works
 
-- [EdgeShard Efficient LLM Inference via  Collaborative Edge Computing](./edgeshard-efficient-llm-inference-via-collaborative-edge-computing)
+- [EdgeShard Efficient LLM Inference via Collaborative Edge Computing](posts/papers/llm/edgeshard-efficient-llm-inference-via-collaborative-edge-computing.md)

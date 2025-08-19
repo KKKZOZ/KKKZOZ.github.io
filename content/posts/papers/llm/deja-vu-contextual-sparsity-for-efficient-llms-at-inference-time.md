@@ -135,7 +135,7 @@ DEJAVU 设计了一种**异步查找预测机制**：当计算第 `k` 层的注�
 
 在存储 MLP 的两个权重矩阵时，如果都采用同一种矩阵存储格式（行主序或者列主序），对于稠密计算没有影响，但是对于稀疏计算，需要先通过索引读取分散的列时，如果是在**行主序中取列**和在**列主序中取行**都会导致非合并内存访问，性能急剧下降。
 
-个人觉得这个改变存储格式的方法没有 [LLM-Flash](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md) 中 "col-row bundling" 优雅和实用。
+个人觉得这个改变存储格式的方法没有 [LLM-Flash](posts/papers/llm/llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory.md) 中 "col-row bundling" 优雅和实用。
 
 ## Evaluation
 
@@ -161,6 +161,6 @@ contextual sparsity 能不能和 speculative encoding 联系起来？
 
 ## Related Works
 
-- [LLM in a flash Efficient Large Language Model Inference with Limited Memory](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md)
-- [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](papers/llm/PowerInfer-2%20Fast%20Large%20Language%20Model%20Inference%20on%20a%20Smartphone.md)
-- [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md)
+- [LLM in a flash Efficient Large Language Model Inference with Limited Memory](posts/papers/llm/llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory.md)
+- [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](posts/papers/llm/powerinfer-2-fast-large-language-model-inference-on-a-smartphone.md)
+- [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md)

@@ -97,7 +97,7 @@ The key idea is to maximize prefill execution on mobile NPUs to accelerate integ
 
 - `llm.npu` 通过使用大型语料库在离线阶段运行模型，计算出模型每一层 outliers 的重要性得分，剪除那些重要性得分最低的层的 outliers, **禁用这些 outliers 的影子执行机制**，从而消除了这部分机制带来的同步开销。
 
-> 第二个观察和 [AWQ](papers/llm/AWQ%20Activation-aware%20Weight%20Quantization%20for%20LLM%20Compression%20and%20Acceleration.md) 工作的观察类似。
+> 第二个观察和 [AWQ](posts/papers/llm/awq-activation-aware-weight-quantization-for-llm-compression-and-acceleration.md) 工作的观察类似。
 
 在推理过程中，系统会根据离线分析的结果来执行操作：
 
@@ -170,7 +170,7 @@ The key idea is to maximize prefill execution on mobile NPUs to accelerate integ
 
 ### When Reading
 
-和 [PowerInfer](papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md) 以及 [PowerInfer-2](papers/llm/PowerInfer-2%20Fast%20Large%20Language%20Model%20Inference%20on%20a%20Smartphone.md) 关注的点不同，这项工作主要旨在提高设备端 LLM 的预填充速度，也就是说 `llm.npu` 的工作和这些工作是正交的。
+和 [PowerInfer](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md) 以及 [PowerInfer-2](posts/papers/llm/powerinfer-2-fast-large-language-model-inference-on-a-smartphone.md) 关注的点不同，这项工作主要旨在提高设备端 LLM 的预填充速度，也就是说 `llm.npu` 的工作和这些工作是正交的。
 
 移动端的 NPU 有这么多限制，是因为设计的时候就没考虑到大模型相关的计算？后续各厂商会不会补齐这一方面的短板？
 

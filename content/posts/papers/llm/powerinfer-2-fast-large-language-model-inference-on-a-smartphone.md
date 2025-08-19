@@ -81,14 +81,14 @@ PowerInfer-2 利用了神经元簇的抽象，并基于两个原则进行构建�
 
 ![pasted-image-20250731111420](/images/pasted-image-20250731111420.png)
 
-整体流程和 [PowerInfer](export/papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md) 类似，分类两个大阶段：
+整体流程和 [PowerInfer](posts/export/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md) 类似，分类两个大阶段：
 
 + Offline Profiling and Planning: 区分出冷热神经元簇, 并生成对应的执行计划，包括如何划分神经元簇和如何配置对应的硬件资源
 + Online Inference:
   + Prefill phase: 使用 NPU 进行计算，单独用一个 CPU core 执行并行权重加载
   + Decoding phase: 使用 CPU-NPU 混合策略，核心思想就是把热神经元簇分配到 NPU 上，把冷神经元簇分配到 CPU 上
     + 对于热神经元簇，直接使用 NPU 进行稠密计算
-    + 对于冷神经元簇，采用一个 online predictor 来降低计算开销（和 [PowerInfer](papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md) 以及 [LLM-Flash](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md) 类似）
+    + 对于冷神经元簇，采用一个 online predictor 来降低计算开销（和 [PowerInfer](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md) 以及 [LLM-Flash](posts/papers/llm/llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory.md) 类似）
 
 在加载权重时，采用了神经元簇级流水线，让**慢速的 I/O 操作被“隐藏”在了 CPU 的计算周期之下**，实现了计算和 I/O 操作的最大化并行。
 
@@ -102,7 +102,7 @@ PowerInfer-2 利用了神经元簇的抽象，并基于两个原则进行构建�
 
 在动态进行 CPU-NPU 调整时，考虑到 NPU的静态图执行模型，调整其计算负载需要加载新的计算图。所以在离线阶段，PowerInfer-2 会准备多个 NPU 计算图，每个计算图都针对特定的批处理大小和相应的热神经元比例进行了优化。
 
-> [Fast On-device LLM Inference with NPUs](papers/llm/Fast%20On-device%20LLM%20Inference%20with%20NPUs.md) 也提到了这个问题
+> [Fast On-device LLM Inference with NPUs](posts/papers/llm/fast-on-device-llm-inference-with-npus.md) 也提到了这个问题
 >
 ### In-Memory Neuron Cache
 
@@ -173,7 +173,7 @@ This classification process involves:
 
 ### When Reading
 
-LLM 在激活参数上的边际效应特别明显，像 [PowerInfer](export/papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md) 那样，只计算部分神经元，极大降低了计算量和带宽限制，模型的质量却几乎不会退化。
+LLM 在激活参数上的边际效应特别明显，像 [PowerInfer](posts/export/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md) 那样，只计算部分神经元，极大降低了计算量和带宽限制，模型的质量却几乎不会退化。
 
 需要对 llama.cpp 代码本身有了解，方便自己做一些 profiling 和 demo.
 
@@ -181,8 +181,8 @@ LLM 在激活参数上的边际效应特别明显，像 [PowerInfer](export/pape
 
 ## Related Works
 
-+ [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](papers/llm/PowerInfer%20Fast%20Large%20Language%20Model%20Serving%20with%20a%20Consumer-grade%20GPU.md)
-+ [LLM in a flash Efficient Large Language Model Inference with Limited Memory](papers/llm/LLM%20in%20a%20flash%20Efficient%20Large%20Language%20Model%20Inference%20with%20Limited%20Memory.md)
-+ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](papers/llm/Deja%20Vu%20Contextual%20Sparsity%20for%20Efficient%20LLMs%20at%20Inference%20Time.md)
++ [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md)
++ [LLM in a flash Efficient Large Language Model Inference with Limited Memory](posts/papers/llm/llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory.md)
++ [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](posts/papers/llm/deja-vu-contextual-sparsity-for-efficient-llms-at-inference-time.md)
 + A survey of resource-efficient LLM and multimodal foundation models
 + STI: Turbocharge NLP Inference at the Edge via Elastic Pipelining

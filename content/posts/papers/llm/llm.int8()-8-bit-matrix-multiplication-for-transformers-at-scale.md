@@ -103,4 +103,4 @@ showtoc: true
 
 ## Related Works
 
-+ [Fast On-device LLM Inference with NPUs](papers/llm/Fast%20On-device%20LLM%20Inference%20with%20NPUs.md)
++ [Fast On-device LLM Inference with NPUs](posts/papers/llm/fast-on-device-llm-inference-with-npus.md)

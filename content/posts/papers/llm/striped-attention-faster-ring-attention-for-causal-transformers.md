@@ -132,5 +132,5 @@ Striped Attention 不再连续切分，而是像发扑克牌一样，**轮流地
 
 ## Related Works
 
-- [Ring Attention with Blockwise Transformers for Near-Infinite Context](papers/llm/Ring%20Attention%20with%20Blockwise%20Transformers%20for%20Near-Infinite%20Context.md)
-- [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](papers/llm/KV-Runahead%20Scalable%20Causal%20LLM%20Inference%20by%20Parallel%20Key-Value%20Cache%20Generation.md)
+- [Ring Attention with Blockwise Transformers for Near-Infinite Context](posts/papers/llm/ring-attention-with-blockwise-transformers-for-near-infinite-context.md)
+- [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](posts/papers/llm/kv-runahead-scalable-causal-llm-inference-by-parallel-key-value-cache-generation.md)
