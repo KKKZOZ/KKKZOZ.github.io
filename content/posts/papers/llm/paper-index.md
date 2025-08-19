@@ -15,7 +15,7 @@ weight: 1
 - [Striped Attention Faster Ring Attention for Causal Transformers](./striped-attention-faster-ring-attention-for-causal-transformers/)
 - [Ring Attention with Blockwise Transformers for Near-Infinite Context](./ring-attention-with-blockwise-transformers-for-near-infinite-context/)
 - [TPI-LLM Serving 70B-scale LLMs Efficiently on Low-resource Mobile Devices](./tpi-llm-serving-70b-scale-llms-efficiently-on-low-resource-mobile-devices/)
-- [LLM.int8() 8-bit Matrix Multiplication for Transformers at Scale](./llm.int8-8-bit-matrix-multiplication-for-transformers-at-scale/)
+- [LLM.int8() 8-bit Matrix Multiplication for Transformers at Scale](./llm.int8()-8-bit-matrix-multiplication-for-transformers-at-scale/)
 
 ### 0729-0804
 
