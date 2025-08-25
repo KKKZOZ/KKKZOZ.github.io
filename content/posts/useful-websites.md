@@ -13,6 +13,7 @@ weight: 10
 
 - [Picture Compressor](https://picsmaller.com/)
 - [Convert from/to JPG](https://jpgconverter.com/)
+- [NanoReview – tech comparison and ratings](https://nanoreview.net/)
 
 ## Programming
 

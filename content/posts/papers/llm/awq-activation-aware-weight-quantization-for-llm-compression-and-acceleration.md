@@ -39,7 +39,7 @@ Quantization is vital for running LLM on edge devices.
 
 ![pasted-image-20250728101911](/images/pasted-image-20250728101911.png)
 
-直接使用 RTN 量化方法会导致 PPL 指标增大，作者分别使用三种策略来保留部分权重为 FP16 格式：随机，根据权重矩阵，根据激活值大小。
+直接使用 round-to-nearest(RTN) 量化方法会导致 PPL 指标增大，作者分别使用三种策略来保留部分权重为 FP16 格式：随机，根据权重矩阵，根据激活值大小。
 
 实验发现根据激活值大小策略效果最好，所以提出了假设：the input features with larger magnitudes are generally more important.
 
@@ -57,9 +57,9 @@ Quantization is vital for running LLM on edge devices.
 > - Channel: **逻辑概念**，与模型的网络结构有关。在权重矩阵 `W`（维度为 `输入特征数 x 输出特征数`）中，一个**输入通道**就对应矩阵的**一整列**。
 > - Group: 这是一个**量化实现上的概念**，与权重的**物理存储顺序**有关。分组量化时，系统会将整个2D的权重矩阵“铺平”成一个1D的长条，然后将这个长条切成固定大小的块，每块就是一个“组”（例如，每128个权重一个组）。
 
-与其手动指定一个固定的缩放比例（比如`s=2`），不如设计一种方法来自动地、为每一个权重通道（channel）找到一个最优的缩放比例，从而让整个模型的量化误差最小。
+与其手动指定一个固定的缩放比例（比如 `s=2`），不如设计一种方法来自动地、为每一个权重通道（channel）找到一个最优的缩放比例，从而让整个模型的量化误差最小。
 
-AWQ 将这个问题形式化为一个优化的问题：找到一组缩放因子 `s`（每个输入通道对应一个），使得“权重乘以`s`再量化，然后输入除以`s`”这一系列操作之后得到的结果，与原始的、未经量化的结果之间的差距最小。
+AWQ 将这个问题形式化为一个优化的问题：找到一组缩放因子 `s`（每个输入通道对应一个），使得“权重乘以 `s` 再量化，然后输入除以 `s` ”这一系列操作之后得到的结果，与原始的、未经量化的结果之间的差距最小。
 
 直接求解很困难，但是我们可以简化 $s$ 的范围：
 
@@ -83,9 +83,9 @@ $$s = {s_X}^{\alpha}$$
 
 论文还开发了一个名为 TinyChat 的高效推理框架，通过以下关键技术实现了显著加速：
 
-- On-the-fly dequantization：在计算过程中，将4位权重实时地恢复到16位浮点数，并与矩阵乘法等计算操作融合，避免了将反量化后的权重写回内存，减少了访存开销。
-- Kernel fusion)：将多个独立的操作（如注意力计算中的QKV投影、层归一化等）融合成一个单一的计算核心，大大减少了GPU核心的启动开销，这对于延迟极低的操作尤为重要。
-- **SIMD-aware weight packing**：针对CPU等具有SIMD（单指令多数据）架构的设备，设计了特定的权重打包和重排方式，使得在运行时可以利用SIMD指令高效地解包权重，进一步提升反量化速度。
+- **On-the-fly dequantization**：在计算过程中，将 4 位权重实时地恢复到 16 位浮点数，并与矩阵乘法等计算操作融合，避免了将反量化后的权重写回内存，减少了访存开销。
+- **Kernel fusion**：将多个独立的操作（如注意力计算中的 QKV 投影、层归一化等）融合成一个单一的计算核心，大大减少了 GPU 核心的启动开销，这对于延迟极低的操作尤为重要。
+- **SIMD-aware weight packing**：针对 CPU 等具有 SIMD 架构的设备，设计了特定的权重打包和重排方式，使得在运行时可以利用 SIMD 指令高效地解包权重，进一步提升反量化速度。
 
 ## Evaluation
 
@@ -97,9 +97,9 @@ $$s = {s_X}^{\alpha}$$
 
 第三章整体的逻辑很清晰：
 
-- Selecting weights based on activation magnitude can significantly improve the performance despite keeping only 0.1%-1% of the channels in FP16.（&3.1）
+- Selecting weights **based on activation magnitude** can significantly improve the performance despite keeping only 0.1%-1% of the channels in FP16.（&3.1）
 - But mixed-precision format is not hardware-efficient.
-- Instead of preserving the salient weights in FP16, we can employ activation-aware scaling. (&3.2)
+- Instead of preserving the salient weights in FP16, we can employ **activation-aware scaling**. (&3.2)
 - Instead of manually specifying a fixed scaling factor (e.g., s=2), a method should be designed to automatically find an optimal scaling factor for each weight channel, thereby minimizing the overall model's quantization error. (&3.3)
 
 看完之后的感受：Simple but effective!

@@ -18,7 +18,9 @@ showtoc: true
 
 ## Background
 
-LLM serving is shifting from the cloud to edge devices like smartphones and laptops. This trend is driven by growing privacy concerns, as users want to avoid sending their sensitive interaction data to cloud providers. The goal is to process user requests locally on their own devices.
+LLM serving is shifting from the cloud to edge devices like smartphones and laptops.
+
+This trend is driven by growing privacy concerns, as users want to avoid sending their sensitive interaction data to cloud providers. The goal is to process user requests locally on their own devices.
 
 ### Preliminaries
 
@@ -47,7 +49,7 @@ LLM serving is shifting from the cloud to edge devices like smartphones and lapt
 TPI-LLM 采用 master-worker 架构。
 
 - 初始化：master 将预训练好的模型权重分割，并分发给各个 worker。
-- 推理开始：用户输入（prompt）在主节点上被处理和编码成嵌入向量，然后广播给所有工作节点 。
+- 推理开始：用户输入（prompt）在主节点上被处理和编码成嵌入向量，然后广播给所有工作节点。
   - 用户的原始输入和模型的最终输出始终保留在主设备本地，确保了隐私安全。
 - 并行计算：所有设备接收到嵌入向量后，开始逐层进行张量并行计算。每一层都包含 attention 计算和 FFN（前馈网络）计算，每次计算后都通过 star allreduce 同步结果。
 - 内存调度：在整个计算过程中，每个设备上的滑动窗口内存调度器都在后台持续工作，按需从磁盘加载和卸载权重。

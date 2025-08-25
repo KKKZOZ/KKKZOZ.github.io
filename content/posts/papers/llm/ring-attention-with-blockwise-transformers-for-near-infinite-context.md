@@ -2,7 +2,7 @@
 title: "Ring Attention with Blockwise Transformers for Near-Infinite Context"
 tags:
   - arXiv-23
-  - Tensor-Parallelism
+  - Sequence-Parallelism
 date: 2025-08-17
 showtoc: true
 ---
@@ -20,11 +20,28 @@ showtoc: true
 
 ## Background
 
-There is a clear industry trend and growing demand for models with **large context windows**, with models like GPT-4 and Claude already supporting tens of thousands of tokens.
+Transformer 的 核心组件“自注意力机制”的内存消耗会**随着输入序列长度的增加而呈二次方增长**。这导致即便是最先进的 GPU/TPU，其有限的显存（通常小于 100GB）也无法处理超长序列，例如处理百万甚至千万级别的 token.
+
+> [!note] 注意力模块的显存占用分析
+>
+> - $B$: Batch size
+> - $N$: Sequence length
+> - $H$: Number of attention heads
+> - $D$: Hidden Dimension
+>
+> - Weights：
+>   - $W_q, W_k, W_v, W_o$: $4 \times D \times D = 4D^2$
+> - Activations:
+>   - Standard Attention
+>     - Attention score matrix($QK^T$): $B \cdot H \cdot N^2$
+>   - Memory-Efficient Attention
+>     - $B \cdot N \cdot D$
+> - KV Cache:
+>   - $2 \cdot B \cdot N \cdot D$
 
 ---
 
-Blockwise Parallel Transformer (BPT)BPT 本身也是为了解决 Transformer 模型处理长序列时的内存瓶颈而提出的。
+Blockwise Parallel Transformer (BPT) 本身也是为了解决 Transformer 模型处理长序列时的内存瓶颈而提出的。
 
 ### 核心洞察 (Core Insight)
 
@@ -146,6 +163,13 @@ output[i] = attn_weights[i, 0] * value[0] +
 
 ## Approaches
 
+考虑单层 attention:
+
+- 设备 D1, D2, D3
+- 把序列拆分为 S1, S2, S3
+- 每个设备持有 Q_i
+- 每轮每个设备只计算 (K_j, V_j)
+
 ![pasted-image-20250817194437](/images/pasted-image-20250817194437.png)
 
 - **As we compute attention, each host sends key-value blocks to the next host while receives key-value blocks from the preceding host.**
@@ -181,7 +205,7 @@ output[i] = attn_weights[i, 0] * value[0] +
 每个设备使用自己的 Q 和当前持有的 KV 进行计算。与此同时，它们将自己用完的 KV 块发送给下一个设备。
 
 ```ascii
-+--------------------------------------+
+    +--------------------------------------+
           |               Device 1               |
           |--------------------------------------|
           | My Q: Q1                             |

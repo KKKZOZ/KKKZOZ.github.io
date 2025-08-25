@@ -9,6 +9,16 @@ weight: 1
 
 ## 2025
 
+### 0819-0825
+
+- [STI Turbocharge NLP Inference at the Edge via Elastic Pipelining](./sti-turbocharge-nlp-inference-at-the-edge-via-elastic-pipelining/)
+- [EdgeMoE Empowering Sparse Large Language Models on Mobile Devices](./edgemoe-empowering-sparse-large-language-models-on-mobile-devices/)
+- [LLM as a System Service on Mobile Devices](./llm-as-a-system-service-on-mobile-devices/)
+- [SmallThinker A Family of Efficient Large Language Models Natively Trained for Local Deployment](./smallthinker-a-family-of-efficient-large-language-models-natively-trained-for-local-deployment/)
+- [HeteroLLM Accelerating Large Language Model Inference on Mobile SoCs with Heterogeneous AI Accelerators](./heterollm-accelerating-large-language-model-inference-on-mobile-socs-with-heterogeneous-ai-accelerators/)
+- [H2O](./h2o/)
+- [A Survey of Resource-efficient LLM and Multimodal Foundation Models](./a-survey-of-resource-efficient-llm-and-multimodal-foundation-models/)
+
 ### 0812-0818
 
 - [KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation](./kv-runahead-scalable-causal-llm-inference-by-parallel-key-value-cache-generation/)
@@ -50,4 +60,3 @@ weight: 1
 
 - [Efficient Function-as-a-Service for Large Language Models with TIDAL](./efficient-function-as-a-service-for-large-language-models-with-tidal/)
 - [LLM Preliminaries](./llm-preliminaries/)
-- [LLM as a System Service on Mobile Devices](./llm-as-a-system-service-on-mobile-devices/)

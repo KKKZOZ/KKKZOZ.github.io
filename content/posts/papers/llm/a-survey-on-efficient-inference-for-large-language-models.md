@@ -543,13 +543,18 @@ To solve this, frameworks use a method called "split-and-fuse" or "chunked-prefi
 + **Sequence Parallelism** (SP)
   + The key idea is to distribute the computational and storage load by splitting the processing of long sequences across multiple GPUs along the sequence length dimension.
 
-> [!summary] TP vs PP
+![pasted-image-20250819140645](/images/pasted-image-20250819140645.png)
+
+> [!summary] TP vs PP vs SP
 >
 > + TP
 >   + Latency: 单个样本要经过所有 stage，每个 stage 所用时间变少
 > + PP
 >   + Latency：单个样本还是要经过所有 stage，总时间不变
 >   + Throughput：多个样本流水化后，每个 stage 都在并行工作，产出率显著提高
+> + SP
+>   + Latency: 由于数据需要跨卡交换 (`all-gather`/`all-reduce`)，所以延迟变高
+>   + Throughput: 单卡显存压力下降，系统吞吐量更高
 
 ---
 

@@ -11,6 +11,8 @@ showtoc: true
 
 > Extensive Reading
 
+> 在 axriv 或者其他论文中的引用经常是另一个名字：LLMCad
+
 ## Author Info
 
 - [Daliang Xu （徐大亮） - Daliang Xu’s Website](https://daliangxu.github.io/)

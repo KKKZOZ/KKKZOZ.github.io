@@ -201,7 +201,7 @@ Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路
 >
 > 假设只比较两个分支的当前状态：
 >
-> ```shell
+> ```python
 > 分支A：def greet(): print("Hello World")
 > 分支B：def greet(): print("Hello")
 > ```
@@ -215,7 +215,7 @@ Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路
 
 场景 1:
 
-```shell
+```python
 祖先：  def greet(): print("Hello")
 分支A： def greet(): print("Hello World")  # 添加了 World
 分支B： def greet(): print("Hello")        # 没变化
@@ -224,7 +224,7 @@ Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路
 
 场景 2:
 
-```shell
+```python
 祖先：  def greet(): print("Hello World")
 分支A： def greet(): print("Hello")        # 删除了 World  
 分支B： def greet(): print("Hello World")  # 没变化
@@ -367,6 +367,16 @@ index 1234567..abcdefg 100644             # 索引信息
 >      
 >      def subtract(self, a, b):
 > ```
+
+#### Current vs Incoming
+
+在使用 VSCode 进行可视化合并时, 注意区分谁是 Current, 谁是 Incoming
+
+| Git 操作                                  | `Current` (当前的)                               | `Incoming` (传入的)                               | 核心逻辑                                                 |
+| ----------------------------------------- | -------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------- |
+| `git merge feature` (在 main 分支上执行) | 你的 `main` 分支                                 | `feature` 分支                                    | 把 `feature` 的内容 **合并入** `main`                      |
+| `git pull` (在 main 分支上执行)           | 你本地的 `main` 分支                             | 远程的 `origin/main` 分支                         | 把远程的内容 **合并入** 本地的 `main`                    |
+| **`jj rebase -s l -d mm`** | **目标分支 `mm`** | **源提交 `l`** | 把 `l` 的更改 **重新应用到** `mm` 的顶端                 |
 
 ## Git Reset
 
