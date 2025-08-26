@@ -148,3 +148,6 @@ NPU 的 FP16 性能有这么高？我记得哪篇工作里说 NPU 不擅长 FP16
 怎么都喜欢搞一个 solver 之类的？
 
 ## Related Works
+
+- [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](posts/papers/llm/powerinfer-2-fast-large-language-model-inference-on-a-smartphone.md)
+- [Fast On-device LLM Inference with NPUs](posts/papers/llm/fast-on-device-llm-inference-with-npus.md)

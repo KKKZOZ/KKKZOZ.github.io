@@ -16,8 +16,8 @@ weight: 1
 - [LLM as a System Service on Mobile Devices](./llm-as-a-system-service-on-mobile-devices/)
 - [SmallThinker A Family of Efficient Large Language Models Natively Trained for Local Deployment](./smallthinker-a-family-of-efficient-large-language-models-natively-trained-for-local-deployment/)
 - [HeteroLLM Accelerating Large Language Model Inference on Mobile SoCs with Heterogeneous AI Accelerators](./heterollm-accelerating-large-language-model-inference-on-mobile-socs-with-heterogeneous-ai-accelerators/)
-- [H2O](./h2o/)
 - [A Survey of Resource-efficient LLM and Multimodal Foundation Models](./a-survey-of-resource-efficient-llm-and-multimodal-foundation-models/)
+- [H2O Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models](./h2o-heavy-hitter-oracle-for-efficient-generative-inference-of-large-language-models/)
 
 ### 0812-0818
 

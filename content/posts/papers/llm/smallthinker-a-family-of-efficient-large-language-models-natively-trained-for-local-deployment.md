@@ -1,12 +1,11 @@
 ---
 title: "SmallThinker A Family of Efficient Large Language Models Natively Trained for Local Deployment"
 tags:
-  - TOBETAGGED
+  - arXiv-25
+  - LLM
 date: 2025-08-25
 showtoc: true
 ---
-
-
 
 > 回应我在 [EdgeMoE](posts/papers/llm/edgemoe-empowering-sparse-large-language-models-on-mobile-devices.md) 结尾提出的暴论：所有需要离线 Profiling 的工作都应该由 LLM 厂家在训练时实现。
 
@@ -107,3 +106,10 @@ SmallThinker 旨在引入稀疏性来大幅降低计算负载，该架构由四�
 LLM tailored for NPU 还会远吗？
 
 未来是 LLM/Inference System 适应 NPU，还是 NPU 适应 LLM?
+
+## Related Works
+
++ [EdgeMoE Empowering Sparse Large Language Models on Mobile Devices](posts/papers/llm/edgemoe-empowering-sparse-large-language-models-on-mobile-devices.md)
++ [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md)
++ [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](posts/papers/llm/powerinfer-2-fast-large-language-model-inference-on-a-smartphone.md)
++ [Fast On-device LLM Inference with NPUs](posts/papers/llm/fast-on-device-llm-inference-with-npus.md)

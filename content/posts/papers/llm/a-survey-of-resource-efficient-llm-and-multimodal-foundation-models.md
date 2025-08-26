@@ -1,7 +1,8 @@
 ---
 title: "A Survey of Resource-efficient LLM and Multimodal Foundation Models"
 tags:
-  - TOBETAGGED
+  - arXiv-24
+  - Survey
 date: 2025-08-21
 showtoc: true
 ---

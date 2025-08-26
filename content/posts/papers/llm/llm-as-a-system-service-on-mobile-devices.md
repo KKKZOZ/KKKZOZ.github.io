@@ -1,7 +1,7 @@
 ---
 title: "LLM as a System Service on Mobile Devices"
 tags:
-  - TOBETAGGED
+  - arXiv-24
 date: 2025-08-18
 showtoc: true
 ---
@@ -10,42 +10,45 @@ showtoc: true
 
 ## Author Info
 
+- [‪Wangsong Yin‬ - ‪Google Scholar‬](https://scholar.google.com/citations?user=9hp2_UsAAAAJ&hl=en)
+- [Mengwei Xu](https://xumengwei.github.io/)
+
 ## Background
 
 论文首先提出了 *LLMaaS*: LLM as a system service on mobile devices (LLMaaS): The mobile OS exposes an LLM and its inference infrastructure as a system feature to mobile apps, akin to the location or notification services.
 
 LLMaaS 的提出主要有以下原因：
 
-+ LLMaaS needs only one copy of LLM weights in memory.
-  + 不同应用程序应该去调用由系统维护的同一个大模型，而不是自己单独去加载一个
-+ A system-level LLM can be better customized for on-device accelerator and enjoy the performance gain over commodity hardware.
-  + 在系统层面去做大模型的管理和推理更接近底层，能够更好地利用底层的硬件资源
+- LLMaaS needs only one copy of LLM weights in memory.
+  - 不同应用程序应该去调用由系统维护的同一个大模型，而不是自己单独去加载一个
+- A system-level LLM can be better customized for on-device accelerator and enjoy the performance gain over commodity hardware.
+  - 在系统层面去做大模型的管理和推理更接近底层，能够更好地利用底层的硬件资源
 
 这篇文章要解决的核心问题是 **How to efficiently manage the LLM contexts**
 
 论文提出了三个观察：
 
-+ **LLM contexts are memory-intensive.**
+- **LLM contexts are memory-intensive.**
 
 LLM 的内存占用可以分为三部分：
 
-+ Weights
-+ Activations
-+ Context
+- Weights
+- Activations
+- Context
 
 ![pasted-image-20250820093833](/images/pasted-image-20250820093833.png)
 
-+ **LLM contexts often need to be persistent.**
+- **LLM contexts often need to be persistent.**
 
 核心思想：在多轮对话时，只保存对话上下文的文本的话，每次都需要重新计算，不如持久化上下文的 KV Cache，这样能够省去很大一部分重计算
 
-+ **The conventional app-level memory management is not satisfactory.**
+- **The conventional app-level memory management is not satisfactory.**
 
 LLM contexts 和一般的应用内存有很大的不同：
 
-+ LLM contexts are more expensive in terms of time/energy expenditure to obtain.
-+ LLM contexts are relatively cold.
-+ LLM contexts are **naturally compressible**.
+- LLM contexts are more expensive in terms of time/energy expenditure to obtain.
+- LLM contexts are relatively cold.
+- LLM contexts are **naturally compressible**.
 
 ## Challenges
 
@@ -53,9 +56,9 @@ LLM contexts 和一般的应用内存有很大的不同：
 
 主要的 insight: 将 LLM 上下文内存管理从应用中解耦，采用基于 chunk 的 KV 压缩和交换机制，原因有三个：
 
-+ KV cache is easy to be chunked.
-+ KV cache is unevenly tolerant to compression.
-+ KV cache can be recomputed.
+- KV cache is easy to be chunked.
+- KV cache is unevenly tolerant to compression.
+- KV cache can be recomputed.
 
 对应地，LLMS 提出了三个核心技术：
 
@@ -84,10 +87,10 @@ A context is divided to swappable fragment(KV Cache) and memory-resident fragmen
 
 LLMS context memory management 有下面这几个原语：
 
-+ `Claim`: Directly allocate free memory to a chunk
-+ `Reclaim`: Swap a chunk out to disk and reallocate its memory to a new chunk
-+ `Load`: Move a missing chunk from disk to memory **before** LLM inference
-+ `Fault`: Move a missing chunk from disk to memory **at** LLM inference
+- `Claim`: Directly allocate free memory to a chunk
+- `Reclaim`: Swap a chunk out to disk and reallocate its memory to a new chunk
+- `Load`: Move a missing chunk from disk to memory **before** LLM inference
+- `Fault`: Move a missing chunk from disk to memory **at** LLM inference
 
 ![pasted-image-20250820100029](/images/pasted-image-20250820100029.png)
 
@@ -99,8 +102,8 @@ Key idea: **Different chunks do not contribute coequally to LLM inference**.
 
 信息密度主要和注意力分数相关，某一列的注意力分数越大，说明这个 token 的信息密度越大，对应的压缩策略为：
 
-+ 高信息密度 chunk → 低压缩比率（保留更多精度）
-+ 低信息密度 chunk → 高压缩比率（可以大幅压缩）
+- 高信息密度 chunk → 低压缩比率（保留更多精度）
+- 低信息密度 chunk → 高压缩比率（可以大幅压缩）
 
 ![pasted-image-20250820102850](/images/pasted-image-20250820102850.png)
 
@@ -164,8 +167,8 @@ CPU:                 Working                           Working
 
 ### Chunk Lifecycle Management
 
-+ Regarding **which chunk to swap out**, it employs an LCTRU queue to determine the eviction priority.
-+ Regarding **when to swap out**, it adopts an ahead-oftime swapping-out approach to hide the time for reclaiming memory during context switching.
+- Regarding **which chunk to swap out**, it employs an LCTRU queue to determine the eviction priority.
+- Regarding **when to swap out**, it adopts an ahead-oftime swapping-out approach to hide the time for reclaiming memory during context switching.
 
 ## Evaluation
 
@@ -207,3 +210,6 @@ Chunk 2: {
 ```
 
 ## Related Works
+
+- [H2O Heavy-Hitter Oracle for Efficient Generative Inference of Large Language Models](posts/papers/llm/h2o-heavy-hitter-oracle-for-efficient-generative-inference-of-large-language-models.md)
+- [STI Turbocharge NLP Inference at the Edge via Elastic Pipelining](posts/papers/llm/sti-turbocharge-nlp-inference-at-the-edge-via-elastic-pipelining.md)
