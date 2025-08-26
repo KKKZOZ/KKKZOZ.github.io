@@ -141,6 +141,8 @@ Update: 在我的 Mac 上测试，基本为 0 (使用的是自己实现的 gpt2-
 
 ## Related Works
 
+> Reading List
+
 + {5 相关} mllm: fast and lightweight multimodal LLM inference engine for mobile and edge devices
 + {2 LLM 硬件加速综述} Full stack optimization of transformer inference: a survey
 + {2 LLM 硬件加速综述} Hardware acceleration of llms: A comprehensive survey and comparison

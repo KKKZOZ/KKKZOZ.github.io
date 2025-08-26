@@ -34,7 +34,7 @@ Non-expert weights are held in device memory; while expert weights are held on e
 
 Designs:
 
-- **Expert-wise bitwidth adaptation**不同专家对压缩的容忍度不同，容忍度高的专家可以使用更高级别的量化
+- **Expert-wise bitwidth adaptation**: 不同专家对压缩的容忍度不同，容忍度高的专家可以使用更激进的量化
 - **In-memory expert management**: 虽然单层中的专家激活频率接近均衡，但是对于同一个 Token，跨所有层被激活的专家序列呈现幂律分布 -- 也就是说根据当前路径中已经被激活的两个专家，可以有很大概率成功预测下一个激活的专家是哪个，所以也能很自然地使用 predict-then-prefetch 的流水线机制
 
 顺便也总结一下论文提到的几个重要观察：

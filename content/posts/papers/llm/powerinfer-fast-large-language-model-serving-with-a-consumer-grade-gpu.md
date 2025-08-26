@@ -60,7 +60,7 @@ If activated neurons reside in CPU memory, **computing them on the CPU is faster
 
 PowerInfer proposes a neuron-aware offloading strategy and an inference engine by fully leveraging the high locality insights.
 
-针对于冷热神经元的洞察，PowerInfer将频繁激活的神经元的权重预加载到GPU中，而不太活跃的神经元的权重则保留在CPU上。
+针对于冷热神经元的洞察，PowerInfer 将频繁激活的神经元的权重预加载到 GPU 中，而不太活跃的神经元的权重则保留在 CPU 上。
 
 为了进一步降低推理延迟，推理引擎利用一个在线的预测器做预测，只计算那些预测会被激活的神经元。
 
@@ -96,7 +96,7 @@ PowerInfer proposes a neuron-aware offloading strategy and an inference engine b
 > + 热神经元的特点是**数量少，但访问频率极高**，将这个小而关键的热点数据集预先加载到 GPU 中，可以最大化地利用 GPU 强大的计算能力来处理绝大部分的计算任务。
 > + 冷神经元虽然不常被激活，但它们的**数量极其庞大**，占据了模型参数的绝大部分
 >   + 这导致只能放在 CPU 内存中
->   + 如果仅仅是把冷神经元“存放”在 CPU 内存，而在需要时再把它们的权重传输到GPU上计算，那么每次激活都会涉及通过**缓慢的 PCIe 总线**进行数据传输。这种临时传输的延迟非常高，会严重拖慢整个推理过程。
+>   + 如果仅仅是把冷神经元“存放”在 CPU 内存，而在需要时再把它们的权重传输到 GPU 上计算，那么每次激活都会涉及通过**缓慢的 PCIe 总线**进行数据传输。这种临时传输的延迟非常高，会严重拖慢整个推理过程。
 >   + PowerInfer 的第二个关键 insight: 对于那些**偶尔被激活的少数冷神经元**，将其权重从 CPU 传到 GPU 再计算，其总耗时**反而比直接在现代 CPU 上计算要慢**。
 
 ![pasted-image-20250729194617](/images/pasted-image-20250729194617.png)
@@ -105,7 +105,7 @@ Figure 8 这个例子就展示了 online predictor 预测 4，3，5 号神经元
 
 对于每一层，PowerInfer 都训练了 non-fixed-size predictor 来做预测。
 
-Predictor 的大小与 模型本身的稀疏度和内部偏度有关，这部分凭直觉也很好理解：如果模型本身就很稀疏，加上可能会激活的神经元都比较聚集，那么 predictor 预测起来就越轻松，参数量也会更小。
+Predictor 的大小与模型本身的稀疏度和内部偏度有关，这部分凭直觉也很好理解：如果模型本身就很稀疏，加上可能会激活的神经元都比较聚集，那么 predictor 预测起来就越轻松，参数量也会更小。
 
 在推理开始前，PowerInfer会构建一个计算有向无环图（DAG），图中的每个节点都代表一个LLM推理算子 。这个图被存储在CPU内存的一个全局队列中：
 

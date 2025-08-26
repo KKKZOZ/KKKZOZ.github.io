@@ -105,6 +105,14 @@ Key idea: **Different chunks do not contribute coequally to LLM inference**.
 - 高信息密度 chunk → 低压缩比率（保留更多精度）
 - 低信息密度 chunk → 高压缩比率（可以大幅压缩）
 
+> [!tip] 注意力分数矩阵 Cheatsheet
+>
+> - `attn_score(i, j)`: 位置 i 的 query 向量 与 位置 j 的 key 向量 的相似度, 衡量的是 token i 在更新自身表示时，要多大程度地关注 token j
+> - 矩阵第 i 行：第 i 个 token（query i）对序列中所有 token（keys 1..n）的注意力分布，softmax 之后一行之和恒等于 1
+> - 矩阵第 j 列：所有 queries（所有 token）对第 j 个 token（key j）的关注程度，第 j 列的和一般不是 1，但它的大小可以看作 token j 的「全局重要性」或「被关注度」
+>
+> <img src="assets/images/output.png" width="360" />
+
 ![pasted-image-20250820102850](/images/pasted-image-20250820102850.png)
 
 核心实现是对低密度 chunk 进行了二次量化（量化本质是数值映射，可以链式进行）
@@ -178,11 +186,11 @@ CPU:                 Working                           Working
 
 > Observation#2: LLM contexts often need to be persistent.
 
-这个比较有意思，把持久化 KV cache 是 LLM 作为系统服务的核心需求，这与传统无状态模型完全不同。
+这个比较有意思，把持久化 KV cache 是 LLM 作为系统服务的核心需求，这与传统无状态模型完全不同
 
 KV Chunk 是如何组织的：
 
-一个 chunk 包含某个特定 token 在所有层中的 KV 数据。
+一个 chunk 包含某个特定 token 在所有层中的 KV 数据
 
 ```ascii
 Token序列:  [token_1] [token_2] [token_3] [token_4] ...
