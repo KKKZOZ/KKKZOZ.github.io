@@ -34,7 +34,7 @@ While sparsity and pruning have been well-studied, they have not seen wide adopt
 
 ## Insights
 
-This paper envisions **contextual sparsity**, which are small, input-dependent sets of attention heads and MLP parameters that lead to (approximately) the same output as the full model for an input.
+This paper envisions **contextual sparsity**, which are **small, input-dependent sets of attention heads and MLP parameters that lead to (approximately) the same output as the full model for an input**.
 
 **Contextual sparsity can be used for inference optimization due to the significant reduction of Memory I/O.**
 

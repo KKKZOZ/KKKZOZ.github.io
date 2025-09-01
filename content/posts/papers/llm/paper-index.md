@@ -9,6 +9,11 @@ weight: 1
 
 ## 2025
 
+### 0826-0901
+
+- [ELMS Elasticized Large Language Models On Mobile Devices](./elms-elasticized-large-language-models-on-mobile-devices/)
+- [Scaling Up On-Device LLMs via Active-Weight Swapping Between DRAM and Flash](./scaling-up-on-device-llms-via-active-weight-swapping-between-dram-and-flash/)
+
 ### 0819-0825
 
 - [STI Turbocharge NLP Inference at the Edge via Elastic Pipelining](./sti-turbocharge-nlp-inference-at-the-edge-via-elastic-pipelining/)
@@ -60,3 +65,4 @@ weight: 1
 
 - [Efficient Function-as-a-Service for Large Language Models with TIDAL](./efficient-function-as-a-service-for-large-language-models-with-tidal/)
 - [LLM Preliminaries](./llm-preliminaries/)
+- [paper-reviews](./paper-reviews/)

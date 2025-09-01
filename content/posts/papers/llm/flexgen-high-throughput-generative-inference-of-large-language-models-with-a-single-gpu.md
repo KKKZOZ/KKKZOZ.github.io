@@ -69,6 +69,13 @@ Achieving high-throughput generative inference with limited GPU memory is challe
   - After computing the attention matrices, for each query, we calculate the indices of its Top-K tokens from the K cache. We then simply drop the other tokens and only load a subset of the V cache according to the indices.
   - 可以降低 I/O 传输量和计算量
 
+稀疏化策略具体来说：
+
+- 计算当前查询 q 与 K 缓存中所有键的点积，得到注意力分数
+- 对注意力分数执行一个 Top-K 操作。这个操作会找出分数最高的 K 个键 (Key)，并记录下它们在缓存中的索引
+- 从 CPU 或磁盘中加载 V 缓存的对应子集到 GPU
+- 最后，模型仅在这 Top-K 个键值对上完成后续的 Softmax 归一化和加权求和操作，得到近似的上下文向量
+
 ## Evaluation
 
 Tricky 的部分比较多(也有可能是我没仔细看, whatever):

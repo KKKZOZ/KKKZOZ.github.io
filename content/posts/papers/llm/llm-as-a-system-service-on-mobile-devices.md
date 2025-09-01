@@ -107,7 +107,7 @@ Key idea: **Different chunks do not contribute coequally to LLM inference**.
 
 > [!tip] 注意力分数矩阵 Cheatsheet
 >
-> - `attn_score(i, j)`: 位置 i 的 query 向量 与 位置 j 的 key 向量 的相似度, 衡量的是 token i 在更新自身表示时，要多大程度地关注 token j
+> - `attn_score(i, j)`: 位置 i 的 query 向量 与 位置 j 的 key 向量 的相似度, 衡量的是 token i 在更新自身表示时，要多大程度地关注 token j (第 i 个 token 对第 j 个 token 的注意力权重)
 > - 矩阵第 i 行：第 i 个 token（query i）对序列中所有 token（keys 1..n）的注意力分布，softmax 之后一行之和恒等于 1
 > - 矩阵第 j 列：所有 queries（所有 token）对第 j 个 token（key j）的关注程度，第 j 列的和一般不是 1，但它的大小可以看作 token j 的「全局重要性」或「被关注度」
 >
@@ -117,44 +117,60 @@ Key idea: **Different chunks do not contribute coequally to LLM inference**.
 
 核心实现是对低密度 chunk 进行了二次量化（量化本质是数值映射，可以链式进行）
 
-Python 伪代码如下：
+> [!note]- Python 伪代码
+>
+> ```python
+> def two_stage_quantization(kv_cache_fp16, target_bits):
+>     # 第一阶段：框架内置INT8量化
+>     kv_int8, scale1, zero1 = quantize_to_int8(kv_cache_fp16)
+>     
+>     # 第二阶段：LLMS进一步量化
+>     if target_bits == 4:
+>         kv_int4, scale2, zero2 = channel_wise_quantize(kv_int8, bits=4)
+>         return kv_int4, (scale1, zero1, scale2, zero2)
+>     elif target_bits == 2:
+>         kv_int2, scale2, zero2 = channel_wise_quantize(kv_int8, bits=2)  
+>         return kv_int2, (scale1, zero1, scale2, zero2)
+>     else:
+>         return kv_int8, (scale1, zero1)
+> 
+> def channel_wise_quantize(tensor, bits):
+>     # tensor形状: [seq_len, num_heads, head_dim]
+>     scales = []
+>     zero_points = []
+>     quantized = torch.zeros_like(tensor, dtype=torch.int8)
+>     
+>     for head_idx in range(tensor.shape[1]):
+>         head_data = tensor[:, head_idx, :]
+>         scale = (head_data.max() - head_data.min()) / (2**bits - 1)
+>         zero_point = 2**(bits-1)
+>         
+>         quantized[:, head_idx, :] = torch.clamp(
+>             torch.round(head_data / scale + zero_point),
+>             0, 2**bits - 1
+>         )
+>         
+>         scales.append(scale)
+>         zero_points.append(zero_point)
+>     
+>     return quantized, scales, zero_points
+> ```
+>
+>
 
-```python
-def two_stage_quantization(kv_cache_fp16, target_bits):
-    # 第一阶段：框架内置INT8量化
-    kv_int8, scale1, zero1 = quantize_to_int8(kv_cache_fp16)
-    
-    # 第二阶段：LLMS进一步量化
-    if target_bits == 4:
-        kv_int4, scale2, zero2 = channel_wise_quantize(kv_int8, bits=4)
-        return kv_int4, (scale1, zero1, scale2, zero2)
-    elif target_bits == 2:
-        kv_int2, scale2, zero2 = channel_wise_quantize(kv_int8, bits=2)  
-        return kv_int2, (scale1, zero1, scale2, zero2)
-    else:
-        return kv_int8, (scale1, zero1)
+量化的整个生命周期可以说明一下：
 
-def channel_wise_quantize(tensor, bits):
-    # tensor形状: [seq_len, num_heads, head_dim]
-    scales = []
-    zero_points = []
-    quantized = torch.zeros_like(tensor, dtype=torch.int8)
-    
-    for head_idx in range(tensor.shape[1]):
-        head_data = tensor[:, head_idx, :]
-        scale = (head_data.max() - head_data.min()) / (2**bits - 1)
-        zero_point = 2**(bits-1)
-        
-        quantized[:, head_idx, :] = torch.clamp(
-            torch.round(head_data / scale + zero_point),
-            0, 2**bits - 1
-        )
-        
-        scales.append(scale)
-        zero_points.append(zero_point)
-    
-    return quantized, scales, zero_points
-```
+- Prefill
+  - 跑完整上下文的前向，得到注意力矩阵与首批 KV。
+  - 基础量化（如 8-bit 上下文级量化）对新生成的 KV 先做“保底”压缩。
+- Decoding
+  - 逐步生成新 token；对应 KV 持续按同样的基础量化落盘/入内存。
+  - 期间不动态重排、不改分档（只做统一的基础量化）。
+- 收尾压缩点（call 结束时）
+  - 用本次前向里已有的注意力矩阵做一次“快照”：对每个 token 的列做均值（被关注度）→ 跨头/层聚合 → 汇总为其所在 chunk 的信息密度 $D_i$
+  - 排序 + 阈值 + 量化：在给定的全局平均压缩率约束下，把每个 chunk 分到目标位宽档（如 8/8、4/8、2/8），最后再进行二次量化
+
+> 遇到“被重压缩却突然重要”的旧内容，LLMS要么用重算“升级成精确KV”，要么先按量化参数直接用；而在下一轮，它会基于新的注意力分布把这些块调回更安全的位宽档位。
 
 ### Swapping-Recompute Pipeline
 

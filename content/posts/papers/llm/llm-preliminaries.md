@@ -119,6 +119,68 @@ $$
 >
 > 这个视角非常适合用来**反向追溯**一个特定输出的来源。
 
+### Matmul
+
+主要研究 `C = A @ B`，其中 `A` 和 `B` 都为矩阵
+
+* A 的形状为 `n x D`
+* B 的形状为 `D x m`
+* C 的形状为 `n x m`
+
+#### 标量积展开
+
+* A 看做行向量集合
+  * n 个行向量，每个向量形状为 `1 x D`
+   ![pasted-image-20250831153617](/images/pasted-image-20250831153617.png)
+* B 看做列向量集合
+  * m 个列向量，每个向量形状为 `D x 1`
+   ![pasted-image-20250831153628](/images/pasted-image-20250831153628.png)
+
+$\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B} = \begin{bmatrix} \boldsymbol{a}^{(1)} \\ \boldsymbol{a}^{(2)} \\ \vdots \\ \boldsymbol{a}^{(n)} \end{bmatrix}_{n \times 1} \begin{bmatrix} \boldsymbol{b}_{1} & \boldsymbol{b}_{2} & \cdots & \boldsymbol{b}_{m} \end{bmatrix}_{1 \times m} = \begin{bmatrix} \boldsymbol{a}^{(1)}\boldsymbol{b}_{1} & \boldsymbol{a}^{(1)}\boldsymbol{b}_{2} & \cdots & \boldsymbol{a}^{(1)}\boldsymbol{b}_{m} \\ \boldsymbol{a}^{(2)}\boldsymbol{b}_{1} & \boldsymbol{a}^{(2)}\boldsymbol{b}_{2} & \cdots & \boldsymbol{a}^{(2)}\boldsymbol{b}_{m} \\ \vdots & \vdots & \ddots & \vdots \\ \boldsymbol{a}^{(n)}\boldsymbol{b}_{1} & \boldsymbol{a}^{(n)}\boldsymbol{b}_{2} & \cdots & \boldsymbol{a}^{(n)}\boldsymbol{b}_{m} \end{bmatrix}_{n \times m}$
+
+![pasted-image-20250831152627](/images/pasted-image-20250831152627.png)
+
+#### 外积展开
+
+* A 看做列向量集合
+  * D 个列向量，每个向量形状为 `n x 1`
+   ![pasted-image-20250831153304](/images/pasted-image-20250831153304.png)
+* B 看做行向量集合
+  * D 个行向量，每个向量形状为 `1 x m`
+   ![pasted-image-20250831153400](/images/pasted-image-20250831153400.png)
+
+$\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B} = \begin{bmatrix} \boldsymbol{a}_{1} & \boldsymbol{a}_{2} & \cdots & \boldsymbol{a}_{D} \end{bmatrix}_{1 \times D} \begin{bmatrix} b^{(1)} \\ b^{(2)} \\ \vdots \\ b^{(D)} \end{bmatrix}_{D \times 1} = \boldsymbol{a}_{1}b^{(1)} + \boldsymbol{a}_{2}b^{(2)} + \cdots + \boldsymbol{a}_{D}b^{(D)} = \sum_{i=1}^{D} \boldsymbol{a}_{i}b^{(i)}$
+
+![pasted-image-20250831153559](/images/pasted-image-20250831153559.png)
+
+#### B 切为列向量
+
+A 和 B 矩阵相乘时,将 B 分割成列向量,这样 AB 结果为:
+
+$\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B} = \boldsymbol{A}\begin{bmatrix} \boldsymbol{b}_{1} & \boldsymbol{b}_{2} & \cdots & \boldsymbol{b}_{m} \end{bmatrix} = \begin{bmatrix} \boldsymbol{A}\boldsymbol{b}_{1} & \boldsymbol{A}\boldsymbol{b}_{2} & \cdots & \boldsymbol{A}\boldsymbol{b}_{m} \end{bmatrix}$
+
+![pasted-image-20250831153744](/images/pasted-image-20250831153744.png)
+
+#### A 切为行向量
+
+* 将 A 分割成一组行向量
+  * n 个行向量，每个向量形状为 `1 x D`
+* B 矩阵形状为 `D x m`
+
+乘积 AB 结果为:
+
+$\boldsymbol{C} = \boldsymbol{A}\boldsymbol{B} = \begin{bmatrix} \boldsymbol{a}^{(1)} \\ \boldsymbol{a}^{(2)} \\ \vdots \\ \boldsymbol{a}^{(n)} \end{bmatrix}_{n \times 1} @ \boldsymbol{B} = \begin{bmatrix} \boldsymbol{a}^{(1)}\boldsymbol{B} \\ \boldsymbol{a}^{(2)}\boldsymbol{B} \\ \vdots \\ \boldsymbol{a}^{(n)}\boldsymbol{B} \end{bmatrix}_{n \times 1}$
+
+![pasted-image-20250831153906](/images/pasted-image-20250831153906.png)
+
+#### 矩阵分块
+
+A 和 B 都上下左右分块,乘积 AB 结果为:
+
+$\mathbf{A}\mathbf{B} = \begin{bmatrix} \mathbf{A}_{1,1} & \mathbf{A}_{1,2} \\ \mathbf{A}_{2,1} & \mathbf{A}_{2,2} \end{bmatrix} \begin{bmatrix} \mathbf{B}_{1,1} & \mathbf{B}_{1,2} \\ \mathbf{B}_{2,1} & \mathbf{B}_{2,2} \end{bmatrix} = \begin{bmatrix} \mathbf{A}_{1,1}\mathbf{B}_{1,1} + \mathbf{A}_{1,2}\mathbf{B}_{2,1} & \mathbf{A}_{1,1}\mathbf{B}_{1,2} + \mathbf{A}_{1,2}\mathbf{B}_{2,2} \\ \mathbf{A}_{2,1}\mathbf{B}_{1,1} + \mathbf{A}_{2,2}\mathbf{B}_{2,1} & \mathbf{A}_{2,1}\mathbf{B}_{1,2} + \mathbf{A}_{2,2}\mathbf{B}_{2,2} \end{bmatrix}$
+
+![pasted-image-20250831154132](/images/pasted-image-20250831154132.png)
+
 ## LLM Structure
 
 ### MLP layer

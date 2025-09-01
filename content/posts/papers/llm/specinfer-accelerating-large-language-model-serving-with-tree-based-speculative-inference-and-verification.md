@@ -64,7 +64,7 @@ Tree attention 部分感觉没什么新意，作者自己硬造了一个概念�
 - 对于 kv cache
   - 让所有路径共用一个缓存，并通过 DFS 的顺序来更新这个缓存
 - 对于 attention 计算
-  - tree 的性质：从根节点出发，有且仅有一条路径可以到达选择的节点，所以 SpecInfer 采用了 Topology-aware Causal Mask，屏蔽掉不应产生影响的Token之间的注意力计算（例如，兄弟节点之间），使得在一次大的矩阵运算中，就能并行且正确地完成树中所有节点的验证。
+  - tree 的性质：从根节点出发，有且仅有一条路径可以到达选择的节点，所以 SpecInfer 采用了 Topology-aware Causal Mask，屏蔽掉不应产生影响的 Token 之间的注意力计算（例如，兄弟节点之间），使得在一次大的矩阵运算中，就能并行且正确地完成树中所有节点的验证。
 
 ![pasted-image-20250725103008](/images/pasted-image-20250725103008.png)
 

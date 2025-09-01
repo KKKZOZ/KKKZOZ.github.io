@@ -500,6 +500,16 @@ git log --oneline
 git reset --hard a1b2c3d
 ```
 
+#### 5\. 重置本地分支到远程分支的状态
+
+> Fork 其他人仓库后, 同步状态可能会用到 (不要用自己的 fork 后的 main 分支直接开 pr)
+
+```bash
+# 强制重置本地分支到远程分支的状态
+git fetch origin
+git reset --hard origin/<branch_name>
+```
+
 ## Multi Branch Development
 
 ### Git Checkout

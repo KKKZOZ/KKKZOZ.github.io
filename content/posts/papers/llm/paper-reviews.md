@@ -7,8 +7,6 @@ showtoc: true
 draft: true
 ---
 
-
-
 ## Reviews
 
 - [STI Turbocharge NLP Inference at the Edge via Elastic Pipelining](posts/papers/llm/sti-turbocharge-nlp-inference-at-the-edge-via-elastic-pipelining.md)
@@ -18,6 +16,9 @@ draft: true
 - [EdgeMoE Empowering Sparse Large Language Models on Mobile Devices](posts/papers/llm/edgemoe-empowering-sparse-large-language-models-on-mobile-devices.md)
   - 不同专家对量化的容忍度不同，容忍度高的专家可以使用更高级别的量化
   - 对于同一个 Token，跨所有层被激活的专家序列呈现幂律分布: 可以通过 predict-and-prefetch 来优化流水线
+- [ELMS Elasticized Large Language Models  On Mobile Devices](posts/papers/llm/elms-elasticized-large-language-models-on-mobile-devices.md)
+  - Transformer 模块具有置换一致性，可以根据不同块的重要性得分对其进行重排而不影响最终结果，因此将高开销的动态剪枝操作转变为几乎零成本的在线内存指针移动。
+  - 训练一个 TLM 来自动地根据 prompt 和 SLO 确定 prompt 和 model 的弹性百分比
 - [LLM as a System Service on Mobile Devices](posts/papers/llm/llm-as-a-system-service-on-mobile-devices.md)
   - 持久化 KV Cache 来加速对话
   - 不同 KV chunk 的信息密度不一样，因此对量化的容忍度不同，可以根据信息密度分配不同的压缩比例
@@ -54,13 +55,34 @@ draft: true
   - 在线并行预测下一层的稀疏模式，然后利用稀疏模式进行计算，提升模型运算速度和效率 (offline profile, online predict)
   - 注意力模块只计算一部分注意力头，MLP 模块只计算一部分神经元索引(Rows of W_up and Cols of W_down)
 - [LLM in a flash Efficient Large Language Model Inference with Limited Memory](posts/papers/llm/llm-in-a-flash-efficient-large-language-model-inference-with-limited-memory.md)
-  - 直接利用了上下文稀疏性，
+  - I/O 是模型推理瓶颈，想办法降低 I/O 延迟：降低从 flash 读入的数据量；利用滑动窗口保留最近 k 个 token 所激活过的神经元的权重；每次尽可能读更多，更连续的数据块
+  - 直接利用了上下文稀疏性，每层训练了一个 predictor，预测 FFN 中激活值哪些部分会变为 0 (经过 ReLU)，从而只加载非零部分对应的 W_up 和 W_down (offline profile, online predict)
 - [PowerInfer Fast Large Language Model Serving with a Consumer-grade GPU](posts/papers/llm/powerinfer-fast-large-language-model-serving-with-a-consumer-grade-gpu.md)
   - 小部分热神经元在不同输入中持续激活，而大部分冷神经元则根据特定输入而变化; 热神经元预加载到 GPU 中实现快速访问，冷神经元则在 CPU 上计算
   - offline profile: 基于冷热神经元的统计洞察，决定哪些权重该放在 GPU，哪些放在 CPU; online predict: 基于上下文稀疏性，在运行时动态预测并只计算被激活的神经元
   - 激活的主体是热神经元 (70%)，所以放在 GPU 上计算
-
 - [PowerInfer-2 Fast Large Language Model Inference on a Smartphone](posts/papers/llm/powerinfer-2-fast-large-language-model-inference-on-a-smartphone.md)
+  - 将 PowerInfer-1 中的冷热神经元更粗粒度地打包为了冷热神经元簇
+  - NPU 擅长稠密计算，CPU 擅长稀疏计算：热神经元簇激活密度很高，直接视为一个整体在 NPU 上进行稠密计算；冷神经元簇只有少数成员会被激活，因此采用 offline profile and online predict 的方式在 CPU 上进行计算
+  - 以神经元簇粒度进行流水线划分
+- [AWQ Activation-aware Weight Quantization for LLM Compression and Acceleration](posts/papers/llm/awq-activation-aware-weight-quantization-for-llm-compression-and-acceleration.md)
+  - 通过激活值大小识别出对应的 salient weights，保护 salient weights 可以降低量化误差
+  - offline profile: 一个数据集上进行一次静态的 profile 来确定哪些权重是重要的；量化前用一个缩放因子放大这些 salient weights 来降低量化过程中的相对误差
+- [FlexGen High-Throughput Generative Inference of Large Language Models with a Single GPU](posts/papers/llm/flexgen-high-throughput-generative-inference-of-large-language-models-with-a-single-gpu.md)
+  - Throughput-oriented: 对于一次性加载的权重，尽可能一次性多地处理更多的 batch，整体上降低了切换权重的次数，达到更高的吞吐量
+  - 采用了高效的卸载策略，将权重，激活值，KV Cache 放置在 GPU, CPU 和磁盘这三级存储中，同时在某些 I/O 密集型计算中，把某些计算直接委托给 CPU 执行更高效
+- [SpecInfer Accelerating Large Language Model Serving with Tree-based Speculative Inference and Verification](posts/papers/llm/specinfer-accelerating-large-language-model-serving-with-tree-based-speculative-inference-and-verification.md)
+  - 用 Draft Model 构建了一个 Token Tree: 每个 decoding iteration 都接受 top-k 个 token，自然形成了一个 token tree
+  - Verification 时采用了 Topology-aware Causal Mask，屏蔽掉不应产生影响的 Token 之间的注意力计算 (比如兄弟节点之间)，使得在一次大的矩阵运算中，就能并行且正确地完成树中所有节点的验证
+- [EdgeLLM Fast On-Device LLM Inference With Speculative Decoding](posts/papers/llm/edgellm-fast-on-device-llm-inference-with-speculative-decoding.md)
+  - Token tree 可以是动态的，具有更高置信度的 branch 应该被探索地更深
+  - 阈值也可以动态调整：如果 draft model 近期表现良好，就应该更信任它；如果错误较多，就应该更频繁地进行验证
+  - Target model 进行验证时 (I/O 加载时)，draft model 可以继续利用空闲的计算资源预生成后续的 token
+
+- [Efficient Memory Management for Large Language Model Serving with PagedAttention](posts/papers/llm/efficient-memory-management-for-large-language-model-serving-with-pagedattention.md)
+-
+
+- [ServerlessLLM Locality-Enhanced Serverless Inference for Large Language Models](posts/papers/llm/serverlessllm-locality-enhanced-serverless-inference-for-large-language-models.md)
 -
 
 ## Patterns
