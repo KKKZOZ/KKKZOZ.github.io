@@ -2,6 +2,8 @@
 title: "ELMS Elasticized Large Language Models On Mobile Devices"
 tags:
   - arXiv-24
+  - LLM-Inference
+  - Edge-Devices
 date: 2025-08-27
 showtoc: true
 ---
@@ -98,6 +100,8 @@ TLM 训练时采用了自诱导的方式：
 置换一致性从数学角度来说就是矩阵乘法的外积展开视角
 
 整个思路和 [Deja Vu Contextual Sparsity for Efficient LLMs at Inference Time](posts/papers/llm/deja-vu-contextual-sparsity-for-efficient-llms-at-inference-time.md) 中提出的上下文稀疏性有点类似
+
+分析一下，其实也是 offline profile online predict 那一套
 
 与 Speculative Decoding 比较相关：两者都用小模型辅助大模型。推测解码加速Token生成速度（TPOT），而ELMS调整模型以满足延迟目标（TTFT/TPOT）。它们可以结合：ELMS选择一个子模型（如50%模型）来作为另一个更大子模型（如90%模型）的草稿模型。
 

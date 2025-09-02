@@ -1,5 +1,5 @@
 ---
-title: "Scaling Up On-Device LLMs via Active-Weight  Swapping Between DRAM and Flash"
+title: "Scaling Up On-Device LLMs via Active-Weight Swapping Between DRAM and Flash"
 tags:
   - arXiv-25
   - LLM-Inference
@@ -53,7 +53,7 @@ showtoc: true
 
 > [!note] 详细说明
 >
-> + 在常规的LLM权重布局中，数据是按层、按算子（Operator）顺序存储的 。比如，存储完第10层的所有权重（Wq, Wk, Wv...），再存储第11层的所有权重。这导致如果要预加载第10、11、12、13层中同一个“通道 C”的权重，这4块数据在物理上是分散在闪存的四个不同位置的，系统需要进行4次独立的、小数据块的读取操作。
+> + 在常规的 LLM 权重布局中，数据是按层、按算子（Operator）顺序存储的 。比如，存储完第10层的所有权重（Wq, Wk, Wv...），再存储第11层的所有权重。这导致如果要预加载第10、11、12、13层中同一个“通道 C”的权重，这4块数据在物理上是分散在闪存的四个不同位置的，系统需要进行4次独立的、小数据块的读取操作。
 > + ActiveFlow 提出的新的存储顺序是根据 `算子类型 -> 通道 ID -> 层 ID` （从大到小）来组织的。这样一来，所有层中同一个通道的权重在物理上就变成了连续存储。当系统需要预加载某个活跃通道时，它可以一次性将后面多个层对应的权重作为一个大的连续数据块读取出来，极大地提升了加载效率。
 
 > [!example] 实际例子
@@ -114,8 +114,6 @@ Self-distillation uses the full model’s output distribution as a soft target t
 ### When Reading
 
 这篇文章每张图都画得很好，干净简洁，一看就懂，值得学习！
-
-能否从系统的方法论角度分析一下类似于串行执行可以用 pipeline 优化的策略？
 
 再温故一下 contextual sparsity 的定义
 

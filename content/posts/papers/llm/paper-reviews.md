@@ -16,9 +16,9 @@ draft: true
 - [EdgeMoE Empowering Sparse Large Language Models on Mobile Devices](posts/papers/llm/edgemoe-empowering-sparse-large-language-models-on-mobile-devices.md)
   - 不同专家对量化的容忍度不同，容忍度高的专家可以使用更高级别的量化
   - 对于同一个 Token，跨所有层被激活的专家序列呈现幂律分布: 可以通过 predict-and-prefetch 来优化流水线
-- [ELMS Elasticized Large Language Models  On Mobile Devices](posts/papers/llm/elms-elasticized-large-language-models-on-mobile-devices.md)
+- [ELMS Elasticized Large Language Models On Mobile Devices](posts/papers/llm/elms-elasticized-large-language-models-on-mobile-devices.md)
   - Transformer 模块具有置换一致性，可以根据不同块的重要性得分对其进行重排而不影响最终结果，因此将高开销的动态剪枝操作转变为几乎零成本的在线内存指针移动。
-  - 训练一个 TLM 来自动地根据 prompt 和 SLO 确定 prompt 和 model 的弹性百分比
+  - 训练一个 TLM 来自动地根据 prompt 和 SLO 确定 prompt 和 model 的弹性百分比(offline profile, online predict)
 - [LLM as a System Service on Mobile Devices](posts/papers/llm/llm-as-a-system-service-on-mobile-devices.md)
   - 持久化 KV Cache 来加速对话
   - 不同 KV chunk 的信息密度不一样，因此对量化的容忍度不同，可以根据信息密度分配不同的压缩比例
@@ -65,6 +65,9 @@ draft: true
   - 将 PowerInfer-1 中的冷热神经元更粗粒度地打包为了冷热神经元簇
   - NPU 擅长稠密计算，CPU 擅长稀疏计算：热神经元簇激活密度很高，直接视为一个整体在 NPU 上进行稠密计算；冷神经元簇只有少数成员会被激活，因此采用 offline profile and online predict 的方式在 CPU 上进行计算
   - 以神经元簇粒度进行流水线划分
+- [Scaling Up On-Device LLMs via Active-Weight Swapping Between DRAM and Flash](posts/papers/llm/scaling-up-on-device-llms-via-active-weight-swapping-between-dram-and-flash.md)
+  - 利用了 Top-K 的稀疏性，实现了在非 ReLu 上的权重值预测和预取
+  - 激活值相似度很高，可以用当前层最重要的 K 个激活通道去预测下一层最重要的 K 个激活通道；为了提高 I/O 效率，将权重按照 算子类型 -> 通道 ID -> 层 ID 的方式进行重排，方便大块的 I/O 预取
 - [AWQ Activation-aware Weight Quantization for LLM Compression and Acceleration](posts/papers/llm/awq-activation-aware-weight-quantization-for-llm-compression-and-acceleration.md)
   - 通过激活值大小识别出对应的 salient weights，保护 salient weights 可以降低量化误差
   - offline profile: 一个数据集上进行一次静态的 profile 来确定哪些权重是重要的；量化前用一个缩放因子放大这些 salient weights 来降低量化过程中的相对误差
