@@ -12,8 +12,9 @@ weight: 10
 ## Daily Life
 
 - [Picture Compressor](https://picsmaller.com/)
-- [Convert from/to JPG](https://jpgconverter.com/)
 - [NanoReview – tech comparison and ratings](https://nanoreview.net/)
+- [Convert anything to anything - PrintFriendly](https://www.printfriendly.com/)
+- [GPU Database | TechPowerUp](https://www.techpowerup.com/gpu-specs)
 
 ## Programming
 
