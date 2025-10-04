@@ -41,7 +41,7 @@ Designs:
 
 - Expert weights bloat device memory
 - Experts weights are bulky but cold
-- Expert activation path follows power law distribution
+- **Expert activation path follows power law distribution**
 
 ![pasted-image-20250825102402](/images/pasted-image-20250825102402.png)
 

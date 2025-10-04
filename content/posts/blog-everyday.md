@@ -10,6 +10,10 @@ draft: true
 
 > 记录每天读过的 Hacker News
 
+## 2025-10-04
+
+- [WireGuard topologies for self-hosting at home](https://garrido.io/notes/wireguard-topologies-for-self-hosting-at-home/)
+
 ## 2025-08-14
 
 - [Claude Sonnet 4 now supports 1M tokens of context](https://news.ycombinator.com/item?id=44878147): 主打一个贵

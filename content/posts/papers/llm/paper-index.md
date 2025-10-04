@@ -9,6 +9,13 @@ weight: 1
 
 ## 2025
 
+### 1028-1103
+
+- [Aegaeon Effective GPU Pooling for Concurrent LLM Serving on the Market](./aegaeon-effective-gpu-pooling-for-concurrent-llm-serving-on-the-market/)
+- [DistServe Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving](./distserve-disaggregating-prefill-and-decoding-for-goodput-optimized-large-language-model-serving/)
+- [Splitwise Efficient Generative LLM Inference Using Phase Splitting](./splitwise-efficient-generative-llm-inference-using-phase-splitting/)
+- [Taming Throughput-Latency Tradeoff in LLM Inference with Sarathi-Serve](./taming-throughput-latency-tradeoff-in-llm-inference-with-sarathi-serve/)
+
 ### 0826-0901
 
 - [ELMS Elasticized Large Language Models On Mobile Devices](./elms-elasticized-large-language-models-on-mobile-devices/)

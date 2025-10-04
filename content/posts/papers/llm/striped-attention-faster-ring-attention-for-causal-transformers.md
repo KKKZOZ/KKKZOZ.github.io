@@ -15,7 +15,7 @@ showtoc: true
 
 - [zhuzilin/ring-flash-attention: Ring attention implementation with flash attention](https://github.com/zhuzilin/ring-flash-attention)
 
-Corresponding virtualization is [here](/embeds/a.html)
+Corresponding virtualization is [here](posts/archived/embeds/a.html.md)
 
 ## Background
 
