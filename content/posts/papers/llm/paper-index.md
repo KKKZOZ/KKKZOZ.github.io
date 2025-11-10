@@ -9,6 +9,10 @@ weight: 1
 
 ## 2025
 
+### 1103-1110
+
+- [EAGLE Speculative Sampling Requires Rethinking Feature Uncertainty](./eagle-speculative-sampling-requires-rethinking-feature-uncertainty/)
+
 ### 1028-1103
 
 - [Aegaeon Effective GPU Pooling for Concurrent LLM Serving on the Market](./aegaeon-effective-gpu-pooling-for-concurrent-llm-serving-on-the-market/)

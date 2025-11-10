@@ -1,7 +1,7 @@
 ---
 title: "KV-Runahead Scalable Causal LLM Inference by Parallel Key-Value Cache Generation"
 tags:
-  - ICML-224
+  - ICML-24
   - Tensor-Parallelism
 date: 2025-08-17
 showtoc: true
