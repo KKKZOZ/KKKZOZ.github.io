@@ -23,7 +23,7 @@ Snapshot isolate should provide:
 + Visibility check rules.
 + Write conflicts detection.
 
-### Visibility Check Rules
+## Visibility Check Rules
 
 > Intuitively, with SI, a transaction's reads all appear to occur the time when it begins($ts_r$)
 > while its writes appear to execute when it commits($ts_c$).
@@ -39,7 +39,7 @@ When running visibility checks, client get $version$ and $cf$ directly from the 
 
 **Following a commit, the transaction updates the commit fields of its written data items with its $ts_c$, and then removes itself from the CT.**
 
-### Write Conflict Detection
+## Write Conflict Detection
 
 This is done by the TM(Transaction Manager).
 
@@ -53,7 +53,7 @@ Here comes two problems:
 + The table may be too big to fit in the main memory.
   + Each bucket holds a **fixed** array of the most recent pairs. Like Omid1, reduce the table size while increasing the possibility of false aborts.
 
-### High Availablity
+## High Availability
 
 This is achieved via the primary-backup paradigm: during normal operation, a single primary TM handles client requests, while a backup TM runs in hot standby mode.
 Upon detecting the primary’s failure, the backup performs a failover and becomes the new primary.

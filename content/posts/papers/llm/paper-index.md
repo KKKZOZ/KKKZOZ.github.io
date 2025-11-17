@@ -9,7 +9,19 @@ weight: 1
 
 ## 2025
 
-### 1103-1110
+### 1111-1117
+
+- [LServe Efficient Long-sequence LLM Serving with Unified Sparse Attention](./lserve-efficient-long-sequence-llm-serving-with-unified-sparse-attention/)
+- [QServe W4A8KV4 Quantization and System Co-design for Efficient LLM Serving](./qserve-w4a8kv4-quantization-and-system-co-design-for-efficient-llm-serving/)
+- [Quest Query-Aware Sparsity for Efficient Long-Context LLM Inference](./quest-query-aware-sparsity-for-efficient-long-context-llm-inference/)
+- [Dynamic Sparse Attention on Mobile SoCs](./dynamic-sparse-attention-on-mobile-socs/)
+- [A dynamic parallel method for performance optimization on hybrid CPUs](./a-dynamic-parallel-method-for-performance-optimization-on-hybrid-cpus/)
+- [SmoothQuant Accurate and Efficient Post-Training Quantization for Large Language Models](./smoothquant-accurate-and-efficient-post-training-quantization-for-large-language-models/)
+- [DuoAttention Efficient Long-Context LLM Inference with Retrieval and Streaming Heads](./duoattention-efficient-long-context-llm-inference-with-retrieval-and-streaming-heads/)
+- [Efficient Streaming Language Models with Attention Sinks](./efficient-streaming-language-models-with-attention-sinks/)
+- [KTransformers Unleashing the Full Potential of CPU GPU Hybrid Inference for MoE Models](./ktransformers-unleashing-the-full-potential-of-cpu-gpu-hybrid-inference-for-moe-models/)
+
+### 1104-1110
 
 - [EAGLE Speculative Sampling Requires Rethinking Feature Uncertainty](./eagle-speculative-sampling-requires-rethinking-feature-uncertainty/)
 

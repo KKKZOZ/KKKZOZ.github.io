@@ -43,8 +43,46 @@ $$T_{1:j} → E_{1:j} → f_j → p_{j+1} → t_{j+1}$$ for any integer $j ≥ 1
 + $T_{1:j}$ 经过 Embedding 后变为 $F_{1:j}^0$
 + 然后经过 Transformer Layers 不断丰富，得到最后包含了对所有内容语义，语法和上下文理解的 $F_{1:j}$
 + 取最后一个 token 的特征表示 $f_j$
-+ 通过 LM Head 得到**下一个 token** 的概率分布 $p_{j+1}$ (用 $f_j$ 预测 $p_{j+1}$)
++ 通过 LM Head（embedding + softmax） 得到**下一个 token** 的概率分布 $p_{j+1}$ (用 $f_j$ 预测 $p_{j+1}$)
 + 从 $p_{j+1}$ 采样得到 $t_{j+1}$
+
+Embedding 在两个阶段的数学操作不同：
+
+### 1. 输入阶段：查表（lookup）
+
+当我们输入一个 token (t_i) 时，它是词表中的一个索引，比如 42。
+模型的嵌入矩阵是：
+
+$$W_E \in \mathbb{R}^{V \times d}$$
+
+其中：
+
++ (V)：词表大小
++ (d)：embedding（隐藏）维度
+
+查表其实就是选取 (W_E) 的某一行：
+$$e_i = W_E[t_i]$$
+
+这本质上等价于：
+$$e_i = \text{one\_hot}(t_i) \cdot W_E$$
+也就是说，把 token 变成一个 one-hot 向量，然后乘以整个嵌入矩阵 —— 只是实现上我们用查表来加速而已。
+
+### 2. 输出阶段：矩阵乘法（feature → logits）
+
+Transformer 最后一层输出一个向量 ($f_j \in \mathbb{R}^d$), 为了得到每个词的概率（logits），我们要计算：
+
+$$\text{logits}_{j+1} = f_j W_E^\top$$
+
+> 把特征和所有 embedding 进行相似度计算（点积）
+
+这一步得到一个 (V)-维向量，对应每个词的得分。再经过 softmax：
+
+$$p(t_{j+1}) = \text{softmax}(\text{logits}_{j+1})$$
+
+| 阶段  | 操作                  | 数学等价式                                  | 实现形式 |
+| --- | ------------------- | -------------------------------------- | ---- |
+| 输入  | one-hot → embedding | $e_i = \text{one\_hot}(t_i) \cdot W_E$ | 查表   |
+| 输出  | embedding → logits  | $\text{logits} = f_j W_E^\top$         | 矩阵乘法 |
 
 ### Feature-level prediction
 
