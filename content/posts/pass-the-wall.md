@@ -77,6 +77,232 @@ s2-ljy 这台服务器上访问 `localhost:1082` -> 实际访问的是本机的 
 | **典型用途**       | 访问远程内网服务                   | 暴露本地服务给远程                 |
 | **示例**           | `ssh -L 8080:localhost:80 user@server` | `ssh -R 9000:localhost:3000 user@server` |
 
+## Xray Container
+
+如果想在服务器的 docker container 里使用代理，如果只使用远程端口转发非常不方便，我们可以开启一个 Xray 容器来使用代理。
+
+```shell
+
+mkdir xray
+touch xray/config.json
+
+```
+
+然后把下面的配置写入 `xray/config.json` 里:
+
+```json
+{
+  "log": { "loglevel": "info" },
+
+  "inbounds": [
+    {
+      "listen": "0.0.0.0",
+      "port": 10809,
+      "protocol": "http",
+      "settings": {}
+    }
+  ],
+
+  "outbounds": [
+    {
+      "tag": "proxy",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            // let GPT generate it for you
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "tcp",
+        "security": "reality",
+        "realitySettings": {
+          "publicKey": "2O1Q7AJJC5sTUGsnxn_xE4APz-SNeFUEIHfAO00463g",
+          "serverName": "yahoo.com",
+          "shortId": "c35f90d2",
+          "fingerprint": "chrome"
+        }
+      }
+    },
+    { "tag": "direct", "protocol": "freedom" },
+    { "tag": "block", "protocol": "blackhole" }
+  ],
+
+  "dns": {
+    "servers": ["223.5.5.5", "119.29.29.29", "1.1.1.1", "8.8.8.8"]
+  },
+
+  "routing": {
+    "domainStrategy": "IPIfNonMatch",
+    "rules": [
+      { "type": "field", "ip": ["geoip:private"], "outboundTag": "direct" },
+
+      { "type": "field", "domain": ["geosite:cn"], "outboundTag": "direct" },
+      { "type": "field", "ip": ["geoip:cn"], "outboundTag": "direct" },
+
+      { "type": "field", "domain": ["geosite:category-ads-all"], "outboundTag": "block" },
+
+      { "type": "field", "network": "tcp,udp", "outboundTag": "proxy" }
+    ]
+  }
+}
+```
+
+然后运行 Xray 容器:
+
+```shell
+docker network create proxy
+
+docker run -d -p 10809:10809 --name xray --network proxy --restart=always -v ./xray:/etc/xray teddysun/xray
+```
+
+> [!NOTE]
+> 注意这里的 `-p 10809:10809`，如果你要修改的话，需要把 `config.json` 里的 `inbounds` 的 `port` 一起修改。
+
+然后你就能愉快的使用代理了，在服务器里设置环境变量:
+
+```shell
+export http_proxy="http://localhost:10809"
+export https_proxy="http://localhost:10809"
+export HTTP_PROXY="http://localhost:10809"
+export HTTPS_PROXY="http://localhost:10809"
+
+export no_proxy="localhost,127.0.0.1,localaddress,.localdomain.com,$(hostname)"
+export NO_PROXY="localhost,127.0.0.1,localaddress,.localdomain.com,$(hostname)"
+```
+
+如果需要让其他容器使用这个代理，可以把其他容器加入到 `proxy` 这个网络里:
+
+```shell
+docker network connect proxy [other-container-name]
+```
+
+在容器里设置代理环境变量:
+
+```shell
+export http_proxy="http://xray:10809"
+export https_proxy="http://xray:10809"
+export HTTP_PROXY="http://xray:10809"
+export HTTPS_PROXY="http://xray:10809"
+
+export no_proxy="localhost,127.0.0.1,localaddress,.localdomain.com,$(hostname)"
+export NO_PROXY="localhost,127.0.0.1,localaddress,.localdomain.com,$(hostname)"
+```
+
+> [!SUMMARY]
+> 不需要透明代理的话，这样设置是最简单的
+>
+> 如果需要透明代理(比如 TUN 模式)，可以直接在宿主机上使用 Xray 的 TUN 功能
+
+## FRP
+
+FRP (Fast Reverse Proxy) 是一个高性能的反向代理应用，主要用于内网穿透。它允许你将内网服务暴露到公网上，方便远程访问。
+
+具有公网 IP 的服务器上运行 FRP 的服务端 (frps)，而在内网机器上运行 FRP 的客户端 (frpc)。
+
+### frps 配置
+
+```toml
+bindPort = 7000
+
+auth.method = "token"
+auth.token = "your_secure_token"
+
+allowPorts = [
+  { start = 6000, end = 6299 }
+]
+```
+
+然后通过以下命令启动 frps:
+
+```shell
+docker run -d \
+  --name frps \
+  --restart unless-stopped \
+  -p 7000:7000 \
+  -p 6000-6299:6000-6299 \
+  -v $(pwd)/frps.toml:/etc/frp/frps.toml \
+  snowdreamtech/frps
+```
+
+### frpc 配置
+
+```toml
+serverAddr = "your_frps_server_ip"
+serverPort = 7000
+auth.method = "token"
+auth.token = "your_secure_token"
+
+[[proxies]]
+name = "ssh"
+type = "tcp"
+localPort = 22
+remotePort = 6000
+```
+
+然后通过以下命令启动 frpc:
+
+```shell
+docker run -d \
+  --name frpc \
+  --restart unless-stopped \
+  --network host \
+  -v $(pwd)/frpc.toml:/etc/frp/frpc.toml \
+  snowdreamtech/frpc
+```
+
+查看一下日志，确保正常启动了
+
+```shell
+docker logs frpc
+
+start frpc service for config file [/etc/frp/frpc.toml]
+try to connect to server...
+login to server success
+proxy [ssh] start success
+```
+
+然后就可以通过下面的命令来访问：
+
+```shell
+ssh -p 6000 kkkzoz@[your_frps_server_ip]
+```
+
+## Docker
+
+### Docker save/load
+
+```shell
+docker save snowdreamtech/frpc:latest > frpc-image.tar
+docker load < frpc-image.tar
+```
+
+### Docker http-proxy
+
+> 假设已经在本地 10809 端口开启了代理
+
+```shell
+sudo mkdir -p /etc/systemd/system/docker.service.d
+sudo vim /etc/systemd/system/docker.service.d/http-proxy.conf
+```
+
+写入以下内容
+
+```conf
+[Service]
+Environment="HTTP_PROXY=http://localhost:10809"
+Environment="HTTPS_PROXY=http://localhost:10809"
+Environment="NO_PROXY=localhost,127.0.0.1"
+```
+
+然后执行
+
+```shell
+sudo systemctl daemon-reexec
+sudo systemctl restart docker
+```
+
 ## Configuring Mirrors for Development Tools
 
 ### pip
