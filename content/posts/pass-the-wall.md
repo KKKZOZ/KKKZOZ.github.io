@@ -282,6 +282,14 @@ docker load < frpc-image.tar
 
 > 假设已经在本地 10809 端口开启了代理
 
+注意这么设置的是 Docker daemon 的代理，只会用于：
+
++ docker pull / push
++ docker build（RUN apt / curl / wget）
++ daemon 自身的 HTTP 请求
+
+**容器本身的 Proxy 不会受影响**
+
 ```shell
 sudo mkdir -p /etc/systemd/system/docker.service.d
 sudo vim /etc/systemd/system/docker.service.d/http-proxy.conf
@@ -302,6 +310,36 @@ Environment="NO_PROXY=localhost,127.0.0.1"
 sudo systemctl daemon-reexec
 sudo systemctl restart docker
 ```
+
+## Network Proxy
+
+工位上的主机网络带宽被限制了，在白天只有 1MB/s
+
+但是所机房的服务器网络带宽没有被限（通常有 20MB/s），而且工位的主机访问所机房服务器的速度也很快
+
+所以我们就可以通过流量转发的方式，把工位主机的网络流量转发到所机房服务器上，达到网络加速的效果
+
+在服务器上：
+
+```shell
+docker run -d \
+    --name gost-server \
+    --restart=always \
+    --net=host \
+    ginuerzh/gost \
+    -L admin:123456@:1080
+```
+
+在工位主机上：
+
+```shell
+export http_proxy="http://admin:123456@124.16.138.62:1080"
+export https_proxy="http://admin:123456@124.16.138.62:1080"
+export HTTP_PROXY="http://admin:123456@124.16.138.62:1080"
+export HTTPS_PROXY="http://admin:123456@124.16.138.62:1080"
+```
+
+如果有图形界面，可以在系统设置 -> 网络 中设置代理，这样浏览器之类的也会走这个代理
 
 ## Configuring Mirrors for Development Tools
 
