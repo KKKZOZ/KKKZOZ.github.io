@@ -1,17 +1,45 @@
 ---
-title: "PyTorch Python Basics"
+title: "torch-python"
 tags:
-  - Dev
-date: 2026-01-21
-toc: true
-weight: 10
+  - TOBETAGGED
+date: 2026-01-15
+showtoc: true
 ---
 
-> 最近看了一些 PyTorch 的代码，记录一下遇到的 Tensor 操作
+
+
 
 ## Tensor Operations
 
-### detach
+### clamp
+
+torch.clamp（或 Tensor 的实例方法 .clamp）是 PyTorch 中用于数值截断（clipping）的常用操作。它的主要作用是将输入张量（Tensor）中的所有元素限制在一个指定的范围内 $[min, max]$。
+
+Example:
+
+```python
+import torch
+
+# Initialize a tensor with values ranging from -10 to 10
+data = torch.tensor([-10.0, -5.0, 0.5, 5.0, 10.0])
+
+print(f"Original: {data}")
+
+# 1. Clamp between a min and max range [-1, 1]
+# Values < -1 become -1; Values > 1 become 1
+clamped_both = data.clamp(min=-1.0, max=1.0)
+print(f"Range [-1, 1]: {clamped_both}")
+
+# 2. Clamp with only a lower bound (min=-2)
+# Values < -2 become -2; No upper limit
+clamped_min = data.clamp(min=-2.0)
+print(f"Min -2 only: {clamped_min}")
+
+# 3. Clamp with only an upper bound (max=3)
+# Values > 3 become 3; No lower limit
+clamped_max = data.clamp(max=3.0)
+print(f"Max 3 only:  {clamped_max}")
+```
 
 ### Advanced Indexing
 
