@@ -7,7 +7,24 @@ weight: 1
 
 > My reading notes.
 
+## 2026
+
+### 0127-0202
+
+- [FlexPrefill A Context-Aware Sparse Attention Mechanism for Efficient Long-Sequence Inference](./flexprefill-a-context-aware-sparse-attention-mechanism-for-efficient-long-sequence-inference/)
+- [XAttention Block Sparse Attention with Antidiagonal Scoring](./xattention-block-sparse-attention-with-antidiagonal-scoring/)
+- [SLED A Speculative LLM Decoding Framework for Efficient Edge Serving](./sled-a-speculative-llm-decoding-framework-for-efficient-edge-serving/)
+- [R-Stitch Dynamic Trajectory Stitching for Efficient Reasoning](./r-stitch-dynamic-trajectory-stitching-for-efficient-reasoning/)
+- [Estimating LLM Uncertainty with Evidence](./estimating-llm-uncertainty-with-evidence/)
+- [Entropy Adaptive Decoding Dynamic Model Switching for Efficient Inference](./entropy-adaptive-decoding-dynamic-model-switching-for-efficient-inference/)
+- [Think Big, Generate Quick LLM-to-SLM for Fast Autoregressive Decoding](./think-big,-generate-quick-llm-to-slm-for-fast-autoregressive-decoding/)
+
 ## 2025
+
+### Remaining
+
+- [Beyond the 80 20 Rule High-Entropy Minority Tokens Drive Effective Reinforcement Learning for LLM Reasoning](./beyond-the-80-20-rule-high-entropy-minority-tokens-drive-effective-reinforcement-learning-for-llm-reasoning/)
+- [KVCache Cache in the Wild Characterizing and Optimizing KVCache Cache at a Large Cloud Provider](./kvcache-cache-in-the-wild-characterizing-and-optimizing-kvcache-cache-at-a-large-cloud-provider/)
 
 ### 1111-1117
 
@@ -89,3 +106,13 @@ weight: 1
 - [Efficient Function-as-a-Service for Large Language Models with TIDAL](./efficient-function-as-a-service-for-large-language-models-with-tidal/)
 - [LLM Preliminaries](./llm-preliminaries/)
 - [paper-reviews](./paper-reviews/)
+- [CE-LSLM](./ce-lslm/)
+- [Native Sparse Attention Hardware-Aligned and Natively Trainable Sparse Attention](./native-sparse-attention-hardware-aligned-and-natively-trainable-sparse-attention/)
+- [CacheGen](./cachegen/)
+- [R2R](./r2r/)
+- [CITER Collaborative Inference for Efficient Large Language Model Decoding with Token-Level Routing](./citer-collaborative-inference-for-efficient-large-language-model-decoding-with-token-level-routing/)
+- [Accelerating Large-Scale Reasoning Model Inference with Sparse Self-Speculative Decoding](./accelerating-large-scale-reasoning-model-inference-with-sparse-self-speculative-decoding/)
+- [SpecAttn Speculating Sparse Attention](./specattn-speculating-sparse-attention/)
+- [Token Level Routing Inference System for Edge Devices](./token-level-routing-inference-system-for-edge-devices/)
+- [C2C](./c2c/)
+- [Learning to Decode Collaboratively with Multiple Language Models](./learning-to-decode-collaboratively-with-multiple-language-models/)

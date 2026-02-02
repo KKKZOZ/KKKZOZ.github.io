@@ -3,7 +3,7 @@ title: "LServe Efficient Long-sequence LLM Serving with Unified Sparse Attention
 tags:
   - arXiv-25
   - KVCache
-  - Sparse-Attention
+  - sparse-attention
   - LLM-Inference
 date: 2025-11-15
 showtoc: true

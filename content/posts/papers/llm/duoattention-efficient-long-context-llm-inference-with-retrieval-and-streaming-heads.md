@@ -38,7 +38,7 @@ Only a fraction of attention heads, a.k.a, **Retrieval Heads**, are critical for
 
 This paper defines "retrieval heads" as the attention heads that **significantly alter model outputs when restricted to recent tokens and attention sinks**.
 
-For each KV head (or KV group, in GQA models), they introduce a **trainable scalar gate** ( \alpha_{i,j} \in [0, 1] ).
+For each KV head (or KV group, in GQA models), they introduce a **trainable scalar gate** ( $\alpha_{i,j} \in [0, 1]$ ).
 
 At training time, the output of that head is:
 
