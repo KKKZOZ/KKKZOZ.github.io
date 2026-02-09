@@ -9,6 +9,17 @@ weight: 1
 
 ## 2026
 
+### 0203-0209
+
+- [CAS-Spec Cascade Adaptive Self-Speculative Decoding for On-the-Fly Lossless Inference Acceleration of LLMs](./cas-spec-cascade-adaptive-self-speculative-decoding-for-on-the-fly-lossless-inference-acceleration-of-llms/)
+- [Draft & Verify Lossless Large Language Model Acceleration via Self-Speculative Decoding](./draft-&-verify-lossless-large-language-model-acceleration-via-self-speculative-decoding/)
+- [Swift On-the-fly Self-speculative Decoding For LLM Inference Acceleration](./swift-on-the-fly-self-speculative-decoding-for-llm-inference-acceleration/)
+- [3-Model Speculative Decoding](./3-model-speculative-decoding/)
+- [Hierarchical Speculative Decoding with Dynamic Windows for Efficient Language Model Inference](./hierarchical-speculative-decoding-with-dynamic-windows-for-efficient-language-model-inference/)
+- [LayerSkip Enabling Early Exit Inference and Self-Speculative Decoding](./layerskip-enabling-early-exit-inference-and-self-speculative-decoding/)
+- [AIConfigurator Lightning-Fast Configuration Optimization for Multi-Framework LLM Serving](./aiconfigurator-lightning-fast-configuration-optimization-for-multi-framework-llm-serving/)
+- [Revati Transparent GPU-Free Time-Warp Emulation for LLM Serving](./revati-transparent-gpu-free-time-warp-emulation-for-llm-serving/)
+
 ### 0127-0202
 
 - [FlexPrefill A Context-Aware Sparse Attention Mechanism for Efficient Long-Sequence Inference](./flexprefill-a-context-aware-sparse-attention-mechanism-for-efficient-long-sequence-inference/)

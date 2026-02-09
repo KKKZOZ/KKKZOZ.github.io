@@ -1,7 +1,7 @@
 ---
 title: "LLM in a flash Efficient Large Language Model Inference with Limited Memory"
 tags:
-  - ACL24
+  - ACL-24
   - LLM-Inference
   - Commodity-GPU
 date: 2025-07-30
