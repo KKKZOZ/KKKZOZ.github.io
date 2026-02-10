@@ -11,6 +11,7 @@ weight: 1
 
 ### 0203-0209
 
+- [Cascade Speculative Drafting for Even Faster LLM Inference](./cascade-speculative-drafting-for-even-faster-llm-inference/)
 - [CAS-Spec Cascade Adaptive Self-Speculative Decoding for On-the-Fly Lossless Inference Acceleration of LLMs](./cas-spec-cascade-adaptive-self-speculative-decoding-for-on-the-fly-lossless-inference-acceleration-of-llms/)
 - [Draft & Verify Lossless Large Language Model Acceleration via Self-Speculative Decoding](./draft-&-verify-lossless-large-language-model-acceleration-via-self-speculative-decoding/)
 - [Swift On-the-fly Self-speculative Decoding For LLM Inference Acceleration](./swift-on-the-fly-self-speculative-decoding-for-llm-inference-acceleration/)
