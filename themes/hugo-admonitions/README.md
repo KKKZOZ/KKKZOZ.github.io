@@ -20,6 +20,7 @@ If you find this project useful, please consider giving it a star! ⭐
     - [Light Mode](#light-mode)
     - [Dark Mode](#dark-mode)
     - [Header Only Mode](#header-only-mode)
+    - [Headless Mode](#headless-mode)
     - [Foldable Admonitions](#foldable-admonitions)
     - [Nested Admonitions](#nested-admonitions)
   - [Installation](#installation)
@@ -50,16 +51,26 @@ If you find this project useful, please consider giving it a star! ⭐
 
 - Dark Mode Support 🌙
 - Header Only Mode 📑
+- Headless Mode 🧩
 - Foldable Admonitions 📂
-- Multi-language Support 🌐
-  - English
-  - Chinese
-  - French
-  - German
-  - Swahili
-  - Czech
-  - Polish
-  - [Localization PRs are always welcome!](https://github.com/KKKZOZ/hugo-admonitions/pulls)
+
+<details>
+<summary>Multi-language Support 🌐</summary>
+
+- Chinese (Simplified)
+- Chinese (Traditional)
+- Czech
+- English
+- French
+- German
+- Korean
+- Polish
+- Portuguese
+- Spanish
+- Swahili
+- [Localization PRs are always welcome!](https://github.com/KKKZOZ/hugo-admonitions/pulls)
+
+</details>
 
 ## Overview of all admonitions
 
@@ -76,6 +87,12 @@ If you find this project useful, please consider giving it a star! ⭐
 <div align="center">
   <img src="docs/assets/images/header-only-mode.png" width="500" alt="header-only-mode">
 </div>
+
+### Headless Mode
+
+Body-only callouts without a header. 
+
+![headless-callout](docs/assets/images/headless-callout.png)
 
 ### Foldable Admonitions
 
@@ -241,6 +258,18 @@ Use the Header Only mode by including a title only:
 
 ![usage-4](docs/assets/images/usage-4.png)
 
+Use the Headless mode by setting an empty title (double or single quotes):
+
+```markdown
+> [!TIP] ""
+> This is a body-only callout without a header.
+
+> [!INFO] ''
+> You can still use any callout type, but the header will be hidden.
+```
+
+![headless-callout](docs/assets/images/headless-callout.png)
+
 Use the [extended syntax](https://gohugo.io/render-hooks/blockquotes/#extended-syntax):
 
 ```markdown
@@ -263,14 +292,34 @@ You can use nested admonitions too:
 
 ## Customization
 
-There are two main ways to customize the styles:
+The module uses pre-compiled CSS by default. For basic changes, override its CSS custom properties or selectors in a stylesheet loaded after the module styles; this works with standard Hugo and does not require Sass.
 
-1. **Variable Overrides (Recommended for most users):** Modify colors, opacities, dark mode selectors, etc., by overriding SASS variables. **This method is update-friendly.**
+```css
+:root {
+  --adm-bg: #ffffff;
+  --adm-note: #2563eb;
+  --adm-warning: #d97706;
+  --adm-header-bg-opacity: 0.15;
+}
+```
+
+For SCSS-based customization, there are two options:
+
+1. **Variable Overrides:** Modify colors, opacities, dark mode selectors, etc., by overriding SASS variables. **This method is update-friendly.**
 2. **Advanced SCSS Override:** For deep changes to the styling logic and CSS rules, you can override the main SCSS file.
 
 ### Variable Overrides (Recommended)
 
-This is the simplest and most common way to customize admonition styles. You only need to create a single SASS file in your project to specify your custom variable values.
+This method requires Dart Sass in both local and CI/CD build environments. Enable it in your site's configuration before creating the settings file:
+
+```toml
+[params.hugoAdmonitions]
+enableSass = true
+```
+
+With this option disabled (the default), the module does not compile SCSS and uses the pre-compiled CSS instead.
+
+Create a single SASS file in your project to specify your custom variable values.
 
 1. **Create the user settings SASS file:**
 
@@ -448,6 +497,15 @@ If you need to make more fundamental changes to the admonition styles beyond wha
 ## Contributing
 
 Contributions are welcome! Please feel free to submit a [Pull Request](https://github.com/KKKZOZ/hugo-admonitions/pulls).
+
+Run the Hugo compatibility checks locally with:
+
+```shell
+bash tests/hugo-compat/test.sh precompiled
+bash tests/hugo-compat/test.sh scss
+```
+
+The `scss` mode requires Dart Sass in your `PATH`.
 
 Before you submit a pull request, please ensure that you have run `npm install`. This will install a husky hook that automatically checks if your commit messages adhere to the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) specification. Commit messages that do not meet this standard will not pass the automated checks for pull requests.
 

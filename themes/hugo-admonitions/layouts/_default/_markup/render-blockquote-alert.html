@@ -9,15 +9,36 @@
     {{- errorf "Hugo-admonitions requires Hugo v%s or later. Please upgrade Hugo to v%s or higher." $minHugoVersion $minHugoVersion }}
   {{- end -}}
 
-  {{- /* Transpile Sass to CSS and render the link element once per page. */}}
+  {{- /* Load styles once per page. Pre-compiled CSS keeps standard Hugo dependency-free. */}}
   {{- if not (.Page.Store.Get "admonition-style-loaded-flag") }}
-    {{- with resources.Get "sass/vendors/_admonitions.scss" }}
-      {{- $opts := dict
-        "enableSourceMap" (not hugo.IsProduction)
-        "outputStyle" (cond hugo.IsProduction "compressed" "expanded")
-        "targetPath" "css/vendors/admonitions.css"
-      }}
-      {{- with . | toCSS $opts }}
+    {{- $enableSass := false }}
+    {{- with site.Params.hugoadmonitions }}
+      {{- $enableSass = .enablesass | default false }}
+    {{- end }}
+
+    {{- if $enableSass }}
+      {{- with resources.Get "sass/vendors/_admonitions.scss" }}
+        {{- $opts := dict
+          "enableSourceMap" (not hugo.IsProduction)
+          "outputStyle" (cond hugo.IsProduction "compressed" "expanded")
+          "targetPath" "css/vendors/admonitions.css"
+          "transpiler" "dartsass"
+        }}
+        {{- with . | toCSS $opts }}
+          {{- if hugo.IsProduction }}
+            {{- with . | fingerprint }}
+              <link rel="stylesheet" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" crossorigin="anonymous">
+            {{- end }}
+          {{- else }}
+            <link rel="stylesheet" href="{{ .RelPermalink }}">
+          {{- end }}
+        {{- end }}
+      {{- else }}
+        {{- errorf "Admonitions SCSS not found at assets/sass/vendors/_admonitions.scss" }}
+      {{- end }}
+    {{- else }}
+      {{- $cssFile := cond hugo.IsProduction "css/vendors/admonitions.min.css" "css/vendors/admonitions.css" }}
+      {{- with resources.Get $cssFile }}
         {{- if hugo.IsProduction }}
           {{- with . | fingerprint }}
             <link rel="stylesheet" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}" crossorigin="anonymous">
@@ -25,8 +46,11 @@
         {{- else }}
           <link rel="stylesheet" href="{{ .RelPermalink }}">
         {{- end }}
+      {{- else }}
+        {{- errorf "Admonitions CSS not found at assets/%s" $cssFile }}
       {{- end }}
     {{- end }}
+
     {{- .Page.Store.Set "admonition-style-loaded-flag" true }}
   {{- end }}
 
@@ -57,6 +81,15 @@
 
   {{- /* Determine type and title */}}
   {{- $type := cond (index $icons .AlertType) .AlertType "note" }}
+  {{- $rawTitle := or .AlertTitle "" }}
+  {{- $headless := false }}
+  {{- if $rawTitle }}
+    {{- $trimmedTitle := $rawTitle | strings.TrimSpace }}
+    {{- $dequotedTitle := $trimmedTitle | replaceRE `["'']|&quot;|&rdquo;|&ldquo;|&rsquo;|&lsquo;|&#34;|&#39;` "" }}
+    {{- if eq ($dequotedTitle | strings.TrimSpace) "" }}
+      {{- $headless = true }}
+    {{- end }}
+  {{- end }}
   {{- $title := or .AlertTitle (T (printf "admonitions.%s" $type)) (title $type) }}
   {{- $iconFile := index $icons $type }}
   {{- $partial := printf "admonitions/icons/%s" $iconFile }}
@@ -67,7 +100,7 @@
   {{- end }}
 
   {{- /* Check if .AlertSign exists to determine if it's foldable */}}
-  {{- if .AlertSign }}
+  {{- if and .AlertSign (not $headless) }}
     {{- /* --- START Foldable Admonition HTML (using <details>) --- */}}
     {{- /* The 'open' attribute could be conditionally added based on .AlertSign, e.g., if eq .AlertSign "-" */}}
     <details class="admonition {{ $type }}">
@@ -85,11 +118,13 @@
     {{- /* --- END Foldable Admonition HTML --- */}}
   {{- else }}
     {{- /* --- START Non-Foldable Admonition HTML (using <div>) --- */}}
-    <div class="admonition {{ $type }}">
+    <div class="admonition {{ $type }}{{ if $headless }} admonition--headless{{ end }}">
+      {{- if not $headless }}
       <div class="admonition-header">
         {{- partialCached $partial . }}
         <span>{{ $title }}</span>
       </div>
+      {{- end }}
       {{- with .Text }}
       <div class="admonition-content">
         {{ . }}

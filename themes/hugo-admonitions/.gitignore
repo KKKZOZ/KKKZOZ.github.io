@@ -12,3 +12,6 @@ node_modules/
 .LSOverride
 
 .vscode
+
+# Code agents
+.claude/

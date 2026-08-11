@@ -162,6 +162,16 @@ You can choose to only to show the header!
 
 > [!WARNING] Warning: This operation will delete all data
 
+## Headless Mode
+
+Show only the callout body by setting an empty title (double or single quotes):
+
+> [!TIP] ""
+> This is a body-only callout without a header.
+
+> [!INFO] ''
+> You can still use any callout type, but the header will be hidden.
+
 ## Foldable Admonitions
 
 > [!NOTE]- Here are the details regarding API usage:
