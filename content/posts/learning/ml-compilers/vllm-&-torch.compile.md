@@ -1,10 +1,10 @@
 ---
-title: "vllm & torch.compile"
+title: "vLLM and torch.compile"
 tags:
   - ML Compilers
   - torch.compile
   - vLLM
-date: 2026-08-11
+date: 2026-08-10
 showtoc: true
 weight: 10
 ---

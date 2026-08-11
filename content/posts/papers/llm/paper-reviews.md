@@ -1,7 +1,8 @@
 ---
 title: "paper-reviews"
 tags:
-  - TOBETAGGED
+  - Paper Note
+  - LLM-Inference
 date: 2025-08-26
 showtoc: true
 draft: true

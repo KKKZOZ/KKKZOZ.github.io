@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 8 The Trouble with Distributed Systems"
+title: "[DDIA 08] Chapter 8 The Trouble with Distributed Systems"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-11-02
 toc: true
 weight: 10

@@ -1,7 +1,7 @@
 ---
 title: "LLM Preliminaries"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
 date: 2025-08-04
 showtoc: true
 ---

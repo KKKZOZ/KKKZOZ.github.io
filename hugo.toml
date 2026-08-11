@@ -1,7 +1,7 @@
 title = "KKKZOZ's Blog"
 # copyright = "© [PaperMod Contributors](https://github.com/adityatelange/hugo-PaperMod/graphs/contributors)"
 baseURL = 'http://blog.kkkzoz.top/'
-pagination.pagerSize = 8
+pagination.pagerSize = 12
 theme = ["hugo-admonitions", "PaperMod"]
 enableInlineShortcodes = true
 enableRobotsTXT = true
@@ -50,8 +50,18 @@ url = "tags/"
 weight = 10
 
 [[languages.en.menu.main]]
+name = "Series"
+url = "series/"
+weight = 11
+
+[[languages.en.menu.main]]
 name = "About"
 url = "about/"
+weight = 13
+
+[[languages.en.menu.main]]
+name = "Papers"
+url = "paperindex/"
 weight = 12
 
 # [[languages.en.menu.main]]
@@ -76,9 +86,15 @@ ShowRssButtonInSectionTermList = true
 ShowAllPagesInArchive = true
 ShowPageNums = true
 ShowToc = true
+TocOpen = true
 comments = true
 math = true
 images = ["images/papermod-cover.png"]
+
+[params.fuseOpts]
+keys = ["title", "content"]
+threshold = 0.4
+ignoreLocation = true
 
 [params.profileMode]
 enabled = false
@@ -96,16 +112,11 @@ url = "tags"
 
 [params.homeInfoParams]
 Title = "KKKZOZ's Blog"
-Content = """
-Three paper indexes(LLM/Transactions/Distributed Systems) are pinned.
-
-Other posts are sorted by date.
-"""
 
 [[params.socialIcons]]
 name = "github"
-title = "View Source on Github"
-url = "https://github.com/KKKZOZ/KKKZOZ.github.io"
+title = "KKKZOZ on GitHub"
+url = "https://github.com/KKKZOZ"
 
 # [[params.socialIcons]]
 # name = "Discord"

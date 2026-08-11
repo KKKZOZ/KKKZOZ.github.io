@@ -1,8 +1,10 @@
 ---
-title: "Missing Semester - Lecture 2"
+title: "[Missing Semester 02] Lecture 2"
 tags:
 - Course
 - The Missing Semester
+series:
+- Missing Semester
 date: 2024-10-11
 toc: true
 weight: 10

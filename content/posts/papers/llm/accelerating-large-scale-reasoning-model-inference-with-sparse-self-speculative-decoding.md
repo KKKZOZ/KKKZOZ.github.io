@@ -1,7 +1,8 @@
 ---
 title: "Accelerating Large-Scale Reasoning Model Inference with Sparse Self-Speculative Decoding"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - Speculative-Decoding
 date: 2025-12-17
 showtoc: true
 draft: true

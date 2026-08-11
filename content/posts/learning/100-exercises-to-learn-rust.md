@@ -1,7 +1,6 @@
 ---
 title: "100 Exercises to Learn Rust Note"
 tags:
-  - Learning
   - Rust
 date: 2025-03-13
 toc: true

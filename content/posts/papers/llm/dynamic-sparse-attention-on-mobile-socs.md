@@ -2,7 +2,7 @@
 title: "Dynamic Sparse Attention on Mobile SoCs"
 tags:
   - arXiv-25
-  - Mobile
+  - Edge-Devices
 date: 2025-11-11
 showtoc: true
 ---

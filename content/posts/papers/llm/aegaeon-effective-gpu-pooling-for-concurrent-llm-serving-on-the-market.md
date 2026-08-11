@@ -1,7 +1,9 @@
 ---
 title: "Aegaeon Effective GPU Pooling for Concurrent LLM Serving on the Market"
 tags:
-  - TOBETAGGED
+  - LLM-Serving
+  - GPU
+  - Schedule
 date: 2025-10-28
 showtoc: true
 draft: true

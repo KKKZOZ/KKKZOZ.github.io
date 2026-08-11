@@ -1,7 +1,8 @@
 ---
 title: "CITER Collaborative Inference for Efficient Large Language Model Decoding with Token-Level Routing"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - Collaborative-Inference
 date: 2025-12-02
 showtoc: true
 draft: true

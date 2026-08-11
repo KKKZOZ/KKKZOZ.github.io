@@ -1,7 +1,9 @@
 ---
 title: "C2C"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - KVCache
+  - Collaborative-Inference
 date: 2025-12-06
 showtoc: true
 draft: true

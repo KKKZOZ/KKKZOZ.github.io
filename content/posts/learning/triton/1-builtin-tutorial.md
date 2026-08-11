@@ -1,7 +1,8 @@
 ---
-title: "1-builtin-tutorial"
+title: "Triton: Built-in Tutorial"
 tags:
-  - TOBETAGGED
+  - GPU
+  - Triton
 date: 2026-01-07
 showtoc: true
 weight: 10

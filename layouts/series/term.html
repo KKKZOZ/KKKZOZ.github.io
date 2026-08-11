@@ -1,0 +1,31 @@
+{{- define "main" }}
+<article class="series-detail">
+  <header class="series-detail__header">
+    {{- partial "breadcrumbs.html" . }}
+    <a class="series-detail__back" href="{{ "series/" | relLangURL }}">All series</a>
+    <p class="series-directory__eyebrow">Reading path</p>
+    <h1>{{ .Title }}</h1>
+    <p>{{ len .Pages }} {{ cond (eq (len .Pages) 1) "article" "articles" }} in this series</p>
+  </header>
+
+  <ol class="series-reading-list">
+    {{- $seriesTitle := .Title }}
+    {{- range $article := .Pages.ByTitle }}
+    {{- $shortTitle := replaceRE `^\[[^]]+\]\s*` "" .Title }}
+    {{- $shortTitle = strings.TrimPrefix (printf "%s: " $seriesTitle) $shortTitle }}
+    {{- $sequence := replaceRE `^\[[^]]+ ([0-9][0-9](-[0-9][0-9])?)\].*$` "$1" .Title }}
+    <li>
+      <span class="series-reading-list__number">{{ $sequence }}</span>
+      <div class="series-reading-list__content">
+        <h2><a href="{{ .RelPermalink }}">{{ $shortTitle }}</a></h2>
+        {{- with .Summary }}<p>{{ . | plainify | htmlUnescape | truncate 150 }}</p>{{ end }}
+      </div>
+      <div class="series-reading-list__meta">
+        {{- if not .Date.IsZero }}<time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 02, 2006" }}</time>{{ end }}
+        <span>{{ .ReadingTime }} min</span>
+      </div>
+    </li>
+    {{- end }}
+  </ol>
+</article>
+{{- end }}

@@ -1,5 +1,5 @@
 ---
-title: "jj-vcs Tutorial"
+title: "Jujutsu (jj) Tutorial"
 tags:
   - Dev
 date: 2025-04-04

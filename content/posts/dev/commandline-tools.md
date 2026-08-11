@@ -1,5 +1,5 @@
 ---
-title: "Commandline Tools"
+title: "Command-Line Tools"
 tags:
   - Dev
 date: 2025-09-12

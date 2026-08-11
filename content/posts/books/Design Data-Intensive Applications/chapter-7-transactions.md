@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 7 Transactions"
+title: "[DDIA 07] Chapter 7 Transactions"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-29
 toc: true
 weight: 10

@@ -2,7 +2,7 @@
 title: "SmallThinker A Family of Efficient Large Language Models Natively Trained for Local Deployment"
 tags:
   - arXiv-25
-  - LLM
+  - Edge-Devices
 date: 2025-08-25
 showtoc: true
 ---

@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 5 Replication"
+title: "[DDIA 05] Chapter 5 Replication"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-23
 toc: true
 weight: 10

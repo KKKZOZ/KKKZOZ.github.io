@@ -1,0 +1,51 @@
+{{- define "main" }}
+{{- $collections := slice
+  (dict "id" "llm" "number" "01" "label" "LLM Inference" "description" "Serving, decoding, attention, quantization, and on-device inference." "path" "/posts/papers/llm/paper-index")
+  (dict "id" "transactions" "number" "02" "label" "Transactions" "description" "Concurrency control and transactions across distributed data stores." "path" "/posts/papers/transactions/paper-index")
+  (dict "id" "distributed-systems" "number" "03" "label" "Distributed Systems" "description" "Foundational systems papers on coordination, replication, and storage." "path" "/posts/papers/distributed-systems/paper-index")
+-}}
+
+<article class="paper-index">
+  <header class="paper-index__header">
+    {{- partial "breadcrumbs.html" . }}
+    <p class="paper-index__eyebrow">Reading archive</p>
+    <h1>{{ .Title }}</h1>
+    {{- with .Description }}<p class="paper-index__intro">{{ . }}</p>{{ end }}
+  </header>
+
+  <nav class="paper-index__collections" aria-label="Paper collections">
+    {{- range $collections }}
+    {{- $source := site.GetPage .path }}
+    <a class="paper-index__collection" href="#{{ .id }}">
+      <span class="paper-index__number">{{ .number }}</span>
+      <span class="paper-index__collection-copy">
+        <strong>{{ .label }}</strong>
+        <span>{{ .description }}</span>
+      </span>
+      {{- with $source }}
+      <span class="paper-index__count">{{ len (findRE `<li>` .Content) }} notes</span>
+      {{- end }}
+    </a>
+    {{- end }}
+  </nav>
+
+  <div class="paper-index__contents">
+    {{- range $collections }}
+    {{- $source := site.GetPage .path }}
+    <section class="paper-index__section" id="{{ .id }}">
+      <header class="paper-index__section-header">
+        <span>{{ .number }}</span>
+        <h2>{{ .label }}</h2>
+        {{- with $source }}<a href="{{ .RelPermalink }}">Standalone index</a>{{ end }}
+      </header>
+      {{- with $source }}
+      {{- $content := replace .Content `href="./` (printf `href="%s` .RelPermalink) }}
+      <div class="post-content paper-index__source">{{ $content | safeHTML }}</div>
+      {{- else }}
+      <p>Index unavailable.</p>
+      {{- end }}
+    </section>
+    {{- end }}
+  </div>
+</article>
+{{- end }}

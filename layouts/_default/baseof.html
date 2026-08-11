@@ -18,6 +18,9 @@
 {{- if eq site.Params.defaultTheme `dark` -}}
 {{- print " dark" }}
 {{- end -}}
+{{- if eq .Type `series` -}}
+{{- print " series-page" }}
+{{- end -}}
 " id="top"> 
     {{- partialCached "header.html" . .Page -}}
     <main class="main">

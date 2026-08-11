@@ -1,8 +1,8 @@
 ---
-title: "[Pinned] Distributed Papers Index"
+title: "Distributed Papers Index"
 date: 2025-08-01
 showtoc: true
-weight: 3
+hiddenInHomeList: true
 ---
 
 > My reading notes.

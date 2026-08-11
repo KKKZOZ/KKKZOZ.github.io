@@ -1,7 +1,8 @@
 ---
 title: "R2R"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - Collaborative-Inference
 date: 2025-12-06
 showtoc: true
 draft: true

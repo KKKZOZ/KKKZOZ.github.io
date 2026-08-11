@@ -1,5 +1,5 @@
 ---
-title: "VSCode Essentials"
+title: "VS Code Essentials"
 tags:
   - Dev
 date: 2025-08-06

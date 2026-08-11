@@ -1,7 +1,6 @@
 ---
 title: "Using Rust"
 tags:
-  - Programming
   - Rust
 date: 2025-03-26
 toc: true

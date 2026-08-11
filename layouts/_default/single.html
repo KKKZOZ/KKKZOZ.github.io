@@ -43,6 +43,13 @@
     {{- end }}
 
     <footer class="post-footer">
+        {{- with $.GetTerms "series" }}
+        <ul class="post-tags post-series" aria-label="Series">
+            {{- range . }}
+            <li><a href="{{ .Permalink }}"><span>Series</span>{{ .LinkTitle }}</a></li>
+            {{- end }}
+        </ul>
+        {{- end }}
         {{- $tags := .Language.Params.Taxonomies.tag | default "tags" }}
         <ul class="post-tags">
             {{- range ($.GetTerms $tags) }}

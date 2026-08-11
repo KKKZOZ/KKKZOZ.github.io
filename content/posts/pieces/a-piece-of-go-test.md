@@ -1,5 +1,5 @@
 ---
-title: "A Piece Of: Go Tests"
+title: "A Piece of: Go Tests"
 tags:
   - Golang
 date: 2024-01-21

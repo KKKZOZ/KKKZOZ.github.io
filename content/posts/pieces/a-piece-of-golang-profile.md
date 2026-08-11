@@ -1,5 +1,5 @@
 ---
-title: "A Piece Of: Golang Profile"
+title: "A Piece of: Golang Profile"
 tags:
   - Golang
 date: 2024-10-23

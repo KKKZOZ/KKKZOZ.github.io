@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 3 Storage and Retrieval"
+title: "[DDIA 03] Chapter 3 Storage and Retrieval"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-20
 toc: true
 weight: 10

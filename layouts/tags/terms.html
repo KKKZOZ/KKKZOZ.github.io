@@ -1,0 +1,57 @@
+{{- define "main" }}
+{{- $type := .Type }}
+{{- $venuePattern := `(?i)^[a-z][a-z0-9.-]*-?([0-9]{2}|[0-9]{4})(-workshop)?$` }}
+{{- $topicTerms := slice }}
+{{- $venueTerms := slice }}
+
+{{- range .Data.Terms.Alphabetical }}
+  {{- if gt (len (findRE $venuePattern .Name 1)) 0 }}
+    {{- $venueTerms = $venueTerms | append . }}
+  {{- else }}
+    {{- $topicTerms = $topicTerms | append . }}
+  {{- end }}
+{{- end }}
+
+<article class="tag-directory">
+  <header class="tag-directory__header">
+    <h1>{{ .Title }}</h1>
+    <span>{{ len .Data.Terms }} total</span>
+  </header>
+
+  <section class="tag-group" aria-labelledby="topic-tags">
+    <header class="tag-group__header">
+      <h2 id="topic-tags">Topics</h2>
+      <span>{{ len $topicTerms }}</span>
+    </header>
+    <ul class="terms-tags">
+      {{- range $topicTerms }}
+      {{- $name := .Name }}
+      {{- $count := .Count }}
+      {{- with site.GetPage (printf "/%s/%s" $type $name) }}
+      <li>
+        <a href="{{ .RelPermalink }}">{{ .Name }} <sup aria-label="{{ $count }} posts">{{ $count }}</sup></a>
+      </li>
+      {{- end }}
+      {{- end }}
+    </ul>
+  </section>
+
+  <section class="tag-group tag-group--venues" aria-labelledby="venue-tags">
+    <header class="tag-group__header">
+      <h2 id="venue-tags">Venues &amp; Preprints</h2>
+      <span>{{ len $venueTerms }}</span>
+    </header>
+    <ul class="terms-tags">
+      {{- range $venueTerms }}
+      {{- $name := .Name }}
+      {{- $count := .Count }}
+      {{- with site.GetPage (printf "/%s/%s" $type $name) }}
+      <li>
+        <a href="{{ .RelPermalink }}">{{ .Name }} <sup aria-label="{{ $count }} posts">{{ $count }}</sup></a>
+      </li>
+      {{- end }}
+      {{- end }}
+    </ul>
+  </section>
+</article>
+{{- end }}

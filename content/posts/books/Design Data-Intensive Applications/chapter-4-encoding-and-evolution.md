@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 4 Encoding and Evolution"
+title: "[DDIA 04] Chapter 4 Encoding and Evolution"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-21
 toc: true
 weight: 10

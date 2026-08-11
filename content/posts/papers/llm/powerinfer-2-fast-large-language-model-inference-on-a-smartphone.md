@@ -3,7 +3,7 @@ title: "PowerInfer-2 Fast Large Language Model Inference on a Smartphone"
 tags:
   - arXiv-24
   - LLM-Inference
-  - Serving-on-Edge
+  - Edge-Devices
 date: 2025-07-29
 showtoc: true
 ---

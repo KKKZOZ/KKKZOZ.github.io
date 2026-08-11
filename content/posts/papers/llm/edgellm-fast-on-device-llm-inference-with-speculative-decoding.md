@@ -4,7 +4,7 @@ tags:
   - IEEE-TMC-25
   - LLM-Inference
   - Speculative-Decoding
-  - Serving-on-Edge
+  - Edge-Devices
 date: 2025-07-23
 showtoc: true
 ---

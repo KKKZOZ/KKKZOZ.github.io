@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 6 Partioning"
+title: "[DDIA 06] Chapter 6 Partitioning"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-24
 toc: true
 weight: 10

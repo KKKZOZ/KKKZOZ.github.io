@@ -1,5 +1,5 @@
 ---
-title: Talk about the dual write problem
+title: "Talk about the Dual Write Problem"
 draft: true
 weight: 10
 ---

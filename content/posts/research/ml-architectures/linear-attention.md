@@ -1,7 +1,9 @@
 ---
-title: "linear-attention"
+title: "[Sequence Modeling 04] Linear Attention"
 tags:
-  - TOBETAGGED
+  - Sequence Modeling
+series:
+  - Sequence Modeling
 date: 2026-03-16
 showtoc: true
 weight: 10

@@ -1,7 +1,9 @@
 ---
-title: "LSTM"
+title: "[Sequence Modeling 02] LSTM"
 tags:
-  - TOBETAGGED
+  - Sequence Modeling
+series:
+  - Sequence Modeling
 date: 2026-03-16
 showtoc: true
 weight: 10

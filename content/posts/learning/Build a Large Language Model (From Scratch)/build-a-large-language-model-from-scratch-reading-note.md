@@ -1,7 +1,7 @@
 ---
 title: "Build a Large Language Model (From Scratch) Reading Note"
 tags:
-  - TOBETAGGED
+  - Reading Note
 date: 2025-05-20
 showtoc: true
 weight: 10

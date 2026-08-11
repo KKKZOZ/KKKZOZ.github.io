@@ -1,7 +1,8 @@
 ---
 title: "Learning to Decode Collaboratively with Multiple Language Models"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - Collaborative-Inference
 date: 2025-12-02
 showtoc: true
 draft: true

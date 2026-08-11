@@ -1,5 +1,5 @@
 ---
-title: "A Piece Of: Logs"
+title: "A Piece of: Logs"
 tags:
   - Dev
 date: 2024-05-13

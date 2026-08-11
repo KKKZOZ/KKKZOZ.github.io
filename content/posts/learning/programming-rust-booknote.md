@@ -2,7 +2,7 @@
 title: "Programming Rust Book Note"
 tags:
 - Reading Note
-- Programming Rust
+- Rust
 
 date: 2024-02-10
 toc: true

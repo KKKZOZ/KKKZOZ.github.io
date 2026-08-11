@@ -1,7 +1,10 @@
 ---
 title: "CE-LSLM"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - KVCache
+  - Edge-Devices
+  - Collaborative-Inference
 date: 2025-12-04
 showtoc: true
 draft: true

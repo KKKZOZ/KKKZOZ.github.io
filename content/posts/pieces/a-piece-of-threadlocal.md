@@ -1,5 +1,5 @@
 ---
-title: "A Piece Of: ThreadLocal"
+title: "A Piece of: ThreadLocal"
 tags:
   - Java
   - Concurrency

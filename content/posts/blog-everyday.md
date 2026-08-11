@@ -1,7 +1,7 @@
 ---
 title: "Hacker News Everyday"
 tags:
-    - TOBETAGGED
+    - news
 date: 2025-08-13
 toc: true
 weight: 10

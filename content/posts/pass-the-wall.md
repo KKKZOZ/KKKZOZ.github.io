@@ -1,5 +1,5 @@
 ---
-title: "Pass The Wall"
+title: "Pass the Wall"
 tags:
   - Dev
 date: 2025-03-30

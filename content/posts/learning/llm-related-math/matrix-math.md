@@ -1,7 +1,7 @@
 ---
-title: "matrix-math"
+title: "Matrix Math"
 tags:
-  - TOBETAGGED
+  - Math
 date: 2026-03-18
 showtoc: true
 weight: 10

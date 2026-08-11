@@ -1,7 +1,6 @@
 ---
 title: "Rustlings Note"
 tags:
-  - Programming
   - Rust
 date: 2024-12-26
 toc: true

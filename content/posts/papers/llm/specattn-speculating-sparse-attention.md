@@ -1,7 +1,8 @@
 ---
 title: "SpecAttn Speculating Sparse Attention"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - sparse-attention
 date: 2026-01-30
 showtoc: true
 draft: true

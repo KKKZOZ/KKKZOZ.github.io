@@ -1,5 +1,5 @@
 ---
-title: "Effective MacOS Shortcuts"
+title: "Effective macOS Shortcuts"
 tags:
   - Dev
 date: 2025-04-19

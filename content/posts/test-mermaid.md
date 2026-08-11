@@ -1,7 +1,7 @@
 ---
 title: "Test Mermaid"
 tags:
-    - TOBETAGGED
+    - Dev
 date: 2025-08-13
 toc: true
 weight: 0

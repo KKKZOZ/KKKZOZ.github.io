@@ -1,8 +1,8 @@
 ---
-title: "[Pinned] Transactions Papers Index"
+title: "Transactions Papers Index"
 date: 2025-08-01
 showtoc: true
-weight: 2
+hiddenInHomeList: true
 ---
 
 > My reading notes.

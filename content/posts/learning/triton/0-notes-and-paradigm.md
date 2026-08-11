@@ -1,7 +1,8 @@
 ---
-title: "0-notes-and-paradigm"
+title: "Triton: Notes and Paradigms"
 tags:
-  - TOBETAGGED
+  - GPU
+  - Triton
 date: 2026-02-27
 showtoc: true
 weight: 10

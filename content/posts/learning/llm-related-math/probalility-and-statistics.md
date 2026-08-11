@@ -1,7 +1,8 @@
 ---
-title: "probalility-and-statistics"
+title: "Probability and Statistics"
+summary: "Notes on L1 and L2 norms, KL divergence, and their applications in machine learning."
 tags:
-  - TOBETAGGED
+  - Math
 date: 2026-03-18
 showtoc: true
 weight: 10

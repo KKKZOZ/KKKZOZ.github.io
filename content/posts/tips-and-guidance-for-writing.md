@@ -1,5 +1,5 @@
 ---
-title: "Tips and guidance for writing"
+title: "Tips and Guidance for Writing"
 tags:
   - Reading Note
 date: 2025-03-31

@@ -1,8 +1,10 @@
 ---
-title: "DDIA: Chapter 2 Data Models and Query Languages"
+title: "[DDIA 02] Chapter 2 Data Models and Query Languages"
 tags:
   - Reading Note
   - Design Data-Intensive Applications
+series:
+  - DDIA
 date: 2023-10-20
 toc: true
 weight: 10

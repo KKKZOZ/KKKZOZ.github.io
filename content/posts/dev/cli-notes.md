@@ -1,7 +1,7 @@
 ---
-title: "cli-notes"
+title: "CLI Notes"
 tags:
-  - TOBETAGGED
+  - Dev
 date: 2026-03-17
 showtoc: true
 weight: 10

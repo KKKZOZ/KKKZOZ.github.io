@@ -1,7 +1,9 @@
 ---
-title: "100 Mistakes in Golang: Chapter 7"
+title: "[100 Mistakes in Golang 07] Chapter 7"
 tags:
   - Reading Note
+  - 100 Mistakes in Golang
+series:
   - 100 Mistakes in Golang
 date: 2025-03-07
 toc: true

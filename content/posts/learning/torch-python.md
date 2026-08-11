@@ -1,7 +1,7 @@
 ---
-title: "torch-python"
+title: "PyTorch Notes"
 tags:
-  - TOBETAGGED
+  - PyTorch
 date: 2026-01-15
 showtoc: true
 weight: 10

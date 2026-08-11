@@ -1,0 +1,56 @@
+{{- define "main" }}
+<article class="series-directory">
+  <header class="series-directory__header">
+    {{- partial "breadcrumbs.html" . }}
+    <p class="series-directory__eyebrow">Collections</p>
+    <div class="series-directory__title-row">
+      <h1>{{ .Title }}</h1>
+      <span>{{ len .Data.Terms }} {{ cond (eq (len .Data.Terms) 1) "series" "series" }}</span>
+    </div>
+    <p>Connected notes, organized as reading paths.</p>
+  </header>
+
+  <div class="series-directory__list">
+    {{- $type := .Type }}
+    {{- $seriesItems := slice }}
+    {{- range $term := .Data.Terms.Alphabetical }}
+    {{- $seriesPage := site.GetPage (printf "/%s/%s" $type .Name) }}
+    {{- with $seriesPage }}
+      {{- $latest := index .Pages.ByDate.Reverse 0 }}
+      {{- $seriesItems = $seriesItems | append (dict "page" . "latest" $latest.Date.Unix) }}
+    {{- end }}
+    {{- end }}
+    {{- range $seriesIndex, $item := sort $seriesItems "latest" "desc" }}
+    {{- $seriesPage := .page }}
+    {{- with $seriesPage }}
+    <section class="series-shelf">
+      <header class="series-shelf__header">
+        <span class="series-shelf__number">{{ printf "%02d" (add $seriesIndex 1) }}</span>
+        <div>
+          <h2><a href="{{ .RelPermalink }}">{{ .Title }}</a></h2>
+          <p>{{ len .Pages }} {{ cond (eq (len .Pages) 1) "article" "articles" }}</p>
+        </div>
+        <a class="series-shelf__open" href="{{ .RelPermalink }}" aria-label="Open {{ .Title }} series">View series</a>
+      </header>
+
+      <ol class="series-shelf__articles">
+        {{- range $article := first 5 .Pages.ByTitle }}
+        {{- $shortTitle := replaceRE `^\[[^]]+\]\s*` "" .Title }}
+        {{- $shortTitle = strings.TrimPrefix (printf "%s: " $seriesPage.Title) $shortTitle }}
+        {{- $sequence := replaceRE `^\[[^]]+ ([0-9][0-9](-[0-9][0-9])?)\].*$` "$1" .Title }}
+        <li>
+          <span>{{ $sequence }}</span>
+          <a href="{{ .RelPermalink }}">{{ $shortTitle }}</a>
+          {{- if not .Date.IsZero }}<time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "2006" }}</time>{{ end }}
+        </li>
+        {{- end }}
+      </ol>
+      {{- if gt (len .Pages) 5 }}
+      <a class="series-shelf__more" href="{{ .RelPermalink }}">+ {{ sub (len .Pages) 5 }} more</a>
+      {{- end }}
+    </section>
+    {{- end }}
+    {{- end }}
+  </div>
+</article>
+{{- end }}

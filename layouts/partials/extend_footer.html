@@ -1,0 +1,4 @@
+{{- if and (eq .Kind "page") (.Param "ShowToc") -}}
+{{- $tocScrollspy := resources.Get "js/toc-scrollspy.js" | resources.Minify | fingerprint -}}
+<script defer crossorigin="anonymous" src="{{ $tocScrollspy.RelPermalink }}" integrity="{{ $tocScrollspy.Data.Integrity }}"></script>
+{{- end -}}

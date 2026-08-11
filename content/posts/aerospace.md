@@ -2,7 +2,6 @@
 title: "Aerospace"
 tags:
   - Dev
-  - Tools
 date: 2024-12-24
 showtoc: true
 weight: 10

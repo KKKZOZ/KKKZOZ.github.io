@@ -2,7 +2,6 @@
 title: "From Clicks to Commands: A Windows User's Survival Guide"
 tags:
   - Dev
-  - Tutorial
 date: 2024-11-26
 toc: true
 weight: 10

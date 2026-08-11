@@ -1,7 +1,9 @@
 ---
-title: "Mamba"
+title: "[Sequence Modeling 03] Mamba"
 tags:
-  - TOBETAGGED
+  - Sequence Modeling
+series:
+  - Sequence Modeling
 date: 2026-03-16
 showtoc: true
 weight: 10

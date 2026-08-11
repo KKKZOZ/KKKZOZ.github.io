@@ -1,7 +1,8 @@
 ---
-title: "GGML-with-C++"
+title: "ggml with C++"
 tags:
-  - TOBETAGGED
+  - Dev
+  - LLM-Inference
 date: 2026-03-18
 showtoc: true
 weight: 10

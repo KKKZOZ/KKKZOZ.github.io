@@ -1,8 +1,9 @@
 ---
 title: "Fast On-device LLM Inference with NPUs"
 tags:
-  - TOBETAGGED
+  - LLM-Inference
+  - Edge-Devices
+  - NPU
 date: 2025-08-04
 showtoc: true
 ---
-
