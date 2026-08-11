@@ -3,7 +3,7 @@ title: ML Compilers Overview
 tags:
   - ML Compilers
   - torch.compile
-date: 2026-08-9
+date: 2026-08-09
 showtoc: true
 weight: 10
 ---
@@ -611,7 +611,7 @@ def forward(arg0_1):
 
 Inductor 会先做一系列 FX-level optimization/pass，比如:
 
-```
+```ascii
 ATen FX Graph
      ↓
 pattern matching

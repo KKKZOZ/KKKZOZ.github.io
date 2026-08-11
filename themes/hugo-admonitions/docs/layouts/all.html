@@ -1,8 +1,0 @@
-{{ define "main" }}
-  <h1>{{ .Title }}</h1>
-
-  <a href="{{ site.Home.RelPermalink }}">Home</a>
-  <a href="{{ (site.GetPage "/demo").RelPermalink }}">Demo</a>
-
-  {{ .Content }}
-{{ end }}
