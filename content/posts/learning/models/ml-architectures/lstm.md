@@ -12,21 +12,27 @@ weight: 10
 在上一篇中我们提到，RNN 的核心公式是 $h_t = \tanh(W_{xh} x_t + W_{hh} h_{t-1} + b_h)$。这种设计在处理长序列时会遇到两个工程上的致命问题：
 
 - 梯度消失与梯度爆炸（Vanishing/Exploding Gradients）
-  - 在反向传播计算梯度时，误差需要沿着时间步反向传递。这会导致权重矩阵 $W_{hh}$ 被连乘 $t$ 次。根据线性代数原理，如果 $W_{hh}$ 的最大特征值小于 1，连乘后梯度会呈指数级衰减趋近于 0（梯度消失）；如果大于 1，则会指数级放大（梯度爆炸）。梯度消失意味着网络根本无法学习到长距离的依赖关系。
+  - 在反向传播计算梯度时，误差需要沿着时间步反向传递。这会导致权重矩阵 $W_{hh}$ 被连乘 $t$ 次。根据线性代数原理，如果 $W_{hh}$ 的最大特征值小于 1，连乘后梯度会呈指数级衰减趋近于 0（梯度消失）；如果大于 1，则会指数级放大（梯度爆炸）。梯度消失意味着网络根本无法学习到长距离的依赖关系
 - 信息覆盖（Information Overwrite）
-  - RNN 只有一个隐藏状态 $h_t$。在每一个时间步，新的输入 $x_t$ 都会强制与历史信息 $h_{t-1}$ 混合。没有任何机制能够保护早期非常重要但最近没有出现的信息。这就好比一个容量有限的栈，新数据不断涌入，旧数据很快就被冲刷掉了。
+  - RNN 只有一个隐藏状态 $h_t$。在每一个时间步，新的输入 $x_t$ 都会强制与历史信息 $h_{t-1}$ 混合。没有任何机制能够保护早期非常重要但最近没有出现的信息。这就好比一个容量有限的栈，新数据不断涌入，旧数据很快就被冲刷掉了
 
 ## LSTM 的核心思想：分离状态与引入门控机制
 
-为了解决上述问题，LSTM 对架构进行了大改，其核心创新在于：**将内部状态拆分为两个，并引入了“门（Gates）”来进行精确的信息路由**。
+![pasted-image-20260819145501](/images/pasted-image-20260819145501.png)
 
-- 细胞状态 $c_t$ (Cell State)： 这是 LSTM 的“主干道”或“长期记忆”。它在整个链条上贯穿运行，只有一些少量的线性交互。这种设计使得梯度可以通过 $c_t$ 顺畅地无损反向传播，直接解决了梯度消失问题。
-- 隐藏状态 $h_t$ (Hidden State)： 类似于 Vanilla RNN 的 $h_t$，作为“短期记忆”或当前时间步的输出。
-- 门控机制 (Gating Mechanism)： 门本质上是经过 Sigmoid 激活的全连接层。Sigmoid 的输出在 $[0, 1]$ 之间，用于控制信息的保留比例（0 代表完全丢弃，1 代表完全保留）。
+为了解决上述问题，LSTM 将内部状态拆分为两条相互配合的通路，并通过门控信号控制信息如何在通路之间流动。
+
+- 细胞状态 $c_t$ (Cell State)：位于上方的主干通路，负责携带长期记忆。从 $c_{t-1}$ 到 $c_t$ 的更新主要由逐元素乘法和加法构成，因此为梯度跨时间步传播提供了更顺畅的路径。
+- 隐藏状态 $h_t$ (Hidden State)：位于下方的输出通路，既参与当前时间步的门控计算，也作为当前时间步的输出，并传递给下一时间步。
+- 门控机制 (Gating Mechanism)：将上一时刻的隐藏状态 $h_{t-1}$ 与当前输入 $x_t$ 拼接后，分别计算遗忘门 $f_t$、输入门 $i_t$、输出门 $o_t$ 和候选记忆 $\tilde{c}_t$。其中三个门使用 Sigmoid，将每个维度的控制值限制在 $[0, 1]$；候选记忆使用 $\tanh$ 生成待写入的内容。
+
+一个时间步内部的数据流可以按图中的顺序理解：遗忘门决定保留多少 $c_{t-1}$，输入门决定写入多少候选记忆，二者相加得到新的细胞状态 $c_t$；随后，$c_t$ 经过 $\tanh$ 压缩，并由输出门决定其中多少信息暴露为隐藏状态 $h_t$。
 
 ## 数学工作流：LSTM 的四个核心步骤
 
 对于第 $t$ 个 token，LSTM 内部执行以下运算。为了方便，我们通常将前一个隐藏状态 $h_{t-1}$ 和当前输入 $x_t$ 拼接在一起计算。
+
+这里的拼接写法与代码中的两层线性变换是等价的。若将拼接后的向量记为 $[h_{t-1}, x_t]$，可以写成一个大的线性变换；代码则把这个矩阵按输入来源拆成两块，分别计算 $W_{hh}h_{t-1}$ 和 $W_{ih}x_t$，再将结果相加。因此 $W_{ih}$ 与 $W_{hh}$ 不是同一个矩阵，但共同完成对拼接向量的投影。
 
 **第一步：遗忘门 (Forget Gate) —— 决定丢弃什么历史信息**
 
@@ -74,11 +80,13 @@ class LSTMCell(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
         
-        # In practice, PyTorch fuses all 4 linear transformations into one large matrix
-        # for performance via parallel matrix multiplication.
-        # W shape: (input_size + hidden_size, 4 * hidden_size)
+        # Input-to-hidden projection: maps x_t to all four gate pre-activations.
         self.W_ih = nn.Linear(input_size, 4 * hidden_size)
+
+        # Hidden-to-hidden projection: maps h_{t-1} to all four gate pre-activations.
         self.W_hh = nn.Linear(hidden_size, 4 * hidden_size)
+
+        # These two projections are equivalent to one linear layer on [h_{t-1}, x_t].
 
     def forward(self, x_t: torch.Tensor, states: tuple[torch.Tensor, torch.Tensor]) -> tuple[torch.Tensor, torch.Tensor]:
         # x_t shape: (batch_size, input_size)

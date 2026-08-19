@@ -70,7 +70,8 @@ $$h(t+\Delta) = \exp(\Delta A) h(t) + \left( \int_{0}^{\Delta} \exp(\tau A) d\ta
 
 $$h_t = \bar{A} h_{t-1} + \bar{B} x_t$$
 
-**$\Delta$ 的工程意义**：在 Mamba 中，$\Delta$ 是随输入动态生成的。如果当前 Token 是无用信息（比如标点），网络会输出极小的 $\Delta$，使得 $\bar{A} = \exp(\approx 0) \approx I$（单位矩阵），此时 $h_t \approx h_{t-1}$，系统直接略过当前输入，维持原有记忆。
+> [!TIP] $\Delta$ 的工程意义
+> 在 Mamba 中，$\Delta$ 是随输入动态生成的。如果当前 Token 是无用信息（比如标点），网络会输出极小的 $\Delta$，使得 $\bar{A} = \exp(\approx 0) \approx I$（单位矩阵），此时 $h_t \approx h_{t-1}$，系统直接略过当前输入，维持原有记忆。
 
 ### 为什么“纯线性”能实现并行计算？
 
@@ -90,7 +91,6 @@ RNN 无法并行的罪魁祸首就是那个非线性激活函数 $\tanh$。因�
 * $h_3 = \bar{A} h_2 + \bar{B} x_3 = \bar{A}(\bar{A}\bar{B} x_1 + \bar{B} x_2) + \bar{B} x_3$
 * **展开结果**:  $h_3 = \bar{A}^2 \bar{B} x_1 + \bar{A} \bar{B} x_2 + \bar{B} x_3$
 
-你看出了什么？
 **计算 $h_3$ 不再依赖于 $h_1$ 和 $h_2$ 的中间计算结果了！**
 
 只要我们在 GPU 内存中提前算好 $\bar{A}$ 的幂次（即 $\bar{A}, \bar{A}^2, \bar{A}^3 \dots$），我们就可以把序列中所有的 $x_t$ 与对应的转换矩阵相乘，然后一次性求和。
@@ -147,7 +147,7 @@ $Y = [x_0, x_0+x_1, x_0+x_1+x_2, \dots, x_0+\dots+x_7]$
 **并行计算（利用结合律）：**
 加法满足**结合律**：$(a + b) + c = a + (b + c)$。这意味着我们可以改变计算的优先级，将计算任务分配给 GPU 的多个线程并行执行。
 
-并行前缀和通常通过构建一个**二叉树（Binary Tree）**的规约（Reduction）过程来实现：
+并行前缀和通常通过构建一个二叉树（Binary Tree）的 Reduction 过程来实现：
 
 1. **第一层（并发执行）：**
 线程 1 算 $x_0+x_1$，线程 2 算 $x_2+x_3$，线程 3 算 $x_4+x_5$，线程 4 算 $x_6+x_7$。
@@ -160,7 +160,7 @@ $Y = [x_0, x_0+x_1, x_0+x_1+x_2, \dots, x_0+\dots+x_7]$
 
 ### Mamba 的公式如何套用并行前缀和
 
-你可能会问：前缀和算的是“加法”，但 Mamba 的公式 $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ 既有乘法又有加法，它怎么算前缀和？
+前缀和算的是“加法”，但 Mamba 的公式 $h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$ 既有乘法又有加法，它怎么算前缀和？
 
 这就需要进行**代数抽象**。前缀和算法不仅适用于加法，它适用于**任何满足结合律的二元运算符**。
 
@@ -305,7 +305,7 @@ class MambaBlock(nn.Module):
 
 ## Mamba vs RNN
 
-事实上，**在推理阶段（Inference），Mamba 的本质就是一个 RNN。** 它们都是处理时序数据的状态机，都具有 $O(1)$ 的推理复杂度和无限长度的理论上下文。
+事实上，**在推理阶段，Mamba 的本质就是一个 RNN。** 它们都是处理时序数据的状态机，都具有 $O(1)$ 的推理复杂度和无限长度的理论上下文。
 
 但如果看它的网络拓扑结构和数学表达，Mamba 和传统的 RNN/LSTM 在架构上有**三个根本性的差异**。正是这三个差异，不仅让 Mamba 可以使用并行前缀和，也彻底改变了它的特征提取能力。
 
@@ -316,11 +316,13 @@ class MambaBlock(nn.Module):
 * **RNN/LSTM：非线性发生在“循环内部”（Inside the Recurrence）**
 
 在 RNN 中，每一个时间步的递推公式是：$h_t = \tanh(W_{hh} h_{t-1} + W_{xh} x_t)$。
-注意这个 $\tanh$。隐藏状态 $h_{t-1}$ 在传递给 $h_t$ 时，**必须穿过一个非线性激活函数**。这种设计虽然增加了单步表达能力，但导致了严重的信号衰减（梯度消失），并且彻底破坏了代数上的结合律。
+
+注意这个 $\tanh$，隐藏状态 $h_{t-1}$ 在传递给 $h_t$ 时，**必须穿过一个非线性激活函数**。这种设计虽然增加了单步表达能力，但导致了严重的信号衰减（梯度消失），并且彻底破坏了代数上的结合律。
 
 * **Mamba：非线性发生在“循环外部”（Outside the Recurrence）**
 
 Mamba 的递推公式是：$h_t = \bar{A}_t h_{t-1} + \bar{B}_t x_t$。
+
 这里的递推是**严格的纯线性**操作，没有 $\tanh$，没有 Sigmoid。$h_{t-1}$ 到 $h_t$ 是一条毫无阻挡的线性高速公路。
 
 > [!question] Mamba 的非线性表达能力从哪里来？
@@ -352,7 +354,7 @@ Mamba 引入了状态维度（`d_state`，通常设为 16）。
 
 * **RNN：静态转移矩阵（Static Transition）**
 
-RNN 的权重矩阵 $W_{hh}$ 在训练完成后就是**固定（Fixed）**的。无论当前输入的 token 是至关重要的名词，还是毫无意义的标点符号，RNN 总是使用同一个 $W_{hh}$ 去乘以前一个状态 $h_{t-1}$。
+RNN 的权重矩阵 $W_{hh}$ 在训练完成后就是**固定**的。无论当前输入的 token 是至关重要的名词，还是毫无意义的标点符号，RNN 总是使用同一个 $W_{hh}$ 去乘以前一个状态 $h_{t-1}$。
 
 * **Mamba：动态生成转移矩阵（Data-Dependent Transition）**
 
@@ -392,9 +394,9 @@ h_t = A_bar_t * h_prev + (delta_t * B_t) * x_t
 
 ## To Read
 
-我们直接深入代码。这段伪代码非常经典，它完美映射了 Mamba 的三大核心工程：**局部特征提取**、**数据依赖的参数生成（Selective 机制）**，以及**高维状态空间的纯线性递推**。
+这段伪代码非常经典，它完美映射了 Mamba 的三大核心工程：**局部特征提取**、**数据依赖的参数生成（Selective 机制）**，以及**高维状态空间的纯线性递推**。
 
-我将按照数据流的执行顺序，逐块（Block by Block）为你拆解。
+我们可以按照数据流的执行顺序，逐块拆解如下:
 
 ---
 
@@ -408,7 +410,6 @@ self.conv1d = nn.Conv1d(
     in_channels=d_model, out_channels=d_model, 
     kernel_size=d_conv, padding=d_conv - 1, groups=d_model
 )
-
 ```
 
 * **工程意义：** 在进入严格的 SSM 线性递推之前，先用一个局部的 1D 卷积对输入进行平滑。`groups=d_model` 表示这是一个**深度可分离卷积（Depthwise Convolution）**，即每个特征通道独立进行卷积，跨通道不混合。这弥补了纯线性 SSM 在捕捉极短期、局部词汇组合（如 n-gram）时的能力不足。
@@ -417,7 +418,6 @@ self.conv1d = nn.Conv1d(
 # 2. 选择性参数投影层
 self.x_proj = nn.Linear(d_model, d_state * 2 + 1)
 self.dt_proj = nn.Linear(1, d_model)
-
 ```
 
 * **工程意义：** 这两行就是 Mamba 被称为 "Selective" 的灵魂。
@@ -428,7 +428,6 @@ self.dt_proj = nn.Linear(1, d_model)
 # 3. 核心状态转移矩阵 A 的初始化
 A = torch.arange(1, d_state + 1).float().unsqueeze(0).repeat(d_model, 1)
 self.A_log = nn.Parameter(torch.log(A)) 
-
 ```
 
 * **工程意义：** $A$ 是 SSM 内部的系统演化矩阵。这里有两个极其重要的数学设计：
@@ -444,7 +443,6 @@ self.A_log = nn.Parameter(torch.log(A))
 # Step 1: 局部卷积
 x_conv = self.conv1d(x_conv)[:, :, :seq_len] 
 x_conv = F.silu(x_conv)
-
 ```
 
 * 这里执行了前面定义的 1D 卷积，并通过 `SiLU` 激活函数。注意切片 `[:seq_len]` 是为了因果卷积（Causal Convolution）的对齐，确保当前 token 看不到未来的 token。
@@ -454,7 +452,6 @@ x_conv = F.silu(x_conv)
 x_proj_out = self.x_proj(x_conv)
 delta_raw, B, C = torch.split(x_proj_out, [1, self.d_state, self.d_state], dim=-1)
 delta = F.softplus(self.dt_proj(delta_raw)) # (batch, seq_len, d_model)
-
 ```
 
 * 将卷积后的特征映射并切分为 $\Delta_{raw}$, $B$, $C$。
@@ -468,14 +465,12 @@ delta = F.softplus(self.dt_proj(delta_raw)) # (batch, seq_len, d_model)
 
 ```python
 A = -torch.exp(self.A_log) # 强制 A 为负数，保证系统衰减稳定
-
 ```
 
 ```python
 # 计算 \bar{A} = \exp(\Delta * A)
 delta_A = torch.einsum('b l d, d n -> b l d n', delta, A)
 bar_A = torch.exp(delta_A) 
-
 ```
 
 * **数学映射：** 这里执行的是 $\bar{A} = \exp(\Delta A)$。
@@ -487,7 +482,6 @@ bar_A = torch.exp(delta_A)
 ```python
 # 计算 \bar{B} = \Delta * B
 bar_B = torch.einsum('b l d, b l n -> b l d n', delta, B)
-
 ```
 
 * **工程化简：** 严格的 ZOH 离散化中，$\bar{B} = (\exp(\Delta A) - I)A^{-1}B$。但在 Mamba（以及很多现代 SSM）的工程实现中，通常采用**欧拉一阶近似（Euler Approximation）**，直接化简为 $\bar{B} = \Delta B$。这不仅省去了矩阵求逆的巨大开销，在实际训练效果上也基本没有损失。
@@ -500,7 +494,6 @@ bar_B = torch.einsum('b l d, b l n -> b l d n', delta, B)
 
 ```python
 h_t = torch.zeros(batch, d_model, d_state, device=x.device)
-
 ```
 
 * 初始化隐藏状态 $h_0$。注意它的庞大维度：`d_model * d_state`。这就是 Mamba 记忆容量远超常规 RNN 的物理基础。
@@ -511,7 +504,6 @@ for t in range(seq_len):
 
     # 核心递推公式：h_t = \bar{A} * h_{t-1} + \bar{B} * x_t
     h_t = bar_A[:, t, :, :] * h_t + bar_B[:, t, :, :] * x_t.unsqueeze(-1)
-
 ```
 
 * **最关键的性能细节：这里的 `*` 是逐元素乘法（Hadamard Product），不是矩阵乘法。**
@@ -521,7 +513,6 @@ for t in range(seq_len):
     # 计算输出：y_t = C * h_t
     y_t = torch.einsum('b d n, b n -> b d', h_t, C[:, t, :])
     outputs.append(y_t)
-
 ```
 
 * **状态读取：** 当前时间步的输出 $y_t$ 是由内部高维状态 $h_t$ (`d_model, d_state`) 与读取矩阵 $C$ (`d_state`) 投影计算得来的。
@@ -531,7 +522,7 @@ for t in range(seq_len):
 
 ## 总结
 
-看完了这段代码，你会发现 Mamba 的优雅之处在于：
+Mamba 的优雅之处在于：
 
 1. **极简的循环核：** 内部的 `for` 循环里没有任何全连接层，没有任何非线性激活，只有极其简单的标量乘法和加法。
 2. **把复杂性前置：** 所有的非线性、通道混合、数据依赖路由，都在进入循环**之前**，由常规的 PyTorch 线性层并行计算完了（即生成 $\bar{A}, \bar{B}, C$ 的过程）。
