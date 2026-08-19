@@ -1,13 +1,13 @@
 ---
-title: "Production Ready Tilelang Ops Framework"
+title: "Production Ready TileLang Ops Framework"
 tags:
-  - Tilelang
+  - TileLang
 date: 2026-08-17
 showtoc: true
 weight: 10
 ---
 
-在生产环境下使用 Tilelang，需要考虑几个问题：
+在生产环境下使用 TileLang，需要考虑几个问题：
 
 1. 算子缓存
 2. 与 torch.compile 兼容

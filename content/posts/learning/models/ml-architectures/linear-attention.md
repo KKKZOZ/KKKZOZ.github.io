@@ -1,7 +1,5 @@
 ---
 title: "[Sequence Modeling 04] Linear Attention"
-tags:
-  - Sequence Modeling
 series:
   - Sequence Modeling
 date: 2026-03-16

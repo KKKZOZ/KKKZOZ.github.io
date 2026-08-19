@@ -1,7 +1,5 @@
 ---
 title: "[Sequence Modeling 02] LSTM"
-tags:
-  - Sequence Modeling
 series:
   - Sequence Modeling
 date: 2026-03-16

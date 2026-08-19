@@ -26,7 +26,7 @@ target = 'static/images'
 disableXML = true
 
 [languages.en]
-languageName = "English"
+label = "English"
 weight = 1
 
 [languages.en.taxonomies]

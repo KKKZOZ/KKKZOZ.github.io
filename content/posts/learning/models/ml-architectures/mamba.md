@@ -1,7 +1,5 @@
 ---
 title: "[Sequence Modeling 03] Mamba"
-tags:
-  - Sequence Modeling
 series:
   - Sequence Modeling
 date: 2026-03-16
