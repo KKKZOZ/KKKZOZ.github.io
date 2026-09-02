@@ -64,6 +64,10 @@
     monospace;
 }
 
+.post-content img:not(.in-text):not(.hover-image) {
+  margin: 1rem auto;
+}
+
 .single-post .main {
   --post-content-width: 780px;
   max-width: calc(var(--post-content-width) + var(--gap) * 2);
