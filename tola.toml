@@ -1,0 +1,67 @@
+# Tola configuration (v0.8.0)
+# https://github.com/tola-rs/tola-ssg
+#
+# Site-specific values without a `[site]` key (doc-number prefix, mission
+# code) live in `templates/config.typ`.
+
+# tola help "[site]"
+[site]
+# origin = ""  # Public address, e.g. "https://example.com"; needed for feeds and sitemaps
+base-path = "/"
+title = "NASApunk"
+authors = [{ name = "Your Name" }]
+description = "A Typst blog in the style of a flight-ops technical report."
+language = "en"
+
+# tola help "[build]"
+[build]
+entry = "site.typ"
+content-dir = "content"
+publish-dir = "public"
+
+# tola help "[build.references]"
+# A broken link, image or section anchor fails the build. Links to drafts
+# are not links until the draft publishes (templates/base.typ `site-link`).
+[build.references]
+navigation = "error"
+resources = "error"
+fragments = "error"
+
+# tola help "[build.hooks]"
+# Pagefind indexes the compiled pages for /search/ (see package.json).
+# Skipped by `tola dev` so saves reload without waiting for the index; `tola
+# preview` and `tola build` run it. Set `dev = "run"` to search in dev too.
+[[build.hooks.generate-outputs]]
+enable = true
+name = "search"
+command = ["npm", "run", "--silent", "index"]
+dev = "skip"
+rerun-on = ["package.json", "package-lock.json"]
+outputs = [{ tree = "pagefind" }]
+
+# tola help "[typst.fonts]"
+# Compiler fonts for SVG frames (math, cetz): the figures use IBM Plex Mono and
+# Sarasa Gothic SC (for CJK) from the system. `tola vendor` can copy
+# them into the site for builds elsewhere.
+[typst.fonts]
+paths = []
+system = true
+
+# tola help "[assets]"
+[assets]
+cache-busting = true
+trees = [{ source = "assets", url-prefix = "/assets" }]
+files = []
+
+# tola help "[server]"
+[server]
+interface = "127.0.0.1"
+port = 5277
+
+# tola help "[dev]"
+[dev]
+watch = true
+
+# tola help "[vendor]"
+[vendor]
+path = "vendor"

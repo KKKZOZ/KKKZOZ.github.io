@@ -1,0 +1,7 @@
+/public
+/.tola/
+.DS_Store
+/node_modules/
+/.public-publish/
+/.vendor-vendor/
+/.tola-build.lock

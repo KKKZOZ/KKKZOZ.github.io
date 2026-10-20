@@ -1,0 +1,68 @@
+# Publishes the example site to GitHub Pages, the theme's live demo.
+#
+# In a copy of this template: set Settings → Pages → Source to "GitHub
+# Actions", then delete the `if:` line below. The workflow passes the Pages
+# address to Tola, so it works for <user>.github.io and for project sites
+# under /<repo>/ alike.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    # Only the theme's own repository deploys until a copy opts in.
+    if: github.repository == 'KKKZOZ/tola-theme-nasapunk'
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Pagefind
+        run: npm ci
+
+      - name: Install the latest Tola release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag=$(gh release view --repo tola-rs/tola-ssg --json tagName --jq .tagName)
+          archive="tola-${tag#v}-x86_64-unknown-linux-musl.tar.gz"
+          gh release download "$tag" --repo tola-rs/tola-ssg --pattern "$archive" --pattern checksums.txt --dir "$RUNNER_TEMP"
+          cd "$RUNNER_TEMP"
+          grep " $archive\$" checksums.txt | sha256sum --check -
+          mkdir -p "$HOME/.local/bin"
+          tar xzf "$archive" -C "$HOME/.local/bin" tola
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      # Origin and path of this Pages site: base_path is "" for
+      # <user>.github.io and "/<repo>" for a project site.
+      - id: pages
+        uses: actions/configure-pages@v5
+
+      - name: Build
+        run: tola build --origin "${{ steps.pages.outputs.origin }}" --base-path "${{ steps.pages.outputs.base_path }}/"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

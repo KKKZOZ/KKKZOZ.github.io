@@ -1,0 +1,117 @@
+// Style kit for detailed cetz figures: colours, text, arrows, pills, grids,
+// bars and legends that match the theme.
+// Import: #import "/utils/figure.typ": c, txt, tag, arrow, curve-arrow, pill, cells, seg, legend, box-swatch, line-swatch
+//
+// Coordinates are in points (`cetz.canvas(length: 1pt, ...)`, y grows
+// upward). Keep a figure under ~560pt wide so it renders at true scale in the
+// text column.
+//
+// The stylesheet maps the colours in `c` to night values (see the end of
+// assets/styles/site.css), so a figure drawn with them follows the day /
+// night switch. Every colour is mapped as a fill (text included); as a
+// stroke, all but panel and the pale tones (*1, orange2, teal2) are. A colour
+// outside `c` keeps its value in both themes.
+// A walkthrough with examples: content/posts/figure-kit.typ.
+
+#import "/utils/cetz.typ" as cetz
+#import "/templates/base.typ": palette
+
+// ============================================================================
+// Colours
+// ============================================================================
+
+#let c = (
+  ink: palette.ink, muted: palette.muted, blue: palette.blue, orange: palette.orange,
+  teal: palette.hint-emphasis, danger: palette.danger,
+  line: rgb("#7D8987"), hair: rgb("#B7C5C5"), panel: rgb("#F5F7F6"),
+  blue1: rgb("#E1ECEF"), blue2: rgb("#A3C3CE"),
+  orange1: rgb("#FBECE3"), orange2: rgb("#EBB39B"),
+  teal1: rgb("#DCEAE6"), teal2: rgb("#95BFB6"),
+  grey1: rgb("#ECEFEE"), grey2: rgb("#C9D0CE"),
+)
+
+// ============================================================================
+// Text
+// ============================================================================
+
+#let txt(body, size: 8pt, fill: c.muted, weight: 400, style: "normal") = text(
+  size: size, fill: fill, weight: weight, style: style, body,
+)
+
+/// Small uppercase label, e.g. a panel title.
+#let tag(body, fill: c.orange) = text(size: 7.5pt, weight: 600, tracking: .8pt, fill: fill, upper(body))
+
+// ============================================================================
+// Shapes
+// ============================================================================
+
+/// A line with an arrow head (unless `head: false`).
+#let arrow(..pts, color: c.line, w: .7pt, dash: none, head: true) = cetz.draw.line(
+  ..pts,
+  stroke: (paint: color, thickness: w, dash: dash),
+  mark: if head { (end: "stealth", fill: color, scale: .5) } else { none },
+)
+
+/// A curved arrow from `a` to `b` with control points `c1`, `c2`.
+#let curve-arrow(a, b, c1, c2, color: c.line, w: .7pt, dash: none) = cetz.draw.bezier(
+  a, b, c1, c2,
+  stroke: (paint: color, thickness: w, dash: dash),
+  mark: (end: "stealth", fill: color, scale: .5),
+)
+
+#let pill-tones = (
+  blue: (fill: white, stroke: .7pt + c.blue, text: c.ink),
+  orange: (fill: c.orange1, stroke: .7pt + c.orange, text: c.ink),
+  teal: (fill: c.teal1, stroke: .7pt + c.teal, text: c.ink),
+  dark: (fill: c.ink, stroke: .7pt + c.ink, text: white),
+  pale: (fill: c.blue1, stroke: .7pt + c.blue, text: c.ink),
+  muted: (fill: white, stroke: (paint: c.grey2, thickness: .7pt, dash: "dashed"), text: c.muted),
+)
+
+/// A rounded op / step label; anchors come from its bounding box.
+#let pill(pos, body, name: none, tone: "blue", anchor: "center", size: 8pt) = {
+  let t = pill-tones.at(tone)
+  cetz.draw.content(pos, name: name, anchor: anchor, box(
+    fill: t.fill, stroke: t.stroke, radius: 7pt, inset: (x: 6pt, y: 3.5pt),
+    text(size: size, weight: 600, fill: t.text, body),
+  ))
+}
+
+/// A rows x cols grid of cells; `o` is the top-left corner, rows grow downward.
+#let cells(o, rows, cols, w, h, paint: (r, k) => c.grey1) = {
+  import cetz.draw: *
+  let (x, y) = o
+  for r in range(rows) {
+    for k in range(cols) {
+      rect((x + k * w, y - r * h), (x + (k + 1) * w, y - (r + 1) * h), fill: paint(r, k), stroke: .5pt + white)
+    }
+  }
+}
+
+// Bar segments: tone -> (fill, text color).
+#let seg-tones = (
+  blue1: (c.blue1, c.ink), blue2: (c.blue2, c.ink), blue: (c.blue, white),
+  orange: (c.orange, white), orange1: (c.orange1, c.ink),
+  teal1: (c.teal1, c.ink), teal2: (c.teal2, c.ink), grey: (c.grey1, c.muted), ink: (c.ink, white),
+)
+
+/// A bar from x0 to x1 whose top edge is at y.
+#let seg(x0, x1, y, tone, body: none, h: 16) = {
+  import cetz.draw: *
+  let (fill, ink) = seg-tones.at(tone)
+  rect((x0, y), (x1, y - h), fill: fill, stroke: .5pt + white)
+  if body != none { content(((x0 + x1) / 2, y - h / 2), txt(body, size: 7pt, fill: ink, weight: 600)) }
+}
+
+// ============================================================================
+// Legend
+// ============================================================================
+
+/// A legend entry: swatch drawn by `swatch` at (x, y), label to its right.
+#let legend(x, y, body, swatch) = {
+  import cetz.draw: *
+  swatch
+  content((x + 16, y), txt(body), anchor: "west")
+}
+#let box-swatch(x, y, fill, stroke: none) = cetz.draw.rect((x, y + 4), (x + 11, y - 4), fill: fill, stroke: stroke)
+#let line-swatch(x, y, color, dash: none, w: 1pt) = arrow((x, y), (x + 12, y), color: color, dash: dash, w: w)
