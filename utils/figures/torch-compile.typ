@@ -1,10 +1,10 @@
 // Figures for content/posts/ml-systems/ml-compilers/torch-compile-walkthrough.typ,
 // drawn with cetz. They follow `fn(a, b, c) = ((a + b) * c.relu()).sum(dim=-1)`
 // on f32[4, 128] inputs; names and indices are the ones in the logs.
-// Same conventions as ml-compiler.typ: 1pt per unit, y grows upward, < ~560pt wide.
+// Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
 #import "/utils/cetz.typ" as cetz
-#import "/utils/figures/ml-compiler.typ": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, tag, txt
+#import "/utils/figure.typ": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, tag, txt
 
 // ============================================================================
 // TorchDynamo / AOTAutograd
