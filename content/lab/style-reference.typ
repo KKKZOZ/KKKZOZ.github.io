@@ -48,19 +48,19 @@ def union(masks):
 
 = Links Between Posts
 
-Plain Typst links work with any site path; relative ones such as
-#link("../../posts/hello-world/")[the first post] also survive a `base-path`. To link a post by its title,
-use `xref` with a permalink or the last segment of one: #xref("hello-world"). Override the
-text with `body`: #xref("hello-world", body: [this post]).
+Plain Typst links work with any site path:
+#link("/posts/ml-systems/mask-alignment/")[the mask example]. To link a post by its title,
+use `xref` with a permalink or the last segment of one: #xref("mask-alignment"). Override the
+text with `body`: #xref("mask-alignment", body: [this figure]).
 Tola checks these links at build time, and `xref` fails loudly if the post is missing.
 
 ```typst
 #import "/utils/ui.typ": xref, related
-#xref("hello-world")
-#related("hello-world", "/posts/getting-started/")
+#xref("mask-alignment")
+#related("mask-alignment", "/posts/ml-systems/ml-compilers/overview/")
 ```
 
-#related("hello-world", "getting-started")
+#related("mask-alignment", "overview")
 
 = Images
 

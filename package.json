@@ -3,7 +3,7 @@
   "description": "Build helpers: Tola renders the site, Pagefind indexes it for /search/.",
   "scripts": {
     "build": "tola build",
-    "index": "pagefind --site \"$TOLA_HOOK_INPUT_DIR\" --output-path \"$TOLA_HOOK_OUTPUT_DIR/pagefind\""
+    "index": "pagefind --site \"$TOLA_HOOK_INPUT_DIR\" --output-path \"$TOLA_HOOK_OUTPUT_DIR/pagefind\" --force-language zh"
   },
   "devDependencies": {
     "pagefind": "1.5.2"

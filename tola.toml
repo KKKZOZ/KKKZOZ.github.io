@@ -8,9 +8,9 @@
 [site]
 # origin = ""  # Public address, e.g. "https://example.com"; needed for feeds and sitemaps
 base-path = "/"
-title = "NASApunk"
-authors = [{ name = "Your Name" }]
-description = "A Typst blog in the style of a flight-ops technical report."
+title = "KKKZOZ's Blog"
+authors = [{ name = "kkkzoz" }]
+description = "Notes on research, systems and engineering."
 language = "en"
 
 # tola help "[build]"
@@ -41,7 +41,7 @@ outputs = [{ tree = "pagefind" }]
 
 # tola help "[typst.fonts]"
 # Compiler fonts for SVG frames (math, cetz): the figures use IBM Plex Mono and
-# Sarasa Gothic SC (for CJK) from the system. `tola vendor` can copy
+# Sarasa Gothic SC from this machine, as Tola 0.7 did. `tola vendor` can copy
 # them into the site for builds elsewhere.
 [typst.fonts]
 paths = []

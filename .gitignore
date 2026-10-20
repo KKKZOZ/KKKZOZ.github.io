@@ -5,3 +5,4 @@
 /.public-publish/
 /.vendor-vendor/
 /.tola-build.lock
+/tola-ssg/
