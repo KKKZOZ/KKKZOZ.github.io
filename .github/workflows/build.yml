@@ -76,6 +76,11 @@ jobs:
     # Upstream main may break between releases; report it without failing
     # the workflow.
     continue-on-error: true
+    env:
+      # A quicker release build than Tola's own (thin LTO, one codegen unit);
+      # the binary only builds this small site.
+      CARGO_PROFILE_RELEASE_LTO: "false"
+      CARGO_PROFILE_RELEASE_CODEGEN_UNITS: "16"
     steps:
       - uses: actions/checkout@v5
 
@@ -87,10 +92,14 @@ jobs:
       - name: Install Pagefind
         run: npm ci
 
-      - name: Resolve Tola main
+      # Outside the site, so the build never sees Tola's sources.
+      - name: Clone Tola main
         id: tola
-        run: echo "sha=$(git ls-remote https://github.com/tola-rs/tola-ssg.git refs/heads/main | cut -f1)" >> "$GITHUB_OUTPUT"
+        run: |
+          git clone --quiet --depth=1 https://github.com/tola-rs/tola-ssg.git "$RUNNER_TEMP/tola-src"
+          echo "sha=$(git -C "$RUNNER_TEMP/tola-src" rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
+      # The binary for this commit of main, when an earlier run built it.
       - name: Restore Tola build
         id: cache
         uses: actions/cache@v4
@@ -101,9 +110,20 @@ jobs:
       - if: steps.cache.outputs.cache-hit != 'true'
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Tola from main
+      # Compiled dependencies carry over between commits of main, so a new
+      # commit rebuilds mostly Tola's own crates.
+      - if: steps.cache.outputs.cache-hit != 'true'
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ${{ runner.temp }}/tola-src -> target
+          # The Tola binary is cached above, per commit.
+          cache-bin: false
+
+      - name: Build Tola from main
         if: steps.cache.outputs.cache-hit != 'true'
-        run: cargo install --locked --git https://github.com/tola-rs/tola-ssg.git --rev ${{ steps.tola.outputs.sha }} tola
+        run: |
+          cargo build --release --locked --bin tola --manifest-path "$RUNNER_TEMP/tola-src/Cargo.toml"
+          install -D "$RUNNER_TEMP/tola-src/target/release/tola" ~/.cargo/bin/tola
 
       - run: tola --version
 
