@@ -3,7 +3,6 @@
 
 #import "@tola/address:0.0.0": slugify
 #import "@tola/document:0.0.0": current-document
-#import "@tola/web:0.0.0": math-svg
 #import "/templates/data.typ": draft-index
 
 // Mirrors the day values of the `--*` tokens in assets/styles/site.css, for
@@ -23,6 +22,22 @@
 /// Elements matching `sel` in the current document only: the site is one
 /// Bundle, so a bare `query` would also see every other page. Needs `context`.
 #let doc-query(sel) = query(selector(sel).within(current-document().location))
+
+/// An equation as SVG in HTML export, in a `role="math"` wrapper with the
+/// stylesheet's math-inline / math-block class; other targets get it as is.
+/// Tola 0.8.1 dropped `@tola/web`'s `math-svg`; Tola still aligns inline
+/// frames with the text baseline.
+#let math-svg(it) = context {
+  if target() != "html" { return it }
+  let attrs = (role: "math", class: if it.block { "math-block" } else { "math-inline" })
+  let alt = it.at("alt", default: math.equation.alt)
+  if alt != none { attrs.insert("aria-label", alt) }
+  if it.block {
+    html.elem("div", attrs: attrs, html.frame(it))
+  } else {
+    html.elem("span", attrs: attrs, box(html.frame(it)))
+  }
+}
 
 // Footnotes: Typst's HTML export cannot place them under a custom <body>, so
 // the show rule in `base` renders only the numbered ref, and `endnotes()`
@@ -83,10 +98,9 @@
     if target() == "html" { html.figure(class: "figure", it) } else { it }
   }
 
-  // Equations render as SVG; the wrapper also carries the stylesheet's
-  // math-inline / math-block classes.
+  // Equations render as SVG (see `math-svg`).
   show math.equation: set text(font: "New Computer Modern Math")
-  show math.equation: it => math-svg(it, attrs: (class: if it.block { "math-block" } else { "math-inline" }))
+  show math.equation: math-svg
 
   // 11.25pt == 15px, the CSS body size, so SVG frames (math, cetz) keep true scale.
   // The fonts only affect text inside SVG frames; HTML text is styled by CSS.
