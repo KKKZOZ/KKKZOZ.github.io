@@ -15,8 +15,8 @@
 // })
 // ```
 
-#import "@preview/cetz:0.3.4": *
-#import "@preview/cetz:0.3.4" as _cetz
+#import "@preview/cetz:0.5.2": *
+#import "@preview/cetz:0.5.2" as _cetz
 
 /// Render `body` as a block-level inline SVG in HTML export.
 /// Works for any layout-only content (cetz, fletcher, lilaq, ...).

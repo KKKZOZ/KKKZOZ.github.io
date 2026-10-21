@@ -1,6 +1,7 @@
-# Builds the example site with the newest Tola release, and with Tola's main
-# branch as an early warning. The weekly run catches new Tola releases even
-# when the theme itself has not changed.
+# Builds the example site with every Tola release the theme supports (the
+# compatibility matrix), and with Tola's main branch as an early warning. The
+# weekly run catches new Tola releases even when the theme itself has not
+# changed: each one joins the matrix on its own.
 name: Build
 
 on:
@@ -13,10 +14,44 @@ on:
 permissions:
   contents: read
 
+env:
+  # Oldest supported Tola release; keep it in step with the README badges.
+  MIN_TOLA: 0.8.0
+
 jobs:
-  release:
-    name: Latest Tola release
+  versions:
+    name: Supported Tola releases
     runs-on: ubuntu-latest
+    outputs:
+      versions: ${{ steps.list.outputs.versions }}
+    steps:
+      # Stable releases from MIN_TOLA on, newest first, as a JSON array.
+      - id: list
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          versions=$(
+            gh release list --repo tola-rs/tola-ssg --exclude-pre-releases --exclude-drafts --limit 100 --json tagName --jq '.[].tagName' \
+              | sed 's/^v//' \
+              | while read -r v; do
+                  [ "$(printf '%s\n%s\n' "$MIN_TOLA" "$v" | sort -V | head -n1)" = "$MIN_TOLA" ] && echo "$v"
+                done \
+              | sort -rV \
+              | jq -R -s -c 'split("\n") | map(select(. != ""))'
+          )
+          echo "Supported releases: $versions"
+          [ "$versions" != "[]" ]
+          echo "versions=$versions" >> "$GITHUB_OUTPUT"
+
+  release:
+    name: Tola ${{ matrix.version }}
+    needs: versions
+    runs-on: ubuntu-latest
+    strategy:
+      # Report every release, not only the first one that breaks.
+      fail-fast: false
+      matrix:
+        version: ${{ fromJSON(needs.versions.outputs.versions) }}
     steps:
       - uses: actions/checkout@v5
 
@@ -28,20 +63,9 @@ jobs:
       - name: Install Pagefind
         run: npm ci
 
-      - name: Install the latest Tola release
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          tag=$(gh release view --repo tola-rs/tola-ssg --json tagName --jq .tagName)
-          archive="tola-${tag#v}-x86_64-unknown-linux-musl.tar.gz"
-          gh release download "$tag" --repo tola-rs/tola-ssg --pattern "$archive" --pattern checksums.txt --dir "$RUNNER_TEMP"
-          cd "$RUNNER_TEMP"
-          grep " $archive\$" checksums.txt | sha256sum --check -
-          mkdir -p "$HOME/.local/bin"
-          tar xzf "$archive" -C "$HOME/.local/bin" tola
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - run: tola --version
+      - uses: ./.github/actions/install-tola
+        with:
+          version: ${{ matrix.version }}
 
       - name: Build
         run: tola build
