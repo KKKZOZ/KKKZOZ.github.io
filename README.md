@@ -4,9 +4,9 @@
 
 # NASApunk
 
-**A blog theme for [Tola](https://github.com/tola-rs/tola-ssg), built on the NASApunk design.**
+**A NASApunk-style blog theme for [Tola](https://github.com/tola-rs/tola-ssg).**
 
-Document numbers, mission-time archives, telemetry-channel tags and figures drawn by Typst, in a muted aerospace palette for day and night.
+Write posts in Typst. Figures, diagrams and math render as inline SVG in the theme colours, by day and by night.
 
 [![Build](https://github.com/KKKZOZ/tola-theme-nasapunk/actions/workflows/build.yml/badge.svg)](https://github.com/KKKZOZ/tola-theme-nasapunk/actions/workflows/build.yml)
 [![Tola](https://img.shields.io/badge/Tola-0.8%2B-cb4b22)](https://github.com/tola-rs/tola-ssg)
@@ -15,7 +15,7 @@ Document numbers, mission-time archives, telemetry-channel tags and figures draw
 
 **English** · [简体中文](README.zh-CN.md)
 
-**[Live demo](https://kkkzoz.github.io/tola-theme-nasapunk/)** · [Quick start](#quick-start) · [Features](#features) · [Gallery](#gallery) · [Configuration](#configuration) · [Writing](#writing-posts) · [Deployment](#deployment)
+**[Live demo](https://kkkzoz.github.io/tola-theme-nasapunk/)**
 
 <br>
 
@@ -28,19 +28,19 @@ Document numbers, mission-time archives, telemetry-channel tags and figures draw
 <table>
   <tr>
     <td width="33%" valign="top">
-      <img src="docs/features/report.png" alt="Post header with document control block"><br>
-      <b>Report header</b><br>
-      <sub>Doc number, date, GMT day and reading time on every post.</sub>
+      <img src="docs/features/report.png" alt="Post header with document number and date"><br>
+      <b>Post header</b><br>
+      <sub>Document number, date, day of year and reading time on every post.</sub>
     </td>
     <td width="33%" valign="top">
-      <img src="docs/features/archive.png" alt="Archive density chart"><br>
-      <b>Flight-log archive</b><br>
-      <sub>Years in mission time over a posts-per-month chart.</sub>
+      <img src="docs/features/archive.png" alt="Archive page with a posts-per-month chart"><br>
+      <b>Archive</b><br>
+      <sub>Posts grouped by year, with a posts-per-month chart.</sub>
     </td>
     <td width="33%" valign="top">
-      <img src="docs/features/tags.png" alt="Tag channel index"><br>
-      <b>Channel-index tags</b><br>
-      <sub>Every tag a channel, with a level meter.</sub>
+      <img src="docs/features/tags.png" alt="Tags page"><br>
+      <b>Tags</b><br>
+      <sub>Every tag with its post count and posts.</sub>
     </td>
   </tr>
   <tr>
@@ -57,7 +57,7 @@ Document numbers, mission-time archives, telemetry-channel tags and figures draw
     <td width="33%" valign="top">
       <img src="docs/features/callouts.png" alt="Callouts"><br>
       <b>Callouts</b><br>
-      <sub>Five instrument-panel kinds, plus annotations.</sub>
+      <sub>Five kinds, plus annotations.</sub>
     </td>
   </tr>
   <tr>
@@ -74,59 +74,37 @@ Document numbers, mission-time archives, telemetry-channel tags and figures draw
     <td width="33%" valign="top">
       <img src="docs/features/lost.png" alt="404 page"><br>
       <b>404</b><br>
-      <sub>A loss-of-signal page for missing addresses.</sub>
+      <sub>A custom page for missing addresses.</sub>
     </td>
   </tr>
 </table>
 
-Also: day / night theme that follows the system · endnotes · copy buttons on
-code and headings · reading progress bar · Open Graph tags · build-time checks
-for links, images and anchors · a layout that holds down to phone width.
+The theme also follows the system's day / night setting, collects footnotes
+as endnotes, adds copy buttons to code blocks and headings, and fails the
+build on broken links, images and section anchors.
 
-## Gallery
+## Screenshots
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/post.png" alt="Post page"></td>
-    <td width="50%"><img src="docs/screenshots/archive.png" alt="Archive page"></td>
+    <td width="50%"><img src="docs/screenshots/cetz-dark.png" alt="A CeTZ figure, night theme"></td>
   </tr>
   <tr>
-    <td align="center"><b>Post</b> · document control block, series and contents</td>
-    <td align="center"><b>Archive</b> · flight log with a density chart</td>
+    <td align="center">Post</td>
+    <td align="center">A CeTZ figure, night theme</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/tags.png" alt="Tags page, night theme"></td>
-    <td><img src="docs/screenshots/search.png" alt="Search page, night theme"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Tags</b> · channel index with level meters</td>
-    <td align="center"><b>Search</b> · Pagefind, with document numbers</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/cetz.png" alt="A CeTZ orbit diagram"></td>
-    <td><img src="docs/screenshots/cetz-dark.png" alt="A CeTZ bit-layout diagram, night theme"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>CeTZ</b> · arcs, ellipses and a data panel</td>
-    <td align="center"><b>CeTZ at night</b> · grids, zooms and Bézier routes</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/components.png" alt="Callouts and annotations"></td>
-    <td><img src="docs/screenshots/404.png" alt="404 page, night theme"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>Components</b> · callouts, hint, quote, code</td>
-    <td align="center"><b>404</b> · loss of signal</td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/mobile-light.png" width="32%" alt="Home page on a phone">
+    <td><img src="docs/screenshots/components.png" alt="Callouts and code"></td>
+    <td align="center">
+      <img src="docs/screenshots/mobile-light.png" width="45%" alt="Home page on a phone">
       &nbsp;
-      <img src="docs/screenshots/mobile-dark.png" width="32%" alt="Post page on a phone, night theme">
+      <img src="docs/screenshots/mobile-dark.png" width="45%" alt="Post page on a phone, night theme">
     </td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><b>Mobile</b> · the same layout down to phone width</td>
+    <td align="center">Callouts and code</td>
+    <td align="center">On a phone, day and night</td>
   </tr>
 </table>
 
@@ -191,7 +169,7 @@ path suggests: `content/posts/notes/cache.typ` → `/posts/notes/cache/`.
   date: "2026-10-18",
   summary: "One line for the post list, search results and link previews.",
   tags: ("systems", "notes"),
-  series: "Flight Manual",
+  series: "Theme Tour",
 ))
 
 = First section
@@ -224,14 +202,14 @@ Open `/lab/style-reference/` for every element the theme styles.
 #import "/utils/ui.typ": callout, xref
 #import "/utils/diagram.typ": flow, n
 
-#callout(kind: "success", title: [GO FOR LAUNCH])[All systems nominal.]
+#callout(kind: "success")[The build passed.]
 
 #flow(n[Source], [compile], n([HTML], tone: "accent"))
 
 See #xref("cetz-figures") for a full CeTZ example.
 ```
 
-The example posts show each module in use: `content/posts/flight-manual/`
+The example posts show each module in use: `content/posts/theme-tour/`
 for callouts, footnotes, flows and timelines, `content/posts/figure-kit.typ`
 for every helper in `utils/figure.typ` with its output and signature, and
 `content/posts/cetz-figures.typ` for complete CeTZ figures built with them.

@@ -4,9 +4,9 @@
 
 # NASApunk
 
-**一个 [Tola](https://github.com/tola-rs/tola-ssg) 博客主题，采用 NASApunk 设计风格。**
+**一个 NASApunk 风格的 [Tola](https://github.com/tola-rs/tola-ssg) 博客主题。**
 
-文档编号、任务时间线式的归档、遥测信道式的标签，以及由 Typst 绘制的插图，配一套日夜两用的低饱和航天配色。
+用 Typst 写文章，插图、图表和公式渲染为内联 SVG，跟随主题的日夜配色。
 
 [![Build](https://github.com/KKKZOZ/tola-theme-nasapunk/actions/workflows/build.yml/badge.svg)](https://github.com/KKKZOZ/tola-theme-nasapunk/actions/workflows/build.yml)
 [![Tola](https://img.shields.io/badge/Tola-0.8%2B-cb4b22)](https://github.com/tola-rs/tola-ssg)
@@ -15,7 +15,7 @@
 
 [English](README.md) · **简体中文**
 
-**[在线演示](https://kkkzoz.github.io/tola-theme-nasapunk/)** · [快速开始](#快速开始) · [特性](#特性) · [截图](#截图) · [配置](#配置) · [写文章](#写文章) · [部署](#部署)
+**[在线演示](https://kkkzoz.github.io/tola-theme-nasapunk/)**
 
 <br>
 
@@ -28,19 +28,19 @@
 <table>
   <tr>
     <td width="33%" valign="top">
-      <img src="docs/features/report.png" alt="带文档控制表的文章头部"><br>
-      <b>报告式文章头</b><br>
+      <img src="docs/features/report.png" alt="带文档编号和日期的文章头部"><br>
+      <b>文章头</b><br>
       <sub>每篇文章都有文档编号、日期、年积日和阅读时间。</sub>
     </td>
     <td width="33%" valign="top">
-      <img src="docs/features/archive.png" alt="归档页的密度图"><br>
-      <b>飞行日志式归档</b><br>
-      <sub>按任务时间编年，附每月发文密度图。</sub>
+      <img src="docs/features/archive.png" alt="带每月发文图的归档页"><br>
+      <b>归档</b><br>
+      <sub>按年份分组，附每月发文图。</sub>
     </td>
     <td width="33%" valign="top">
-      <img src="docs/features/tags.png" alt="标签信道索引"><br>
-      <b>信道式标签</b><br>
-      <sub>每个标签是一个信道，带电平条。</sub>
+      <img src="docs/features/tags.png" alt="标签页"><br>
+      <b>标签</b><br>
+      <sub>每个标签的文章数与文章列表。</sub>
     </td>
   </tr>
   <tr>
@@ -57,7 +57,7 @@
     <td width="33%" valign="top">
       <img src="docs/features/callouts.png" alt="提示框"><br>
       <b>提示框</b><br>
-      <sub>五种仪表盘风格的提示框，外加工程标注。</sub>
+      <sub>五种提示框，外加标注。</sub>
     </td>
   </tr>
   <tr>
@@ -74,57 +74,35 @@
     <td width="33%" valign="top">
       <img src="docs/features/lost.png" alt="404 页面"><br>
       <b>404</b><br>
-      <sub>地址不存在时显示"信号丢失"页面。</sub>
+      <sub>地址不存在时显示的自定义页面。</sub>
     </td>
   </tr>
 </table>
 
-此外还有：跟随系统的日夜主题 · 尾注 · 代码块与标题的复制按钮 · 阅读进度条 · Open Graph 标签 · 构建时检查链接、图片和锚点 · 一直适配到手机宽度的布局。
+此外，主题会跟随系统切换日夜配色，把脚注汇总为尾注，给代码块和标题加上复制按钮，并在链接、图片或章节锚点失效时让构建报错。
 
 ## 截图
 
 <table>
   <tr>
     <td width="50%"><img src="docs/screenshots/post.png" alt="文章页"></td>
-    <td width="50%"><img src="docs/screenshots/archive.png" alt="归档页"></td>
+    <td width="50%"><img src="docs/screenshots/cetz-dark.png" alt="CeTZ 插图，夜间主题"></td>
   </tr>
   <tr>
-    <td align="center"><b>文章</b> · 文档控制表、系列导航与目录</td>
-    <td align="center"><b>归档</b> · 飞行日志与密度图</td>
+    <td align="center">文章</td>
+    <td align="center">CeTZ 插图（夜间）</td>
   </tr>
   <tr>
-    <td><img src="docs/screenshots/tags.png" alt="标签页，夜间主题"></td>
-    <td><img src="docs/screenshots/search.png" alt="搜索页，夜间主题"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>标签</b> · 带电平条的信道索引</td>
-    <td align="center"><b>搜索</b> · Pagefind，结果附文档编号</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/cetz.png" alt="CeTZ 绘制的轨道图"></td>
-    <td><img src="docs/screenshots/cetz-dark.png" alt="CeTZ 绘制的比特布局图，夜间主题"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>CeTZ</b> · 圆弧、椭圆与数据面板</td>
-    <td align="center"><b>CeTZ（夜间）</b> · 网格、放大与贝塞尔曲线</td>
-  </tr>
-  <tr>
-    <td><img src="docs/screenshots/components.png" alt="提示框与标注"></td>
-    <td><img src="docs/screenshots/404.png" alt="404 页面，夜间主题"></td>
-  </tr>
-  <tr>
-    <td align="center"><b>组件</b> · 提示框、标注、引用与代码块</td>
-    <td align="center"><b>404</b> · 信号丢失</td>
-  </tr>
-  <tr>
-    <td colspan="2" align="center">
-      <img src="docs/screenshots/mobile-light.png" width="32%" alt="手机上的首页">
+    <td><img src="docs/screenshots/components.png" alt="提示框与代码块"></td>
+    <td align="center">
+      <img src="docs/screenshots/mobile-light.png" width="45%" alt="手机上的首页">
       &nbsp;
-      <img src="docs/screenshots/mobile-dark.png" width="32%" alt="手机上的文章页，夜间主题">
+      <img src="docs/screenshots/mobile-dark.png" width="45%" alt="手机上的文章页，夜间主题">
     </td>
   </tr>
   <tr>
-    <td colspan="2" align="center"><b>移动端</b> · 同一套布局一直适配到手机宽度</td>
+    <td align="center">提示框与代码块</td>
+    <td align="center">手机端（日间 / 夜间）</td>
   </tr>
 </table>
 
@@ -183,7 +161,7 @@ tola dev
   date: "2026-10-18",
   summary: "一句话简介，用于文章列表、搜索结果和链接预览。",
   tags: ("systems", "notes"),
-  series: "Flight Manual",
+  series: "Theme Tour",
 ))
 
 = 第一节
@@ -215,14 +193,14 @@ tola dev
 #import "/utils/ui.typ": callout, xref
 #import "/utils/diagram.typ": flow, n
 
-#callout(kind: "success", title: [GO FOR LAUNCH])[各系统正常。]
+#callout(kind: "success")[构建通过。]
 
 #flow(n[Source], [compile], n([HTML], tone: "accent"))
 
 完整的 CeTZ 示例见 #xref("cetz-figures")。
 ```
 
-示例文章里每个模块都有用到：`content/posts/flight-manual/` 演示提示框、脚注、流程图和时间线；`content/posts/figure-kit.typ` 逐个介绍 `utils/figure.typ` 里的函数，附效果图和函数签名；`content/posts/cetz-figures.typ` 是用这些函数画出的完整 CeTZ 图。
+示例文章里每个模块都有用到：`content/posts/theme-tour/` 演示提示框、脚注、流程图和时间线；`content/posts/figure-kit.typ` 逐个介绍 `utils/figure.typ` 里的函数，附效果图和函数签名；`content/posts/cetz-figures.typ` 是用这些函数画出的完整 CeTZ 图。
 
 ## 部署
 
