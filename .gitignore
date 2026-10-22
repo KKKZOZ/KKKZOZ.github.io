@@ -1,7 +1,8 @@
-/public
-/.tola/
+# Build output and caches, in the site root or any site below it (example/)
+public/
+.tola/
+.public-publish/
+.vendor-vendor/
+.tola-build.lock
+node_modules/
 .DS_Store
-/node_modules/
-/.public-publish/
-/.vendor-vendor/
-/.tola-build.lock
