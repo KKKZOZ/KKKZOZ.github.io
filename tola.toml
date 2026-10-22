@@ -10,7 +10,7 @@
 base-path = "/"
 title = "NASApunk"
 authors = [{ name = "Your Name" }]
-description = "A Typst blog in the style of a flight-ops technical report."
+description = "A Typst blog theme in the NASApunk style."
 language = "en"
 
 # tola help "[build]"

@@ -2,11 +2,11 @@
 #import "/utils/diagram.typ": diagram, divider, edge, flow, n, node, timeline
 
 #tola-meta((
-  title: "[FM 02] Ascent Profile",
+  title: "[Tour 02] Diagrams and Timelines",
   date: "2025-07-04",
   summary: "Part two of a sample series: diagrams and timelines from utils/diagram.typ.",
   tags: ("example", "series", "diagram"),
-  series: "Flight Manual",
+  series: "Theme Tour",
 ))
 
 Diagrams are drawn by Typst at build time and embedded as inline SVG. Their
@@ -37,19 +37,19 @@ a boundary across the flow.
 Nodes on a grid, joined by edges.
 
 #diagram(
-  node("gnd", (0, 0), [Ground]),
-  node("relay", (1, 0), [Relay], tone: "accent"),
-  node("craft", (2, 0), [Craft], tone: "dark"),
-  node("log", (1, 1), [Telemetry log], tone: "muted"),
-  edge("gnd", "relay", label: [uplink]),
-  edge("relay", "craft"),
-  edge("relay", "log", dashed: true),
+  node("repo", (0, 0), [Repo]),
+  node("ci", (1, 0), [CI], tone: "accent"),
+  node("pages", (2, 0), [Pages], tone: "dark"),
+  node("log", (1, 1), [Build log], tone: "muted"),
+  edge("repo", "ci", label: [push]),
+  edge("ci", "pages"),
+  edge("ci", "log", dashed: true),
 )
 
 = Timeline
 
 #timeline(
-  (version: [T−10], items: ([Pre-flight checks complete],)),
-  (version: [T+00], items: ([Liftoff], [Tower cleared]), note: [MAJOR EVENT], major: true),
-  (version: [T+02], items: ([Stage separation],)),
+  (version: [0.1], items: ([First layout],)),
+  (version: [1.0], items: ([Search], [Night theme]), note: [RELEASE], major: true),
+  (version: [1.1], items: ([Series navigation],)),
 )

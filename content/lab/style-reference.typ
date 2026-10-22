@@ -34,7 +34,7 @@ $ sum_(i=1)^n |m_i| >= |union.big_(i=1)^n m_i| $
 #callout[Callouts default to *note*.]
 #callout(kind: "info")[Neutral context with _emphasis_.]
 #callout(kind: "warning")[Check the cache before trusting latency numbers.]
-#callout(kind: "success", title: [GO FOR LAUNCH])[Custom titles keep the code tag.]
+#callout(kind: "success", title: [BUILD PASSED])[Custom titles keep the code tag.]
 #callout(kind: "danger")[Do not mutate the shared mask in place.]
 
 #hint[An open engineering annotation: *key term* and _aside_ in mono italic.]

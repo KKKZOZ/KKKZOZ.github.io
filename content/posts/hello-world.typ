@@ -3,7 +3,7 @@
 #tola-meta((
   title: "Hello, World",
   date: "2024-11-02",
-  summary: "The first entry in the flight log. Delete it when you write your own.",
+  summary: "A short first post. Replace it with your own.",
   tags: ("example",),
 ))
 

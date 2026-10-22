@@ -42,12 +42,12 @@
   let peak = calc.max(1, ..counts.flatten())
   let first-year = int(years.at(-1, default: ("0", ())).at(0))
   let mission-time(year) = "T+" + pad(int(year) - first-year, 2)
-  layout.page-head("Archive", sub: "Flight log")
+  layout.page-head("Archive", sub: "All posts")
   index-stats((
     ("Entries", str(posts.len())),
     ("Span", if years.len() > 0 { years.at(-1).at(0) + "–" + years.at(0).at(0) } else { "—" }),
     ("First entry", if posts.len() > 0 { layout.fmt-date(posts.at(-1).date) } else { "—" }),
-    ("Last contact", if posts.len() > 0 { layout.fmt-date(posts.at(0).date) } else { "—" }),
+    ("Latest entry", if posts.len() > 0 { layout.fmt-date(posts.at(0).date) } else { "—" }),
   ))
   html.div(class: "section-label", id: "log", layout.label(class: "accent")[Density / posts per month])
   html.div(class: "density", {

@@ -49,7 +49,7 @@ with `tola-meta` and holds only its text:
   date: "2026-10-18",
   summary: "One line for the post list and the Open Graph card.",
   tags: ("systems", "notes"),
-  series: "Flight Manual",   // optional
+  series: "Theme Tour",   // optional
   draft: false,              // optional; drafts are not published
 ))
 
@@ -70,7 +70,7 @@ out of the post list. Use them for test pages, such as the
 
 `utils/ui.typ` holds the in-article components: `callout`, `hint`, `img`,
 `gallery`, `xref` and `related`. `utils/diagram.typ` draws box-and-arrow
-diagrams and timelines in the site palette; #xref("02-ascent") shows both.
+diagrams and timelines in the site palette; #xref("02-diagrams") shows both.
 `utils/cetz.typ` is a drop-in `cetz` that renders to inline SVG, and
 `utils/figure.typ` holds colours and helpers for detailed drawings:
 #xref("figure-kit") goes through them, and #xref("cetz-figures") puts them to
