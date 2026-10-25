@@ -23,6 +23,9 @@ Write posts in Typst. Figures, diagrams and math render as inline SVG in the the
 
 </div>
 
+> [!NOTE]
+> Need slides in the same style? The matching slide template is [touying-nasapunk](https://typst.app/universe/package/touying-nasapunk) on Typst Universe.
+
 ## Features
 
 <table>

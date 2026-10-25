@@ -23,6 +23,9 @@
 
 </div>
 
+> [!NOTE]
+> 需要同一风格的幻灯片？配套的 slides 模板是 Typst Universe 上的 [touying-nasapunk](https://typst.app/universe/package/touying-nasapunk)。
+
 ## 特性
 
 <table>
