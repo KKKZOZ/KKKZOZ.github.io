@@ -93,6 +93,23 @@ body {
 
 main { flex: 1; width: 100%; }
 
+/* "Skip to content": above the page, shown when keyboard focus reaches it. */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 30;
+  padding: 6px 10px;
+  background: var(--ink);
+  color: var(--paper);
+  font: 500 11px/1.4 var(--font-mono);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateY(calc(-100% - 16px));
+}
+.skip-link:focus { transform: none; outline: 1px solid var(--orange); outline-offset: 2px; }
+
 .wrap {
   width: 100%;
   max-width: calc(var(--measure) + 2 * var(--gutter));
@@ -182,6 +199,9 @@ main { flex: 1; width: 100%; }
 .footer-rule span:nth-child(3) { width: 20px; height: 2px; background: var(--band-4); }
 .footer-rule span:nth-child(4) { width: 8px; height: 2px; background: var(--band-3); }
 .footer-row { display: flex; justify-content: space-between; gap: 12px; margin-top: 8px; }
+.footer-links { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 4px 16px; }
+.footer-links a { color: var(--orange); text-decoration: none; }
+.footer-links a:hover { text-decoration: underline; text-underline-offset: 3px; }
 
 /* ========================================================================== */
 /* Home                                                                       */
@@ -389,7 +409,9 @@ a.tag:hover { color: var(--orange); border-color: var(--orange); }
 /* Document control block: the tech-report cover table (post.typ). */
 .doc-control {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  /* One column per cell: four, or five when a post shows a revision date. */
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
   margin: 24px 0 0;
   border-top: 2px solid var(--ink);
   border-bottom: .5px solid var(--rule);
@@ -822,8 +844,8 @@ html { scroll-behavior: smooth; }
   .hero-mark { display: none; }
   .lost { grid-template-columns: 1fr; margin-top: 36px; }
   .lost-mark { grid-row: 1; justify-self: start; }
-  .doc-control { grid-template-columns: repeat(2, 1fr); }
-  .doc-cell:nth-child(3) { border-left: 0; padding-left: 0; }
+  .doc-control { grid-auto-flow: row; grid-template-columns: repeat(2, 1fr); }
+  .doc-cell:nth-child(2n + 1) { border-left: 0; padding-left: 0; }
   .doc-cell:nth-child(n + 3) { border-top: .5px solid var(--rule); }
   .post-nav { grid-template-columns: 1fr; }
   .series-nav { grid-template-columns: 1fr; gap: 4px; }

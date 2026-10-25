@@ -6,12 +6,11 @@
 // site.typ renders it with `post(page, posts)`.
 
 #import "@tola/address:0.0.0": slugify
-#import "@tola/site:0.0.0": site
 #import "/templates/base.typ": doc-query, endnotes
 #import "/templates/config.typ": doc-prefix
 #import "/templates/layout.typ" as layout: fmt-date, label
 #import "/templates/page.typ": html-document
-#import "/templates/util.typ": og-tags, to-string
+#import "/templates/util.typ": to-string
 
 // ============================================================================
 // Document control block
@@ -46,6 +45,7 @@
   let cells = (
     ("Doc no.", doc-number(posts, output), "doc"),
     ("Date", fmt-date(m.date), "date"),
+    ..if m.updated != none { (("Revised", fmt-date(m.updated), none),) },
     ("GMT day", gmt-day(m.date), none),
     ("Est. read", str(read-minutes(body)) + " min", none),
   )
@@ -185,14 +185,8 @@
 #let post(page, posts) = {
   let m = page.source.meta
   let body = include page.source.file
-  let head = og-tags(
-    title: m.title,
-    description: m.summary,
-    site-name: site.title,
-    published: m.date,
-    tags: m.tags,
-  )
-  html-document(page.output, m.title, head: head, posts: posts, {
+  let article = (published: m.date, updated: m.updated, tags: m.tags)
+  html-document(page.output, m.title, description: m.summary, article: article, posts: posts, {
     show heading: heading-with-id
     layout.shell(html.article(class: "post", {
       // Fixed reading-progress bar at the top of the viewport (reading.js).
@@ -211,8 +205,9 @@
       html.div(class: "post-body", {
         toc()
         // Only the text is indexed for search (Pagefind); title, date and doc
-        // number are tagged as result metadata where they are shown above.
-        html.elem("div", attrs: (class: "prose", data-pagefind-body: ""), { body; endnotes() })
+        // number are tagged as result metadata where they are shown above. The
+        // id selects the text for the RSS feed (feeds.typ).
+        html.elem("div", attrs: (class: "prose", id: "post-content", data-pagefind-body: ""), { body; endnotes() })
       })
       post-nav(posts, page.output)
     }))
