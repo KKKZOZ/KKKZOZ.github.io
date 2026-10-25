@@ -145,7 +145,7 @@ Then make it yours:
 | Preview image for shared links: drawn (`auto`), your own file, or none | `templates/config.typ` → `social-image` |
 | Analytics or other `<head>` additions | `templates/config.typ` → `head-extra` |
 | Header links | `templates/layout.typ` → `nav-items` |
-| Posts on the home page | `templates/pages.typ` → `shown` |
+| Posts per home page (older ones on `/page/2/`, `/page/3/`, …) | `templates/pages.typ` → `shown` |
 | Heading levels in the table of contents | `templates/post.typ` → `toc-depth` |
 | Posts in the RSS feed; full text or summaries | `templates/feeds.typ` → `feed-size`, `full-text` |
 | Colours | tokens at the top of `assets/styles/site.css`, mirrored by `palette` in `templates/base.typ` |

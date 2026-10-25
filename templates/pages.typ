@@ -8,19 +8,37 @@
 #import "/templates/page.typ": page
 #import "/templates/post.typ": doc-number, pad
 
-/// Number of posts listed on the home page.
+/// Posts per home page; the rest go on /page/2/, /page/3/, ...
 #let shown = 10
 
-#let home(posts) = page("index.html", none, posts: posts, {
-  layout.hero(subtitle: site.description, meta: str(posts.len()) + " posts")
-  html.div(class: "section-label", layout.label(class: "accent")[Recent posts])
-  // By `weight`; the sort is stable, so equal weights stay newest first.
-  // Other listings and the feed keep date order.
-  layout.post-list(posts.sorted(key: p => p.weight).slice(0, calc.min(posts.len(), shown)))
-  if posts.len() > shown {
-    html.div(class: "more-link", html.a(class: "label", href: output-url("archive/index.html"))[All #posts.len() posts →])
+/// The home page's n-th page (from 1): index.html, then page/n/index.html.
+#let home-output(n) = if n == 1 { "index.html" } else { "page/" + str(n) + "/index.html" }
+
+/// Previous / next links and "Page n / count" under a home page's list.
+#let pager(n, count) = if count > 1 {
+  html.nav(class: "pager", aria-label: "Pages", {
+    if n > 1 { html.a(class: "label prev", href: output-url(home-output(n - 1)), "← Previous") }
+    layout.label("Page " + str(n) + " / " + str(count), class: "pager-count")
+    if n < count { html.a(class: "label next", href: output-url(home-output(n + 1)), "Next →") }
+  })
+}
+
+/// The home page and its following pages, `shown` posts each, by `weight`.
+/// The sort is stable, so equal weights stay newest first; other listings
+/// and the feed keep date order. The hero is on the first page only.
+#let home(posts) = {
+  let listed = posts.sorted(key: p => p.weight)
+  let count = calc.max(1, calc.ceil(listed.len() / shown))
+  for n in range(1, count + 1) {
+    let first = (n - 1) * shown
+    page(home-output(n), if n > 1 { "Page " + str(n) }, posts: posts, {
+      if n == 1 { layout.hero(subtitle: site.description, meta: str(posts.len()) + " posts") }
+      html.div(class: "section-label", layout.label(class: "accent")[Recent posts])
+      layout.post-list(listed.slice(first, calc.min(listed.len(), first + shown)), start: listed.len() - first)
+      pager(n, count)
+    })
   }
-})
+}
 
 /// Four-cell summary under a listing's title, styled as the post's document
 /// control block: (label, value) pairs.

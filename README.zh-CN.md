@@ -145,7 +145,7 @@ tola dev
 | 分享链接时的预览图：自动绘制（`auto`）、自己的图片或不用图 | `templates/config.typ` → `social-image` |
 | 统计脚本等额外的 `<head>` 内容 | `templates/config.typ` → `head-extra` |
 | 顶部导航链接 | `templates/layout.typ` → `nav-items` |
-| 首页显示的文章数 | `templates/pages.typ` → `shown` |
+| 首页每页的文章数（其余在 `/page/2/`、`/page/3/` …） | `templates/pages.typ` → `shown` |
 | 目录收录的标题层级 | `templates/post.typ` → `toc-depth` |
 | RSS 收录的文章数；全文还是摘要 | `templates/feeds.typ` → `feed-size`、`full-text` |
 | 配色 | `assets/styles/site.css` 开头的颜色变量，`templates/base.typ` 里的 `palette` 与之对应 |

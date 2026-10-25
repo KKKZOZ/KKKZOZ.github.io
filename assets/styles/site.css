@@ -248,6 +248,8 @@ main { flex: 1; width: 100%; }
 
 .section-label { display: flex; align-items: center; gap: 12px; margin: 0 0 4px; }
 .section-label::after { content: ""; flex: 1; height: .5px; background: var(--rule); }
+/* The home page's following pages have no hero above the list. */
+.prose > .section-label:first-child { margin-top: 36px; }
 
 .entry-list { list-style: none; margin: 0; padding: 0; }
 .entry-item { border-bottom: .5px solid var(--rule); }
@@ -277,9 +279,13 @@ main { flex: 1; width: 100%; }
 a.tag { text-decoration: none; transition: border-color .15s, color .15s; }
 a.tag:hover { color: var(--orange); border-color: var(--orange); }
 
-.more-link { margin-top: 20px; text-align: right; }
-.more-link a { color: var(--orange); text-decoration: none; }
-.more-link a:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* Home page pager: previous on the left, next on the right, count between. */
+.pager { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 12px; margin-top: 20px; }
+.pager a { color: var(--orange); text-decoration: none; }
+.pager a:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pager .prev { grid-column: 1; justify-self: start; }
+.pager-count { grid-column: 2; }
+.pager .next { grid-column: 3; justify-self: end; }
 
 /* ========================================================================== */
 /* Archive / Tags                                                             */
