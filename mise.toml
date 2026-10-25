@@ -1,0 +1,47 @@
+[tasks."theme:pull"]
+description = "Merge the latest tola-theme-nasapunk (remote `theme`) into the blog"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+
+# Files the blog maintains itself: theme changes to these are discarded (and listed).
+owned=(.github .gitignore tola.toml package.json package-lock.json templates/config.typ content assets/images utils/figures scripts)
+# Files that only belong in the theme repo.
+theme_only=(docs LICENSE README.md README.zh-CN.md)
+
+if ! git diff --quiet || ! git diff --cached --quiet; then
+  echo "Working tree has uncommitted changes; commit or stash them first." >&2
+  exit 1
+fi
+
+git fetch theme
+if git merge-base --is-ancestor theme/main HEAD; then
+  echo "Already up to date with theme/main."
+  exit 0
+fi
+
+echo "Incoming theme commits:"
+git log --oneline HEAD..theme/main
+
+git merge --no-ff --no-commit theme/main >/dev/null 2>&1 || true
+
+git rm -rqf --ignore-unmatch -- "${theme_only[@]}"
+
+skipped=$(git diff --cached --name-only HEAD -- "${owned[@]}")
+git restore --source=HEAD --staged --worktree -- "${owned[@]}"
+
+if [ -n "$(git diff --name-only --diff-filter=U)" ]; then
+  echo "Unresolved conflicts remain; fix them and run 'git commit' (or 'git merge --abort'):" >&2
+  git diff --name-only --diff-filter=U >&2
+  exit 1
+fi
+
+git commit -q --no-edit
+echo "Merged theme/main:"
+git diff --stat HEAD^ HEAD
+if [ -n "$skipped" ]; then
+  echo
+  echo "Theme changes to blog-owned files were kept out; port them by hand if needed:"
+  echo "$skipped" | sed 's/^/  /'
+fi
+'''

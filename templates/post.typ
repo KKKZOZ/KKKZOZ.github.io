@@ -7,6 +7,7 @@
 
 #import "@tola/address:0.0.0": slugify
 #import "/templates/base.typ": doc-query, endnotes
+#import "/templates/comments.typ": comments-box
 #import "/templates/config.typ": doc-prefix
 #import "/templates/layout.typ" as layout: fmt-date, label
 #import "/templates/page.typ": html-document
@@ -210,6 +211,8 @@
         html.elem("div", attrs: (class: "prose", id: "post-content", data-pagefind-body: ""), { body; endnotes() })
       })
       post-nav(posts, page.output)
+      // lab/ test pages take no comments.
+      if not page.source.id.starts-with("lab/") { comments-box() }
     }))
   })
 }

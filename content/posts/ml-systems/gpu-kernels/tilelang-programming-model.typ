@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
+#import "/utils/figures/tilelang.typ" as fig
 
 #tola-meta((
   title: "TileLang Programming Model",
@@ -98,31 +99,11 @@ extern "C" __global__ void __launch_bounds__(256, 1) tl_copy_1d_parallel_thread_
 
 假设一个 block 有 4 个线程，要搬 16 个格子：
 
-```ascii
-格子编号:  0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15
-```
+#fig.fig-copy-partition()
 
-Kernel 1 的切法（按块切，每人拿一整块）
+Kernel 1 的切法（按块切，每人拿一整块）：每人拿到连续的 4 个，一次拿走。threadIdx.x \* 4 就是每人的起始位置。
 
-```ascii
-Thread 0: [0  1  2  3]           → threadIdx.x * 4 = 0
-Thread 1:             [4  5  6  7]
-Thread 2:                         [8  9 10 11]
-Thread 3:                                     [12 13 14 15]
-```
-
-每人拿到连续的 4 个，一次拿走。threadIdx.x \* 4 就是每人的起始位置。
-
-Kernel 2 的切法（按列切，分 4 轮，每轮每人拿 1 个）
-
-```ascii
-         i=0        i=1        i=2        i=3
-Thread 0: [0]        [4]        [8]        [12]
-Thread 1:  [1]        [5]        [9]        [13]
-Thread 2:   [2]        [6]        [10]       [14]
-Thread 3:    [3]        [7]        [11]       [15]
-每轮 i，每人拿 i*4 + threadIdx.x 号格子。i * 4（实际是 i * 线程数）用来跳到下一轮。
-```
+Kernel 2 的切法（按列切，分 4 轮，每轮每人拿 1 个）：每轮 i，每人拿 i \* 4 + threadIdx.x 号格子。i \* 4（实际是 i \* 线程数）用来跳到下一轮。
 
 == 原语差别
 很容易想到，在 Block 视角下，有一些声明式原语会指导框架进行线程分配，常见的有:
@@ -189,6 +170,8 @@ T.alloc_shared((N,), dtype)    → 完全共享，所有 thread 访问同一份
 T.alloc_fragment((N,), dtype)  → 分布式，逻辑上是一个 tile，物理上切分给各 thread
 ```
 
+#fig.fig-alloc-scopes()
+
 以 `T.alloc_fragment((BLOCK_N,), accum)` 且 threads=BLOCK\_N 为例：
 
 ```ascii
@@ -204,19 +187,7 @@ T.alloc_fragment((N,), dtype)  → 分布式，逻辑上是一个 tile，物理�
 = 操作的层级归宿
 TileLang 对操作有严格的层级归属：
 
-```ascii
-Block scope（块级）
-│
-│  ← T.copy, T.clear, T.fill, T.gemm 等 tile-op 必须在这里
-│     所有线程协作完成，本质是集体操作（collective op）
-│
-└── T.Parallel（线程级并行边界）
-      │
-      │  ← 只允许 elementwise 操作
-      │     每个线程独立执行，彼此不协调
-      │
-      └── T.serial
-```
+#fig.fig-op-scopes()
 
 换句话说：
 

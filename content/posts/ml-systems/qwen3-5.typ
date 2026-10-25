@@ -1,4 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
+#import "/utils/figures/qwen3-5.typ" as fig
 
 #tola-meta((
   title: "Qwen3.5 Dense Model Architecture",
@@ -15,6 +16,8 @@
 文本主干的计算顺序是：`Embedding` → 多个 `Qwen3_5DecoderLayer` → 最终 `Qwen3_5RMSNorm` → `lm_head`。每个 decoder layer 都包含一个 token mixer 和一个 MLP；token mixer 的具体类型由 `config.layer_types[layer_idx]` 决定。
 
 在默认配置中，`full_attention_interval=4`，因此每第 4 个 layer 使用 `full_attention`，其余 layer 使用 `linear_attention`。
+
+#fig.fig-hybrid-stack()
 
 = 配置定义
 #strong[`Qwen3_5TextConfig` 同时定义模型宽度、层数、两类 attention 的维度和层类型。]
@@ -71,6 +74,8 @@ x = residual + x
 
 因此一个 layer 的输出形状仍为 `[B, T, H]`。
 
+#fig.fig-decoder-layer()
+
 `Qwen3_5RMSNorm` 的权重初始化为零，实际缩放因子是 `1 + weight`，而不是直接使用 `weight`。这是该版本实现的特定行为，不应直接套用普通 RMSNorm 的参数语义。
 
 = Linear Attention
@@ -97,6 +102,8 @@ conv_dim  = 2 * key_dim + value_dim
 + 对 query/key 做 L2 normalization，并把 key head 复制到 `linear_num_value_heads`，使其与 value head 对齐
 + 在 prefill 阶段调用 chunked gated-delta rule；在单 token decode 阶段调用 recurrent gated-delta rule
 + 用 recurrent state 与 query 计算输出，再用 gated RMSNorm 和 `z` 做门控，最后经过 `out_proj` 回到 `H` 维
+
+#fig.fig-gdn-flow()
 
 可将单步状态更新抽象为：
 
@@ -259,6 +266,8 @@ V: [B, Nkv, T, D]
 Grouped-Query Attention (GQA): 当 `Nq > Nkv` 时，`repeat_kv` 将 K/V 复制到 query head 的分组数量，这就是
 ]
 
+#fig.fig-gqa()
+
 == 工作机制
 #strong[全注意力先计算 Q/K/V，再使用 causal mask 对历史位置做 attention，最后应用 query-side gate。]
 
@@ -268,6 +277,12 @@ Grouped-Query Attention (GQA): 当 `Nq > Nkv` 时，`repeat_kv` 将 K/V 复制�
 + 对 Q/K 应用 `position_embeddings`；文本路径使用 partial RoPE，旋转维度由 `partial_rotary_factor` 决定。
 + 将当前 K/V 写入该层的 cache，再通过 `ALL_ATTENTION_FUNCTIONS` 选择 eager、SDPA 或其他已注册实现。
 + attention 输出乘以 `sigmoid(gate)`，reshape 回 `[B, T, H]`，再经过 `o_proj`。
+
+#fig.fig-full-attn-flow()
+
+`q_proj` 的输出按 head 交错排列 query 和 gate：`chunk` 切分的是每个 head 内部的 `2D` 维，而不是整个输出向量的前后两半。
+
+#fig.fig-q-gate()
 
 == 最小示例
 #strong[下面的代码保留了 `Qwen3_5Attention.forward` 的核心数据流，用于展示一个 full-attention layer 如何从 `[B, T, H]` 生成输出。]
@@ -394,6 +409,8 @@ y = down_proj(silu(gate) * up)
 
 `gate_proj`、`up_proj` 和 `down_proj` 都是 `bias=False` 的线性层。FFN 前有 `post_attention_layernorm`，FFN 输出通过第二次 residual connection 加回 token mixer 的结果。
 
+#fig.fig-swiglu()
+
 == 最小示例
 ```python
 def forward_mlp(self, x):
@@ -425,3 +442,5 @@ Final RMSNorm -> lm_head -> logits [B, T, vocab_size]
 ```
 
 图中的两类 cache 不是同一种张量：linear layer 保存有限状态，full-attention layer 保存历史 K/V。生成时，模型必须在每个 layer 使用与 `layer_types` 对应的 cache 更新路径。
+
+#fig.fig-cache-growth()

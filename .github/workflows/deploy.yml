@@ -1,0 +1,90 @@
+# Builds the blog and publishes it to GitHub Pages on every push.
+#
+# The repository needs Settings → Pages → Source set to "GitHub Actions", and
+# the branch below allowed by the `github-pages` environment's deployment
+# branch rules. The custom domain is set in the Pages settings; the address
+# feeds and sitemaps use is `origin` in tola.toml.
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+env:
+  # Bump together with the local Tola (mise).
+  TOLA_VERSION: 0.8.1
+  # Compiler fonts for SVG frames (math, cetz): the runner has none of them.
+  SARASA_VERSION: 1.0.43
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      FONT_DIR: ${{ runner.temp }}/fonts
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install Pagefind
+        run: npm ci
+
+      - name: Install Tola
+        uses: ./.github/actions/install-tola
+        with:
+          version: ${{ env.TOLA_VERSION }}
+
+      - name: Restore fonts
+        id: fonts
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.FONT_DIR }}
+          key: fonts-sarasa-${{ env.SARASA_VERSION }}-plex-rajdhani-v1
+
+      # IBM Plex Mono and Rajdhani from Google Fonts; Sarasa Gothic SC from its
+      # release, only the styles the theme uses.
+      - name: Download fonts
+        if: steps.fonts.outputs.cache-hit != 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "$FONT_DIR"
+          google=https://raw.githubusercontent.com/google/fonts/main/ofl
+          for style in Regular Italic Medium MediumItalic SemiBold SemiBoldItalic Bold BoldItalic; do
+            curl -fsSL -o "$FONT_DIR/IBMPlexMono-$style.ttf" "$google/ibmplexmono/IBMPlexMono-$style.ttf"
+          done
+          for style in Regular Medium SemiBold Bold; do
+            curl -fsSL -o "$FONT_DIR/Rajdhani-$style.ttf" "$google/rajdhani/Rajdhani-$style.ttf"
+          done
+          archive="SarasaGothicSC-TTF-Unhinted-$SARASA_VERSION.7z"
+          gh release download "v$SARASA_VERSION" --repo be5invis/Sarasa-Gothic --pattern "$archive" --dir "$RUNNER_TEMP"
+          7z e -y -o"$FONT_DIR" "$RUNNER_TEMP/$archive" \
+            SarasaGothicSC-Regular.ttf SarasaGothicSC-Italic.ttf SarasaGothicSC-SemiBold.ttf \
+            SarasaGothicSC-Bold.ttf SarasaGothicSC-BoldItalic.ttf
+          ls -l "$FONT_DIR"
+
+      - name: Build
+        run: tola build --font-path "$FONT_DIR"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: public
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

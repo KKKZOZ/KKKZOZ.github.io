@@ -6,7 +6,7 @@
 
 # tola help "[site]"
 [site]
-# origin = ""  # Public address, e.g. "https://example.com"; needed for feeds and sitemaps
+origin = "https://blog.kkkzoz.top"  # Public address; needed for feeds and sitemaps
 base-path = "/"
 title = "KKKZOZ's Blog"
 authors = [{ name = "kkkzoz" }]

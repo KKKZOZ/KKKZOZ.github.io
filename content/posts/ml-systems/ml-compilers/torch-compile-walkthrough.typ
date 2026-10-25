@@ -7,6 +7,7 @@
   date: "2026-10-20",
   summary: "用 ((a + b) * c.relu()).sum(dim=-1) 跟踪 torch.compile 的每个阶段：Dynamo FX Graph、AOT ATen Graph、TorchInductor IR（TensorBox / StorageBox / Pointwise / Reduction / realize）、Scheduler 与生成的 kernel。",
   tags: ("ML Compilers", "torch.compile"),
+  weight: 10,
 ))
 
 #hint[各阶段的职责和它们在 IR 分层中的位置见 #xref("/posts/ml-systems/ml-compilers/overview/")。本文只跟踪一个具体例子在每个阶段的产物。]

@@ -29,4 +29,19 @@
 ///   defer: "", src: "https://plausible.io/js/script.js", data-domain: "example.com",
 /// ))
 /// ```
-#let head-extra = none
+/// Insightflare analytics, loaded only on the live host so `tola dev`
+/// visits are not counted.
+#let head-extra = html.script("if(location.hostname===\"blog.kkkzoz.top\"){let s=document.createElement(\"script\");s.defer=true;s.src=\"https://insightflare.1206668472.workers.dev/script.js?siteId=a2308d7a-3c61-4541-987c-e675aa991a6f\";document.head.append(s)}")
+
+/// giscus comments under each post (templates/comments.typ), from the repo's
+/// Discussions; the values come from https://giscus.app. `none` turns
+/// comments off.
+#let comments = (
+  repo: "kkkzoz/kkkzoz.github.io",
+  repo-id: "MDEwOlJlcG9zaXRvcnkzOTU4ODgxODY=",
+  category: "Announcements",
+  category-id: "DIC_kwDOF5jGOs4Cr9zt",
+  // Discussion per page path, as the Hugo site used: posts that kept their
+  // path keep their comments.
+  mapping: "pathname",
+)

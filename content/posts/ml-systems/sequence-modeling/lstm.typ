@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
+#import "/utils/figures/sequence-modeling.typ" as fig
 
 #tola-meta((
   title: "[Sequence Modeling 02] LSTM",
@@ -16,8 +16,11 @@
 - 信息覆盖（Information Overwrite）
   - RNN 只有一个隐藏状态 $h_t$。在每一个时间步，新的输入 $x_t$ 都会强制与历史信息 $h_(t - 1)$ 混合。没有任何机制能够保护早期非常重要但最近没有出现的信息。这就好比一个容量有限的栈，新数据不断涌入，旧数据很快就被冲刷掉了
 
+#fig.fig-lstm-gradient()
+
 = LSTM 的核心思想：分离状态与引入门控机制
-#img("/assets/images/pasted-image-20260819145501.png", alt: "pasted-image-20260819145501")
+#fig.fig-lstm-cell()
+
 为了解决上述问题，LSTM 将内部状态拆分为两条相互配合的通路，并通过门控信号控制信息如何在通路之间流动。
 
 - 细胞状态 $c_t$ (Cell State)：位于上方的主干通路，负责携带长期记忆。从 $c_(t - 1)$ 到 $c_t$ 的更新主要由逐元素乘法和加法构成，因此为梯度跨时间步传播提供了更顺畅的路径。
@@ -66,7 +69,9 @@ $ h_t = o_t * tanh\(c_t\) $
 
 #html.hr()
 = 代码与工作流解析
-以下是标准 LSTM 单元的伪代码实现，展示了参数是如何定义以及前向传播是如何完成的。
+以下是标准 LSTM 单元的伪代码实现，展示了参数是如何定义以及前向传播是如何完成的。代码没有为四个门各建一个线性层，而是用两次 matmul 一次算出全部 pre-activation，再切成四块：
+
+#fig.fig-lstm-gates()
 
 ```python
 import torch

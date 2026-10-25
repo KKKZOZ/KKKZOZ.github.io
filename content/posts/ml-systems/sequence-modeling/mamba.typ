@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
+#import "/utils/figures/sequence-modeling.typ" as fig
 
 #tola-meta((
   title: "[Sequence Modeling 03] Mamba",
@@ -68,6 +69,8 @@ $ h\(t + Delta\)= exp\(Delta A\)h\(t\)+ (integral_0^Delta exp \( tau A \) d tau)
 
 $ h_t = macron(A) h_(t - 1) + macron(B) x_t $
 
+#fig.fig-ssm-zoh()
+
 #callout(kind: "info", title: "TIP / \\Delta 的工程意义")[
 在 Mamba 中，$Delta$ 是随输入动态生成的。如果当前 Token 是无用信息（比如标点），网络会输出极小的 $Delta$，使得 $macron(A) = exp\(approx 0\)approx I$（单位矩阵），此时 $h_t approx h_(t - 1)$，系统直接略过当前输入，维持原有记忆。
 
@@ -113,6 +116,8 @@ $ C_t = upright("Linear")\(x_t\) $
 - #strong[$Delta_t$（步长）]：类似于遗忘门。如果当前输入是无用信息，网络可以输出一个很小的 $Delta_t$，使得 $macron(A) approx I$（保留原状态），从而忽略当前输入；如果遇到关键信息，则输出较大的 $Delta_t$ 以更新状态。
 - #strong[$B_t$ 和 $C_t$]：动态决定如何将当前输入写入隐藏状态，以及如何从隐藏状态中读取输出。
 
+#fig.fig-mamba-selective()
+
 通过这种方式，Mamba 具备了基于内容进行推理（Content-based Reasoning）的能力，能够像 LSTM 一样过滤信息，解决了传统 SSM 难以处理离散语言信息（如精准复制、忽略填充词）的问题。
 
 = 工程魔法：硬件感知与并行扫描 (Parallel Scan)
@@ -127,6 +132,8 @@ Mamba 的工程神来之笔在于：#strong[利用并行前缀和（Parallel Ass
 + #strong[SRAM 驻留：] 避免了在极其缓慢的 GPU HBM（高带宽内存）和计算单元之间来回搬运庞大的隐藏状态。
 + 将离散化（计算 $macron(A)_t\,macron(B)_t$）和并行扫描融合（Kernel Fusion）在 GPU 极速但容量极小的 SRAM 中一气呵成完成。
 + 最终只将输出 $y_t$ 写回 HBM。
+
+#fig.fig-mamba-hw()
 
 这种设计使得 Mamba 在训练阶段无需显式的 `for` 循环，速度与 Transformer 相当；而在推理阶段，又可以切换回标准的 RNN 步进模式，无需缓存历史 token。
 
@@ -150,6 +157,8 @@ $Y =\[x_0\,x_0 + x_1\,x_0 + x_1 + x_2\,dots.h\,x_0 + dots.h + x_7\]$
   线程 1 算 $\(x_0 + x_1\)+\(x_2 + x_3\)$，线程 2 算 $\(x_4 + x_5\)+\(x_6 + x_7\)$。
 + #strong[第三层：]
   线程 1 算所有结果的总和。
+
+#fig.fig-prefix-scan()
 
 通过这种树状的合并，长度为 $N$ 的序列，原本需要 $N$ 步，现在只需要 $log_2\(N\)$ 步。这就是并行化的本质：#strong[用多余的计算单元（GPU 核心）换取时间复杂度的指数级下降]。
 
@@ -184,7 +193,9 @@ $ \(S_1 times.o S_2\)times.o S_3 = S_1 times.o\(S_2 times.o S_3\) $
 既然算子 $times.o$ 满足结合律，我们就可以完全抛弃 $O\(N\)$ 的串行 `for` 循环，直接把包含矩阵乘法和加法的算子 $times.o$ 扔进刚才的二叉树并行前缀和算法中。GPU 的各个线程块会并发地计算不同时间段的等效转移矩阵 $\(A_(i arrow.r j)\,B_(i arrow.r j)\)$，最终在 $O\(log N\)$ 的时间步内解算出所有 $t$ 时刻的隐藏状态 $h_t$。
 
 = 代码与工作流解析
-以下是 Mamba 核心处理模块的伪代码，展示了参数动态生成和离散化的过程（省略了底层的定制化 CUDA Scan 实现，用概念上的接口代替）。
+以下是 Mamba 核心处理模块的伪代码，展示了参数动态生成和离散化的过程（省略了底层的定制化 CUDA Scan 实现，用概念上的接口代替）。先看整体数据流：
+
+#fig.fig-mamba-block()
 
 ```python
 import torch
@@ -303,6 +314,8 @@ class MambaBlock(nn.Module):
 == 核心差异一：非线性激活函数的位置（纯线性 vs 非线性递推）
 这是两者在架构上最底层的分歧。
 
+#fig.fig-mamba-nonlinear()
+
 - #strong[RNN/LSTM：非线性发生在“循环内部”（Inside the Recurrence）]
 
 在 RNN 中，每一个时间步的递推公式是：$h_t = tanh\(W_(h h) h_(t - 1) + W_(x h) x_t\)$。
@@ -324,6 +337,8 @@ Mamba 使用非线性的全连接层（Linear + Softplus/SiLU）根据输入 $x_
 ]
 == 核心差异二：隐藏状态的维度映射（单通道压缩 vs 多通道展开）
 这决定了模型的“记忆容量”和信息瓶颈。
+
+#fig.fig-mamba-state()
 
 - #strong[RNN/LSTM：低维度的全局状态]
 

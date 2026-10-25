@@ -1,10 +1,10 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
+#import "/utils/figures/probability.typ" as fig
 
 #tola-meta((
   title: "Probability and Statistics",
   date: "2026-03-18",
-  summary: "Notes on L1 and L2 norms, KL divergence, and their applications in machine learning.",
   tags: ("Math",),
   weight: 10,
 ))
@@ -27,10 +27,14 @@ Calculation: For the same weight vector $w$, the $L_2$ norm is defined as:
 
 $ parallel w parallel_2 = sqrt(sum_(i = 1)^n w_i^2) $
 
+#fig.fig-l1-l2()
+
 #callout(kind: "info", title: "INFO / Related to LLM")[
 Pruning Context: Because the $L_2$ norm squares each parameter before summing them, #strong[it disproportionately heavily weights larger parameters]. A structural group with just a few very large weights will have a high $L_2$ norm, even if the rest of the weights are near zero. Conversely, a group with consistently small weights will have a low $L_2$ norm and will be targeted for pruning.
 
 ]
+#fig.fig-pruning-groups()
+
 = KL 散度
 KL Divergence calculates the expected excess surprise from using an approximation distribution instead of the true distribution.
 
@@ -70,6 +74,8 @@ While norms are typically used to penalize or prune network weights, KL Divergen
 - Element 3: $0.2 times ln (0.2 / 0.2) = 0.2 times ln\(1\)= 0.2 times 0 = 0$
 
 - Element 4: $0.1 times ln (0.1 / 0.1) = 0.1 times ln\(1\)= 0.1 times 0 = 0$
+
+#fig.fig-kl-example()
 
 Finally, we sum these individual components together:
 

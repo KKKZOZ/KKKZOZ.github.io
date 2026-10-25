@@ -44,7 +44,7 @@ My reading notes.
 - #link("/posts/papers/llm/smoothquant-accurate-and-efficient-post-training-quantization-for-large-language-models/")[SmoothQuant Accurate and Efficient Post-Training Quantization for Large Language Models]
 - #link("/posts/papers/llm/duoattention-efficient-long-context-llm-inference-with-retrieval-and-streaming-heads/")[DuoAttention Efficient Long-Context LLM Inference with Retrieval and Streaming Heads]
 - #link("/posts/papers/llm/efficient-streaming-language-models-with-attention-sinks/")[Efficient Streaming Language Models with Attention Sinks]
-- #link("/posts/papers/llm/ktransformers-unleashing-the-full-potential-of-cpu-gpu-hybrid-inference-for-moe-models/")[KTransformers Unleashing the Full Potential of CPU GPU Hybrid Inference for MoE Models]
+- #link("/posts/papers/llm/ktransformers-deep-dive/")[KTransformers: CPU/GPU Hybrid Inference for MoE Models]
 
 == 1104-1110
 - #link("/posts/papers/llm/eagle-speculative-sampling-requires-rethinking-feature-uncertainty/")[EAGLE Speculative Sampling Requires Rethinking Feature Uncertainty]

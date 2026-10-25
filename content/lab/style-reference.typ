@@ -49,18 +49,18 @@ def union(masks):
 = Links Between Posts
 
 Plain Typst links work with any site path:
-#link("/posts/ml-systems/mask-alignment/")[the mask example]. To link a post by its title,
-use `xref` with a permalink or the last segment of one: #xref("mask-alignment"). Override the
-text with `body`: #xref("mask-alignment", body: [this figure]).
+#link("/posts/ml-systems/ml-compilers/torch-compile-walkthrough/")[the torch.compile walkthrough]. To link a post by its title,
+use `xref` with a permalink or the last segment of one: #xref("torch-compile-walkthrough"). Override the
+text with `body`: #xref("torch-compile-walkthrough", body: [this walkthrough]).
 Tola checks these links at build time, and `xref` fails loudly if the post is missing.
 
 ```typst
 #import "/utils/ui.typ": xref, related
-#xref("mask-alignment")
-#related("mask-alignment", "/posts/ml-systems/ml-compilers/overview/")
+#xref("torch-compile-walkthrough")
+#related("torch-compile-walkthrough", "/posts/ml-systems/ml-compilers/overview/")
 ```
 
-#related("mask-alignment", "overview")
+#related("torch-compile-walkthrough", "overview")
 
 = Images
 

@@ -1,4 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
+#import "/utils/figures/sequence-modeling.typ" as fig
 
 #tola-meta((
   title: "[Sequence Modeling 04] Linear Attention",
@@ -46,6 +47,8 @@ $ o_t = S_t q_t $
 - 不需要保存所有历史 token
 - 只需要维护一个不断更新的状态 $S_t$，当前输出就能由 $S_t$ 和当前 query 算出来。
 
+#fig.fig-la-memory()
+
 所以它看起来更像一个 #strong[矩阵状态的 RNN]。作者在 DeltaNet 相关解释里也明确强调：linear attention 本质上就是带矩阵状态的 linear RNN。
 
 你可以把它和 Transformer 对比成：
@@ -88,6 +91,8 @@ $ upright("pred")_t = S_(t - 1) k_t $
 $ Delta_t = v_t - upright("pred")_t $
 
 $ S_t = S_(t - 1) + Delta_t k_t^top $
+
+#fig.fig-delta-rule()
 
 如果 Transformer 的直觉是：
 
@@ -193,34 +198,7 @@ $ S_t = tilde(S)_(t - 1) + eta_t dot.op Delta_t k_t^top $
 
 变化的是历史的存储方式。Transformer 保留每个历史 token 的 key/value，读取时才计算当前 query 与所有 key 的匹配程度；Gated DeltaNet 则在 token 到来时就把 key/value 写入固定大小的状态矩阵，之后直接用 query 读取该矩阵。
 
-- #strong[Transformer Layer]
-
-```python
-x_t
- ├─> q_t
- ├─> k_t
- └─> v_t
-
-scores_t = q_t @ K_past^T
-weights_t = softmax(scores_t)
-o_t = weights_t @ V_past
-```
-
-- #strong[Gated DeltaNet Layer]
-
-```python
-x_t
- ├─> q_t
- ├─> k_t
- ├─> v_t
- └─> gate/update params
-
-state_{t-1} --(gate)--> gated_state
-pred_t = gated_state @ k_t       # 写入前校验
-delta_t = v_t - pred_t
-state_t = gated_state + write(delta_t, k_t)
-o_t = state_t @ q_t              # 最终读取
-```
+#fig.fig-la-layers()
 
 这里的两次矩阵-向量乘法用途不同。`gated_state @ k_t` 不是该层的最终输出，它是在写入新内容前检查：“状态对当前 key 已经会返回什么？”然后只写入预测值与目标 `$v_t$` 的差。`state_t @ q_t` 才是为当前 token 生成输出的读取操作。
 
@@ -237,6 +215,8 @@ $ o_t = S_t q_t = sum_(i lt.eq t) v_i\(k_i^top q_t\) $
 
 - Transformer 先为当前 `$q_t$` 显式生成一行 token-to-token 权重，再对 `$V$` 加权求和
 - linear attention 先把历史压缩为 `$S_t$`，读取时只计算 `$S_t q_t$`
+
+#fig.fig-la-order()
 
 因此，基础 linear attention 中的相似度系数是隐含在矩阵乘法里的，并不会形成一个可单独查看的 attention map。它也不等价于 Transformer 的 `softmax` attention：上式中的 `$k_i^\top q_t$` 没有经过 `softmax` 归一化，实际模型还会对 Q/K 做特定的特征变换或归一化。
 

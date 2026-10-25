@@ -517,6 +517,10 @@ html { scroll-behavior: smooth; }
 .post-nav a:hover .post-nav-title { color: var(--orange); }
 .post-nav .next { text-align: right; grid-column: 2; }
 
+/* giscus comments under the post (comments.typ); the frame sizes itself. */
+.comments { margin-top: 48px; border-top: .5px solid var(--rule); padding-top: 16px; }
+.comments .giscus-frame { margin-top: 16px; }
+
 /* Series box under the doc control block (post.typ): an ink head bar like
    the callouts, older / newer parts, and the full part list folded away. */
 .series { margin-top: 20px; border: .5px solid var(--rule); }
