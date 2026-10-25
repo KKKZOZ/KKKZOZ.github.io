@@ -52,6 +52,7 @@ with `tola-meta` and holds only its text:
   summary: "One line for the post list and the Open Graph card.",
   tags: ("systems", "notes"),
   series: "Theme Tour",   // optional
+  weight: 1,                 // optional; home page order, default 100
   draft: false,              // optional; drafts are not published
 ))
 

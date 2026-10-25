@@ -14,7 +14,9 @@
 #let home(posts) = page("index.html", none, posts: posts, {
   layout.hero(subtitle: site.description, meta: str(posts.len()) + " posts")
   html.div(class: "section-label", layout.label(class: "accent")[Recent posts])
-  layout.post-list(posts.slice(0, calc.min(posts.len(), shown)))
+  // By `weight`; the sort is stable, so equal weights stay newest first.
+  // Other listings and the feed keep date order.
+  layout.post-list(posts.sorted(key: p => p.weight).slice(0, calc.min(posts.len(), shown)))
   if posts.len() > shown {
     html.div(class: "more-link", html.a(class: "label", href: output-url("archive/index.html"))[All #posts.len() posts →])
   }

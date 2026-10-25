@@ -181,6 +181,7 @@ Every `.typ` file under `content/posts/` is a post, published at the URL its pat
 | `updated` | `"YYYY-MM-DD"` | Date of the last revision: shown under the title, and used by the sitemap and feed. |
 | `summary` | string | Post list, search results, Open Graph. |
 | `tags` | string or array | Shown as chips; collected on `/tags/`. |
+| `weight` | integer | Home page order: lower comes first, posts with equal weight newest first. The default is 100 (0, which Hugo treats as unset, counts as 100 too), so `weight: 1` pins a post to the top and `weight: 200` sinks it. Other listings stay in date order. |
 | `series` | string | Posts with the same name form a series, ordered by date. |
 | `draft` | bool | Drafts are not published; links to them render as plain text. |
 

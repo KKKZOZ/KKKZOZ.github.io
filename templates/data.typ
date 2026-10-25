@@ -16,8 +16,10 @@
   // `series: "Name"` or `("Name",)`, as Hugo front matter writes it;
   // only the first entry counts.
   series: optional(nullable(one-or-many(str)), default: none),
-  // Hugo-style ordering weight, accepted for imported posts; nothing reads it yet.
-  weight: optional(nullable(int), default: none),
+  // Home page order, as Hugo's `weight`: lower first, ties newest first.
+  // Posts without one, or with Hugo's "unset" 0, weigh 100, so `weight: 1`
+  // pins a post to the top and `weight: 200` sinks it.
+  weight: optional(int, default: 100),
   draft: optional(bool, default: false),
 ))
 
@@ -42,7 +44,7 @@
 }
 
 /// Dated pages under posts/, newest first, as flat records the templates
-/// read: title, date, updated, summary, tags, series, permalink, output.
+/// read: title, date, updated, summary, tags, series, weight, permalink, output.
 #let post-records(pages) = {
   pages
     .filter(page => page.source.id.starts-with("posts/") and page.source.meta.date != none)
@@ -55,6 +57,7 @@
         summary: m.summary,
         tags: m.tags,
         series: if m.series != none { m.series.at(0, default: none) },
+        weight: if m.weight == 0 { 100 } else { m.weight },
         permalink: output-url(page.output),
         output: page.output,
       )
