@@ -186,7 +186,9 @@
     html.nav(class: "site-nav", context {
       let here = current-document().output
       for (name, output) in nav-items {
-        html.a(class: cls("label", if here == output { "is-active" }), href: output-url(output), name)
+        // Home stays lit on the home page's following pages (page/2/, ...).
+        let active = here == output or (output == "index.html" and here.starts-with("page/"))
+        html.a(class: cls("label", if active { "is-active" }), href: output-url(output), name)
       }
       // Day / night switch, wired up by assets/scripts/theme.js.
       html.elem("button", attrs: (type: "button", class: "theme-toggle", aria-label: "Dark theme", aria-pressed: "false"))
@@ -242,9 +244,9 @@
   })
 }
 
-/// Numbered post listing, newest first.
-#let post-list(posts) = html.ol(class: "entry-list", for (i, p) in posts.enumerate() {
-  let n = posts.len() - i
+/// Numbered post listing, counting down from `start` (default: the count).
+#let post-list(posts, start: auto) = html.ol(class: "entry-list", for (i, p) in posts.enumerate() {
+  let n = if start == auto { posts.len() } else { start } - i
   let code = "/" + if n < 10 { "0" } + str(n)
   html.li(class: "entry-item", html.a(href: p.permalink, {
     label(code, class: "entry-code")
