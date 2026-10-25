@@ -79,9 +79,9 @@ Write posts in Typst. Figures, diagrams and math render as inline SVG in the the
   </tr>
 </table>
 
-The theme also follows the system's day / night setting, collects footnotes
-as endnotes, adds copy buttons to code blocks and headings, and fails the
-build on broken links, images and section anchors.
+The theme also follows the system's day / night setting, collects footnotes as endnotes, adds copy buttons to code blocks and headings, and fails the build on broken links, images and section anchors.
+
+Once the site has a public address (`origin`), the build also writes an RSS feed (`/feed.xml`) with the full text of the newest posts, and a `/sitemap.xml` for search engines. Every page announces the feed to feed readers, and the footer links to it. Without an address, as under `tola dev`, neither is written; `tola dev --origin http://127.0.0.1:5277` previews them.
 
 ## Screenshots
 
@@ -110,8 +110,7 @@ build on broken links, images and section anchors.
 
 ## Quick start
 
-You need [Tola](https://github.com/tola-rs/tola-ssg) 0.8 or newer and
-Node.js (for the search index).
+You need [Tola](https://github.com/tola-rs/tola-ssg) 0.8 or newer and Node.js (for the search index).
 
 ```sh
 # 1. Get the theme: click "Use this template" on GitHub, or
@@ -126,16 +125,13 @@ npm install
 tola dev
 ```
 
-Open <http://127.0.0.1:5277>. `tola dev` rebuilds on save; `tola build` writes
-the finished site, search index included, to `public/`.
+Open <http://127.0.0.1:5277>. `tola dev` rebuilds on save; `tola build` writes the finished site, search index included, to `public/`.
 
 Then make it yours:
 
-1. Set your title, name, description and language under `[site]` in
-   `tola.toml`.
+1. Set your title, name, description and language under `[site]` in `tola.toml`.
 2. Set the document-number prefix in `templates/config.typ`.
-3. Replace the example posts in `content/posts/` and edit
-   `content/about.typ`.
+3. Replace the example posts in `content/posts/` and edit `content/about.typ`.
 
 ## Configuration
 
@@ -149,16 +145,15 @@ Then make it yours:
 | Header links | `templates/layout.typ` → `nav-items` |
 | Posts on the home page | `templates/pages.typ` → `shown` |
 | Heading levels in the table of contents | `templates/post.typ` → `toc-depth` |
+| Posts in the RSS feed; full text or summaries | `templates/feeds.typ` → `feed-size`, `full-text` |
 | Colours | tokens at the top of `assets/styles/site.css`, mirrored by `palette` in `templates/base.typ` |
 | Search language | `index` script in `package.json` (see below) |
 
-Search detects the language from `[site] language`. For a site written mostly
-in Chinese, add `--force-language zh` to the `index` script.
+Search detects the language from `[site] language`. For a site written mostly in Chinese, add `--force-language zh` to the `index` script.
 
 ## Writing posts
 
-Every `.typ` file under `content/posts/` is a post, published at the URL its
-path suggests: `content/posts/notes/cache.typ` → `/posts/notes/cache/`.
+Every `.typ` file under `content/posts/` is a post, published at the URL its path suggests: `content/posts/notes/cache.typ` → `/posts/notes/cache/`.
 
 ```typst
 #import "@tola/source:0.0.0": tola-meta
@@ -186,8 +181,7 @@ path suggests: `content/posts/notes/cache.typ` → `/posts/notes/cache/`.
 | `series` | string | Posts with the same name form a series, ordered by date. |
 | `draft` | bool | Drafts are not published; links to them render as plain text. |
 
-Files under `content/lab/` use the post layout but stay out of the post list.
-Open `/lab/style-reference/` for every element the theme styles.
+Files under `content/lab/` use the post layout but stay out of the post list. Open `/lab/style-reference/` for every element the theme styles.
 
 ## Components
 
@@ -209,30 +203,19 @@ Open `/lab/style-reference/` for every element the theme styles.
 See #xref("cetz-figures") for a full CeTZ example.
 ```
 
-The example posts show each module in use: `content/posts/theme-tour/`
-for callouts, footnotes, flows and timelines, `content/posts/figure-kit.typ`
-for every helper in `utils/figure.typ` with its output and signature, and
-`content/posts/cetz-figures.typ` for complete CeTZ figures built with them.
+The example posts show each module in use: `content/posts/theme-tour/` for callouts, footnotes, flows and timelines, `content/posts/figure-kit.typ` for every helper in `utils/figure.typ` with its output and signature, and `content/posts/cetz-figures.typ` for complete CeTZ figures built with them.
 
 ## Deployment
 
 `tola build` writes plain static files to `public/`, so any static host works.
 
-For GitHub Pages, the repository ships `.github/workflows/deploy.yml`, which
-publishes the live demo. In your copy:
+For GitHub Pages, the repository ships `.github/workflows/deploy.yml`, which publishes the live demo. In your copy:
 
 1. Set **Settings → Pages → Source** to **GitHub Actions**.
-2. Delete the `if:` line in `deploy.yml`; it keeps template copies from
-   deploying before they opt in.
+2. Delete the `if:` line in `deploy.yml`; it keeps template copies from deploying before they opt in.
 3. Push to `main`.
 
-The workflow asks GitHub for the site's address and passes it to
-`tola build`, so the same file works for a user site
-(`https://<user>.github.io/`) and a project site
-(`https://<user>.github.io/<repo>/`). A project site is served under
-`/<repo>/` and leaves your user site untouched. Links in your posts that start
-with `/` need that prefix too; relative links and `xref` work anywhere, and
-the build points out any link it misses.
+The workflow asks GitHub for the site's address and passes it to `tola build`, so the same file works for a user site (`https://<user>.github.io/`) and a project site (`https://<user>.github.io/<repo>/`). A project site is served under `/<repo>/` and leaves your user site untouched. Links in your posts that start with `/` need that prefix too; relative links and `xref` work anywhere, and the build points out any link it misses.
 
 ## Project structure
 
@@ -240,7 +223,8 @@ the build points out any link it misses.
 ├── site.typ              site program: emits every page
 ├── tola.toml             site settings
 ├── templates/            layouts, header and footer, listings
-│   └── config.typ        document-number prefix and mission code
+│   ├── config.typ        document-number prefix and mission code
+│   └── feeds.typ         RSS feed and sitemap
 ├── utils/                components for posts (see above)
 ├── assets/
 │   ├── styles/site.css   all styles; colour tokens at the top
@@ -255,21 +239,12 @@ the build points out any link it misses.
 
 ## Fonts
 
-Body text is IBM Plex Mono and headings are Rajdhani, both self-hosted.
-Chinese, Japanese and Korean text falls back to Sarasa Gothic or the system
-font. Figures drawn by Typst use the fonts installed on the build machine; a
-build without them still succeeds, with fallback fonts in the figures.
+Body text is IBM Plex Mono and headings are Rajdhani, both self-hosted. Chinese, Japanese and Korean text falls back to Sarasa Gothic or the system font. Figures drawn by Typst use the fonts installed on the build machine; a build without them still succeeds, with fallback fonts in the figures.
 
 ## Acknowledgements
 
-Built on [Tola](https://github.com/tola-rs/tola-ssg) and
-[Typst](https://typst.app). Figures use [CeTZ](https://github.com/cetz-package/cetz);
-search uses [Pagefind](https://pagefind.app). Fonts:
-[IBM Plex Mono](https://github.com/IBM/plex) and
-[Rajdhani](https://github.com/itfoundry/rajdhani).
+Built on [Tola](https://github.com/tola-rs/tola-ssg) and [Typst](https://typst.app). Figures use [CeTZ](https://github.com/cetz-package/cetz); search uses [Pagefind](https://pagefind.app). Fonts: [IBM Plex Mono](https://github.com/IBM/plex) and [Rajdhani](https://github.com/itfoundry/rajdhani).
 
 ## License
 
-The theme is released under the [MIT License](LICENSE). The bundled fonts are
-under the SIL Open Font License 1.1; their license texts are in
-`assets/webfonts/`.
+The theme is released under the [MIT License](LICENSE). The bundled fonts are under the SIL Open Font License 1.1; their license texts are in `assets/webfonts/`.

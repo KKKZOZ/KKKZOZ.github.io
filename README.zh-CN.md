@@ -81,6 +81,8 @@
 
 此外，主题会跟随系统切换日夜配色，把脚注汇总为尾注，给代码块和标题加上复制按钮，并在链接、图片或章节锚点失效时让构建报错。
 
+设置了站点公网地址（`origin`）后，构建还会生成 RSS 订阅源（`/feed.xml`，包含最新文章的全文）和供搜索引擎使用的 `/sitemap.xml`。每个页面都会向阅读器声明订阅源，页脚也有 RSS 链接。没有公网地址时（例如 `tola dev`）两者都不生成；可以用 `tola dev --origin http://127.0.0.1:5277` 预览。
+
 ## 截图
 
 <table>
@@ -143,6 +145,7 @@ tola dev
 | 顶部导航链接 | `templates/layout.typ` → `nav-items` |
 | 首页显示的文章数 | `templates/pages.typ` → `shown` |
 | 目录收录的标题层级 | `templates/post.typ` → `toc-depth` |
+| RSS 收录的文章数；全文还是摘要 | `templates/feeds.typ` → `feed-size`、`full-text` |
 | 配色 | `assets/styles/site.css` 开头的颜色变量，`templates/base.typ` 里的 `palette` 与之对应 |
 | 搜索语言 | `package.json` 里的 `index` 脚本（见下文） |
 
@@ -220,7 +223,8 @@ tola dev
 ├── site.typ              站点程序：生成所有页面
 ├── tola.toml             站点配置
 ├── templates/            页面布局、页眉页脚、列表页
-│   └── config.typ        文档编号前缀与任务代号
+│   ├── config.typ        文档编号前缀与任务代号
+│   └── feeds.typ         RSS 订阅源与 sitemap
 ├── utils/                文章里用的组件（见上文）
 ├── assets/
 │   ├── styles/site.css   全部样式；颜色变量在文件开头

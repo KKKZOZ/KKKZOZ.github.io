@@ -211,8 +211,9 @@
       html.div(class: "post-body", {
         toc()
         // Only the text is indexed for search (Pagefind); title, date and doc
-        // number are tagged as result metadata where they are shown above.
-        html.elem("div", attrs: (class: "prose", data-pagefind-body: ""), { body; endnotes() })
+        // number are tagged as result metadata where they are shown above. The
+        // id selects the text for the RSS feed (feeds.typ).
+        html.elem("div", attrs: (class: "prose", id: "post-content", data-pagefind-body: ""), { body; endnotes() })
       })
       post-nav(posts, page.output)
     }))

@@ -3,6 +3,7 @@
 
 #import "/templates/base.typ": palette
 #import "/templates/config.typ": mission
+#import "/templates/feeds.typ": feed-output, has-feed
 #import "/templates/util.typ": cls
 #import "@tola/address:0.0.0": asset-url, output-url
 #import "@tola/document:0.0.0": current-document
@@ -130,6 +131,10 @@
   html.link(rel: "icon", type: "image/svg+xml", href: asset-url("/assets/favicon.svg"))
   html.link(rel: "stylesheet", href: asset-url("/assets/styles/site.css"))
   for name in scripts { html.script("", src: asset-url("/assets/scripts/" + name), defer: true) }
+  // Lets feed readers find the feed from any page.
+  if has-feed {
+    html.link(rel: "alternate", type: "application/rss+xml", title: site.title, href: output-url(feed-output))
+  }
   extra
 })
 
@@ -163,7 +168,10 @@
   html.div(class: "footer-rule", role: "presentation", spans(4))
   html.div(class: "footer-row", {
     label[© #author]
-    label[Typst / Tola]
+    html.div(class: "footer-links", {
+      if has-feed { html.a(class: "label", href: output-url(feed-output), "RSS") }
+      label[Typst / Tola]
+    })
   })
 })
 
