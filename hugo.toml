@@ -157,3 +157,8 @@ disableInlineCSS = true
 
 [services.x]
 disableInlineCSS = true
+
+# Allow .html files in page bundles, used as diagram resources by the `diagram` shortcode.
+# Raw HTML in Markdown is already enabled via goldmark `unsafe`, so this adds no new exposure.
+[security]
+allowContent = ['! ^text/org$']

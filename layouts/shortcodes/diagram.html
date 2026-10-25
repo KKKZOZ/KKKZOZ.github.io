@@ -1,0 +1,23 @@
+{{/*
+    Shortcode to embed a hand-written HTML/SVG diagram.
+    Either load it from an .html file in the page bundle (preferred, keeps the Markdown readable):
+        {{< diagram src="figure.html" caption="Optional caption" />}}
+    or write it inline (the inner content is NOT parsed as Markdown, so blank lines and indentation are safe):
+        {{< diagram caption="Optional caption" >}}
+        <div>...</div>
+        {{< /diagram >}}
+*/}}
+{{ $html := "" }}
+{{ with .Get "src" }}
+    {{ with $.Page.Resources.Get . }}
+        {{ $html = .Content }}
+    {{ else }}
+        {{ errorf "diagram: resource %q not found in page bundle (%s)" . $.Position }}
+    {{ end }}
+{{ else }}
+    {{ $html = .Inner }}
+{{ end }}
+<figure class="diagram">
+{{ $html | safeHTML }}
+{{ with .Get "caption" }}<figcaption>{{ . | markdownify }}</figcaption>{{ end }}
+</figure>

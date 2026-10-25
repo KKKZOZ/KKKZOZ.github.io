@@ -634,3 +634,16 @@
   font-family: "Courier Prime", monospace;
 }
 */
+
+/* Hand-written HTML/SVG diagrams, see layouts/shortcodes/diagram.html */
+.post-content figure.diagram {
+  margin: 2em 0;
+  overflow-x: auto;
+}
+
+.post-content figure.diagram figcaption {
+  margin-top: 1em;
+  text-align: center;
+  color: var(--secondary);
+  font-size: 14px;
+}

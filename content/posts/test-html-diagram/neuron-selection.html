@@ -1,0 +1,159 @@
+<div class="nsel-fig">
+  <style>
+    .nsel-fig {
+      --nsel-keep: #2b6176;
+      --nsel-keep-fg: #fff;
+      --nsel-sel: #8a5a1a;
+      --nsel-sel-fg: #fff;
+      --nsel-omit: #f6e7cd;
+      --nsel-omit-fg: #9a8a72;
+      --nsel-omit-bd: #ecdcbf;
+      --nsel-drop: #f1f2f0;
+      --nsel-drop-fg: #8c918e;
+      --nsel-drop-bd: #dfe1de;
+      --nsel-cell: 26px;
+      --nsel-label: 62px;
+      container-type: inline-size;
+      font-family: "Maple Mono Web", ui-monospace, SFMono-Regular, Menlo, monospace;
+      color: var(--primary);
+      line-height: 1;
+    }
+
+    .dark .nsel-fig {
+      --nsel-keep: #3b7d96;
+      --nsel-sel: #a26b22;
+      --nsel-omit: #4a3f2e;
+      --nsel-omit-fg: #c4ad86;
+      --nsel-omit-bd: #5d4f39;
+      --nsel-drop: #2c2e32;
+      --nsel-drop-fg: #8d9095;
+      --nsel-drop-bd: #3c3f44;
+    }
+
+    .nsel-panels {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+
+    .nsel-title {
+      margin: 0 0 14px var(--nsel-label);
+      text-align: center;
+      font-size: 17px;
+      font-weight: 700;
+    }
+
+    .nsel-row {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 6px;
+    }
+
+    .nsel-row.union {
+      margin-top: 16px;
+    }
+
+    .nsel-row > .lbl {
+      flex: none;
+      width: calc(var(--nsel-label) - 4px);
+      padding-right: 8px;
+      box-sizing: border-box;
+      text-align: right;
+      font-size: 14px;
+      white-space: nowrap;
+    }
+
+    .nsel-row > :not(.lbl),
+    .nsel-legend i {
+      flex: none;
+      display: grid;
+      place-items: center;
+      width: var(--nsel-cell);
+      height: var(--nsel-cell);
+      box-sizing: border-box;
+      border: 1px solid transparent;
+      border-radius: 2px;
+      font-size: 12px;
+      font-style: normal;
+    }
+
+    .nsel-fig .k { background: var(--nsel-keep); color: var(--nsel-keep-fg); }
+    .nsel-fig .s { background: var(--nsel-sel); color: var(--nsel-sel-fg); }
+    .nsel-fig .o { background: var(--nsel-omit); color: var(--nsel-omit-fg); border-color: var(--nsel-omit-bd); }
+    .nsel-fig .d { background: var(--nsel-drop); color: var(--nsel-drop-fg); border-color: var(--nsel-drop-bd); }
+
+    .nsel-count {
+      margin: 18px 0 0 var(--nsel-label);
+      text-align: center;
+      font-size: 15px;
+    }
+
+    .nsel-arrow {
+      flex: none;
+      width: 36px;
+      color: var(--primary);
+    }
+
+    .nsel-legend {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px 28px;
+      margin-top: 28px;
+      font-size: 13px;
+    }
+
+    .nsel-legend span {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nsel-legend i {
+      --nsel-cell: 16px;
+    }
+
+    @container (max-width: 680px) {
+      .nsel-panels {
+        flex-direction: column;
+      }
+
+      .nsel-arrow {
+        transform: rotate(90deg);
+        margin-left: var(--nsel-label);
+      }
+    }
+  </style>
+
+  <div class="nsel-panels">
+    <div class="nsel-panel">
+      <div class="nsel-title">Independent</div>
+      <div class="nsel-row"><span class="lbl">Token 1</span><span class="k">1</span><span class="d">2</span><span class="s">3</span><span class="o">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-row"><span class="lbl">Token 2</span><span class="d">1</span><span class="k">2</span><span class="o">3</span><span class="s">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-row union"><span class="lbl">Union</span><span class="k">1</span><span class="k">2</span><span class="s">3</span><span class="s">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-count">4 distinct neurons</div>
+    </div>
+
+    <svg class="nsel-arrow" viewBox="0 0 36 12" aria-hidden="true">
+      <line x1="0" y1="6" x2="33" y2="6" stroke="currentColor" stroke-width="1.2" />
+      <path d="M28 2 L34 6 L28 10" fill="none" stroke="currentColor" stroke-width="1.2" />
+    </svg>
+
+    <div class="nsel-panel">
+      <div class="nsel-title">Aligned</div>
+      <div class="nsel-row"><span class="lbl">Token 1</span><span class="k">1</span><span class="d">2</span><span class="s">3</span><span class="o">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-row"><span class="lbl">Token 2</span><span class="d">1</span><span class="k">2</span><span class="s">3</span><span class="o">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-row union"><span class="lbl">Union</span><span class="k">1</span><span class="k">2</span><span class="s">3</span><span class="o">4</span><span class="d">5</span><span class="d">6</span><span class="d">7</span><span class="d">8</span></div>
+      <div class="nsel-count">3 distinct neurons</div>
+    </div>
+  </div>
+
+  <div class="nsel-legend">
+    <span><i class="k"></i>Must keep</span>
+    <span><i class="s"></i>Flexible: selected</span>
+    <span><i class="o"></i>Flexible: omitted</span>
+    <span><i class="d"></i>Must drop</span>
+  </div>
+</div>
