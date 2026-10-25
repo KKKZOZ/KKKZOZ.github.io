@@ -29,12 +29,13 @@ env:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    env:
-      FONT_DIR: ${{ runner.temp }}/fonts
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
+      # The runner context is not available in job-level env.
+      - run: echo "FONT_DIR=$RUNNER_TEMP/fonts" >> "$GITHUB_ENV"
+
       - uses: actions/checkout@v5
 
       - uses: actions/setup-node@v5
