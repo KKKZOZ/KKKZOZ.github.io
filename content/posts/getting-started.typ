@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Getting Started with NASApunk",
   date: "2026-10-18",
+  updated: "2026-10-25",
   summary: "Install the theme, set your site identity, and write the first post.",
   tags: ("guide", "theme"),
 ))
@@ -47,6 +48,7 @@ with `tola-meta` and holds only its text:
 #tola-meta((
   title: "Post title",
   date: "2026-10-18",
+  updated: "2026-10-25",     // optional; last revision
   summary: "One line for the post list and the Open Graph card.",
   tags: ("systems", "notes"),
   series: "Theme Tour",   // optional

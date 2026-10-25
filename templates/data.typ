@@ -9,6 +9,8 @@
 #let page-schema = schema((
   title: str,
   date: optional(nullable(date), default: none),
+  // Last substantial revision: shown on the post, and the sitemap's lastmod.
+  updated: optional(nullable(date), default: none),
   summary: optional(nullable(str), default: none),
   tags: optional(one-or-many(str), default: ()),
   // `series: "Name"` or `("Name",)`, as Hugo front matter writes it;
@@ -40,7 +42,7 @@
 }
 
 /// Dated pages under posts/, newest first, as flat records the templates
-/// read: title, date, summary, tags, series, permalink, output.
+/// read: title, date, updated, summary, tags, series, permalink, output.
 #let post-records(pages) = {
   pages
     .filter(page => page.source.id.starts-with("posts/") and page.source.meta.date != none)
@@ -49,6 +51,7 @@
       (
         title: m.title,
         date: m.date,
+        updated: m.updated,
         summary: m.summary,
         tags: m.tags,
         series: if m.series != none { m.series.at(0, default: none) },

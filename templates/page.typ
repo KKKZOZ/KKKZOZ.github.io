@@ -7,16 +7,16 @@
 #import "/templates/layout.typ" as layout
 
 /// Write `body` to `output` as a complete page. `title: none` is the home
-/// page; `head` is appended to the shared head entries; `posts` feeds
-/// `post-index` for helpers inside the body.
-#let html-document(output, title, body, head: none, posts: ()) = document(
+/// page; `description` and `article` go to the head (`layout.head`); `posts`
+/// feeds `post-index` for helpers inside the body.
+#let html-document(output, title, body, description: none, article: none, posts: ()) = document(
   output,
   format: "html",
   title: if title != none { title } else { site.title },
 )[
   #show: base
   #html.html(lang: site.language.tag)[
-    #layout.head(title, extra: head)
+    #layout.head(output, title, description: description, article: article)
     #html.body({
       post-index.update(posts)
       body

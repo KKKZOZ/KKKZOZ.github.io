@@ -2,9 +2,10 @@
 // Import: #import "/templates/layout.typ" as layout
 
 #import "/templates/base.typ": palette
-#import "/templates/config.typ": mission
+#import "/templates/config.typ": head-extra, mission, social-image, social-links
 #import "/templates/feeds.typ": feed-output, has-feed
-#import "/templates/util.typ": cls
+#import "/templates/util.typ": cls, social-tags
+#import "@tola/web:0.0.0": head-metadata
 #import "@tola/address:0.0.0": asset-url, output-url
 #import "@tola/document:0.0.0": current-document
 #import "@tola/site:0.0.0": site
@@ -83,16 +84,18 @@
 /// N empty spans for the CSS-drawn rules (footer / hint).
 #let spans(n) = for _ in range(n) { html.span() }
 
-/// Vector orbital mark, recoloured for a light page and
-/// rendered as inline SVG.
-#let orbital-mark() = html.frame(box(width: 120pt, height: 120pt)[
+/// Vector orbital mark, drawn for a light page: inline SVG on the home page
+/// (`orbital-mark`), and on the social preview image (social.typ).
+#let orbital-glyph = box(width: 120pt, height: 120pt)[
   #place(center + horizon, circle(width: 106pt, stroke: .6pt + palette.rule))
   #place(center + horizon, circle(width: 73pt, stroke: .6pt + palette.rule))
   #place(center + horizon, circle(width: 36pt, stroke: 1pt + palette.ink))
   #place(center + horizon, line(length: 120pt, stroke: .5pt + palette.rule))
   #place(center + horizon, rotate(-35deg, line(length: 131pt, stroke: 2.5pt + palette.orange)))
   #place(top + right, dx: -16pt, dy: 19pt, circle(width: 8pt, fill: palette.ink, stroke: none))
-])
+]
+
+#let orbital-mark() = html.frame(orbital-glyph)
 
 /// The orbital mark after loss of signal (404): dashed rings, a trajectory
 /// that breaks off past the core, and a hollow craft.
@@ -115,19 +118,38 @@
 /// Scripts every page loads, deferred, in this order.
 #let scripts = ("theme.js", "reading.js", "copy.js", "footnotes.js")
 
-/// Shared <head> content. Typst only adds charset/viewport when it builds the
-/// <head> itself, so templates with a custom head must emit them. `extra` is
-/// appended, e.g. a post's Open Graph entries.
-#let head(title, extra: none) = html.head({
+/// The preview image social.typ draws for `social-image: auto`.
+#let social-output = "social.png"
+
+/// `social-image` as an `(url:, alt:)` dictionary with an absolute URL, or
+/// `none` when there is none or the site has no origin.
+#let share-image = if social-image == none or site.url == none {
+  none
+} else if social-image == auto {
+  let alt = if site.description != "" { site.title + ": " + site.description } else { site.title }
+  (url: output-url(social-output, origin: site.origin), alt: alt)
+} else {
+  let src = social-image.src
+  (url: if src.starts-with("/") { site.origin + asset-url(src) } else { src }, alt: social-image.alt)
+}
+
+/// Shared <head> content for the page written to `output`. Typst only adds
+/// charset/viewport when it builds the <head> itself, so templates with a
+/// custom head must emit them. `description` falls back to the site's;
+/// `article` is a post's `(published:, updated:, tags:)`.
+#let head(output, title, description: none, article: none) = html.head({
   // A blocking script keeps the first paint until the stylesheet is in,
   // avoiding a flash of unstyled content. It also settles the theme before
   // that paint: the reader's pick (theme.js), else the system setting.
   html.script("(()=>{let t;try{t=localStorage.getItem(\"theme\")}catch(e){}document.documentElement.dataset.theme=t===\"dark\"||t===\"light\"?t:matchMedia(\"(prefers-color-scheme: dark)\").matches?\"dark\":\"light\"})()")
-  html.meta(charset: "utf-8")
-  html.meta(name: "viewport", content: "width=device-width, initial-scale=1")
+  let description = if description != none { description } else { site.description }
+  head-metadata(
+    site,
+    title: if title != none { title + " | " + site.title } else { site.title },
+    description: description,
+  ).join()
   html.meta(name: "color-scheme", content: "light dark")
-  html.title(if title != none { title + " | " + site.title } else { site.title })
-  html.meta(name: "description", content: site.description)
+  if author != none { html.meta(name: "author", content: author) }
   html.link(rel: "icon", type: "image/svg+xml", href: asset-url("/assets/favicon.svg"))
   html.link(rel: "stylesheet", href: asset-url("/assets/styles/site.css"))
   for name in scripts { html.script("", src: asset-url("/assets/scripts/" + name), defer: true) }
@@ -135,7 +157,16 @@
   if has-feed {
     html.link(rel: "alternate", type: "application/rss+xml", title: site.title, href: output-url(feed-output))
   }
-  extra
+  // Link previews when the page is shared.
+  social-tags(
+    title: if title != none { title } else { site.title },
+    url: if site.url != none { output-url(output, origin: site.origin) },
+    description: description,
+    site-name: site.title,
+    image: share-image,
+    article: if article != none { article + (author: author) },
+  )
+  head-extra
 })
 
 // ============================================================================
@@ -169,6 +200,8 @@
   html.div(class: "footer-row", {
     label[© #author]
     html.div(class: "footer-links", {
+      // html.elem: the typed html.a rejects rel="me".
+      for (name, url) in social-links { html.elem("a", attrs: (class: "label", href: url, rel: "me"), name) }
       if has-feed { html.a(class: "label", href: output-url(feed-output), "RSS") }
       label[Typst / Tola]
     })
@@ -177,8 +210,10 @@
 
 /// Page skeleton shared by all templates.
 #let shell(body, main-class: "") = {
+  // The first Tab stop: past the header, straight to the page's text.
+  html.div(class: "skip", html.a(class: "skip-link", href: "#main", "Skip to content"))
   site-header()
-  html.main(class: cls("wrap", main-class), body)
+  html.main(id: "main", class: cls("wrap", main-class), body)
   site-footer()
 }
 

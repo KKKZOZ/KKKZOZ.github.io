@@ -79,10 +79,6 @@
   </tr>
 </table>
 
-此外，主题会跟随系统切换日夜配色，把脚注汇总为尾注，给代码块和标题加上复制按钮，并在链接、图片或章节锚点失效时让构建报错。
-
-设置了站点公网地址（`origin`）后，构建还会生成 RSS 订阅源（`/feed.xml`，包含最新文章的全文）和供搜索引擎使用的 `/sitemap.xml`。每个页面都会向阅读器声明订阅源，页脚也有 RSS 链接。没有公网地址时（例如 `tola dev`）两者都不生成；可以用 `tola dev --origin http://127.0.0.1:5277` 预览。
-
 ## 截图
 
 <table>
@@ -138,10 +134,13 @@ tola dev
 | 配置项 | 位置 |
 | --- | --- |
 | 标题、作者、简介、语言 | `tola.toml` → `[site]` |
-| 站点公网地址（RSS 和 sitemap 需要） | `tola.toml` → `origin` |
+| 站点公网地址（RSS、sitemap 和链接预览需要） | `tola.toml` → `origin` |
 | 部署在子路径下，例如 `/blog/` | `tola.toml` → `base-path` |
 | 文档编号前缀（`TN` → `TN-001`） | `templates/config.typ` → `doc-prefix` |
 | 站点标题旁的橙色代号 | `templates/config.typ` → `mission` |
+| 页脚链接（GitHub、邮箱、Mastodon 等） | `templates/config.typ` → `social-links` |
+| 分享链接时的预览图：自动绘制（`auto`）、自己的图片或不用图 | `templates/config.typ` → `social-image` |
+| 统计脚本等额外的 `<head>` 内容 | `templates/config.typ` → `head-extra` |
 | 顶部导航链接 | `templates/layout.typ` → `nav-items` |
 | 首页显示的文章数 | `templates/pages.typ` → `shown` |
 | 目录收录的标题层级 | `templates/post.typ` → `toc-depth` |
@@ -176,6 +175,7 @@ tola dev
 | --- | --- | --- |
 | `title` | 字符串 | 必填。 |
 | `date` | `"YYYY-MM-DD"` | 没有日期的文件照常发布，但不进文章列表。 |
+| `updated` | `"YYYY-MM-DD"` | 最后修订日期：显示在标题下方，并用于 sitemap 和 RSS。 |
 | `summary` | 字符串 | 用于文章列表、搜索结果和 Open Graph。 |
 | `tags` | 字符串或数组 | 显示为标签，并汇总到 `/tags/`。 |
 | `series` | 字符串 | 同名的文章组成一个系列，按日期排序。 |
@@ -223,8 +223,9 @@ tola dev
 ├── site.typ              站点程序：生成所有页面
 ├── tola.toml             站点配置
 ├── templates/            页面布局、页眉页脚、列表页
-│   ├── config.typ        文档编号前缀与任务代号
-│   └── feeds.typ         RSS 订阅源与 sitemap
+│   ├── config.typ        tola.toml 之外的站点设置
+│   ├── feeds.typ         RSS 订阅源、sitemap 与 robots.txt
+│   └── social.typ        分享链接的预览图
 ├── utils/                文章里用的组件（见上文）
 ├── assets/
 │   ├── styles/site.css   全部样式；颜色变量在文件开头
@@ -239,7 +240,7 @@ tola dev
 
 ## 字体
 
-正文使用 IBM Plex Mono，标题使用 Rajdhani，均为自托管。中日韩文字回退到更纱黑体或系统字体。Typst 绘制的插图使用构建机器上已安装的字体；缺少这些字体时构建仍会成功，只是插图里会换用备用字体。
+正文使用 IBM Plex Mono，标题使用 Rajdhani，均为自托管。中日韩文字回退到更纱黑体或系统字体。Typst 绘制的插图和预览图使用构建机器上已安装的字体；缺少这些字体时构建仍会成功，只是插图和预览图里会换用备用字体。
 
 ## 致谢
 

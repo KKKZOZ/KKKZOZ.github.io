@@ -13,6 +13,7 @@
 #import "/templates/page.typ": page
 #import "/templates/pages.typ" as pages
 #import "/templates/post.typ": post
+#import "/templates/social.typ": social-card
 
 #set text(
   lang: site.language.lang,
@@ -40,3 +41,4 @@
 #pages.not-found()
 
 #feeds(selected, posts)
+#social-card()

@@ -79,10 +79,6 @@ Write posts in Typst. Figures, diagrams and math render as inline SVG in the the
   </tr>
 </table>
 
-The theme also follows the system's day / night setting, collects footnotes as endnotes, adds copy buttons to code blocks and headings, and fails the build on broken links, images and section anchors.
-
-Once the site has a public address (`origin`), the build also writes an RSS feed (`/feed.xml`) with the full text of the newest posts, and a `/sitemap.xml` for search engines. Every page announces the feed to feed readers, and the footer links to it. Without an address, as under `tola dev`, neither is written; `tola dev --origin http://127.0.0.1:5277` previews them.
-
 ## Screenshots
 
 <table>
@@ -138,10 +134,13 @@ Then make it yours:
 | What | Where |
 | --- | --- |
 | Title, author, description, language | `tola.toml` → `[site]` |
-| Public address (for feeds and sitemaps) | `tola.toml` → `origin` |
+| Public address (for the RSS feed, sitemap and link previews) | `tola.toml` → `origin` |
 | Sub-path deployment, e.g. `/blog/` | `tola.toml` → `base-path` |
 | Document-number prefix (`TN` → `TN-001`) | `templates/config.typ` → `doc-prefix` |
 | Orange code next to the site title | `templates/config.typ` → `mission` |
+| Footer links (GitHub, email, Mastodon, ...) | `templates/config.typ` → `social-links` |
+| Preview image for shared links: drawn (`auto`), your own file, or none | `templates/config.typ` → `social-image` |
+| Analytics or other `<head>` additions | `templates/config.typ` → `head-extra` |
 | Header links | `templates/layout.typ` → `nav-items` |
 | Posts on the home page | `templates/pages.typ` → `shown` |
 | Heading levels in the table of contents | `templates/post.typ` → `toc-depth` |
@@ -176,6 +175,7 @@ Every `.typ` file under `content/posts/` is a post, published at the URL its pat
 | --- | --- | --- |
 | `title` | string | Required. |
 | `date` | `"YYYY-MM-DD"` | Without a date, the file is published but left out of the post list. |
+| `updated` | `"YYYY-MM-DD"` | Date of the last revision: shown under the title, and used by the sitemap and feed. |
 | `summary` | string | Post list, search results, Open Graph. |
 | `tags` | string or array | Shown as chips; collected on `/tags/`. |
 | `series` | string | Posts with the same name form a series, ordered by date. |
@@ -223,8 +223,9 @@ The workflow asks GitHub for the site's address and passes it to `tola build`, s
 ├── site.typ              site program: emits every page
 ├── tola.toml             site settings
 ├── templates/            layouts, header and footer, listings
-│   ├── config.typ        document-number prefix and mission code
-│   └── feeds.typ         RSS feed and sitemap
+│   ├── config.typ        settings tola.toml has no key for
+│   ├── feeds.typ         RSS feed, sitemap and robots.txt
+│   └── social.typ        preview image for shared links
 ├── utils/                components for posts (see above)
 ├── assets/
 │   ├── styles/site.css   all styles; colour tokens at the top
@@ -239,7 +240,7 @@ The workflow asks GitHub for the site's address and passes it to `tola build`, s
 
 ## Fonts
 
-Body text is IBM Plex Mono and headings are Rajdhani, both self-hosted. Chinese, Japanese and Korean text falls back to Sarasa Gothic or the system font. Figures drawn by Typst use the fonts installed on the build machine; a build without them still succeeds, with fallback fonts in the figures.
+Body text is IBM Plex Mono and headings are Rajdhani, both self-hosted. Chinese, Japanese and Korean text falls back to Sarasa Gothic or the system font. Figures and the preview image drawn by Typst use the fonts installed on the build machine; a build without them still succeeds, with fallback fonts in the figures and the image.
 
 ## Acknowledgements
 
