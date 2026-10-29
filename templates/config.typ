@@ -4,6 +4,11 @@
 /// Prefix of post document numbers: KKZ-TN-001, KKZ-TN-002, ...
 #let doc-prefix = "KKZ-TN"
 
+/// Width of the text column in CSS pixels, shared by the header, listings
+/// and post text. Wider posts float their table of contents beside the text
+/// only on windows with room for both (layout.typ `toc-float-at`).
+#let content-width = 760
+
 /// Optional orange code shown in the header next to the site title, e.g.
 /// "RESEARCH NOTES"; `none` hides it.
 #let mission = none
@@ -21,6 +26,12 @@
 /// gives a text-only card. Needs `origin` in tola.toml, as image URLs are
 /// absolute.
 #let social-image = auto
+
+/// Font for Chinese, Japanese and Korean text in figures and the preview
+/// image drawn by Typst, e.g. "Sarasa Gothic SC" once it is installed on the
+/// build machine. `none` uses any system font that has the glyphs. Pages
+/// themselves use the browser's fonts (assets/styles/site.css).
+#let cjk-font = "Sarasa Gothic SC"
 
 /// Extra <head> content on every page, such as an analytics script.
 /// `html.elem` takes any attribute; Plausible, for example:
