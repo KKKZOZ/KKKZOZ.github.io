@@ -23,7 +23,8 @@ concurrency:
 env:
   # Bump together with the local Tola (mise).
   TOLA_VERSION: 0.8.1
-  # Compiler fonts for SVG frames (math, cetz): the runner has none of them.
+  # CJK font for SVG frames (math, cetz) and the preview image (`cjk-font` in
+  # templates/config.typ); IBM Plex Mono and Rajdhani ship in typst-fonts/.
   SARASA_VERSION: 1.0.43
 
 jobs:
@@ -56,23 +57,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.FONT_DIR }}
-          key: fonts-sarasa-${{ env.SARASA_VERSION }}-plex-rajdhani-v1
+          key: fonts-sarasa-${{ env.SARASA_VERSION }}-v1
 
-      # IBM Plex Mono and Rajdhani from Google Fonts; Sarasa Gothic SC from its
-      # release, only the styles the theme uses.
+      # Sarasa Gothic SC from its release, only the styles the theme uses.
       - name: Download fonts
         if: steps.fonts.outputs.cache-hit != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           mkdir -p "$FONT_DIR"
-          google=https://raw.githubusercontent.com/google/fonts/main/ofl
-          for style in Regular Italic Medium MediumItalic SemiBold SemiBoldItalic Bold BoldItalic; do
-            curl -fsSL -o "$FONT_DIR/IBMPlexMono-$style.ttf" "$google/ibmplexmono/IBMPlexMono-$style.ttf"
-          done
-          for style in Regular Medium SemiBold Bold; do
-            curl -fsSL -o "$FONT_DIR/Rajdhani-$style.ttf" "$google/rajdhani/Rajdhani-$style.ttf"
-          done
           archive="SarasaGothicSC-TTF-Unhinted-$SARASA_VERSION.7z"
           gh release download "v$SARASA_VERSION" --repo be5invis/Sarasa-Gothic --pattern "$archive" --dir "$RUNNER_TEMP"
           7z e -y -o"$FONT_DIR" "$RUNNER_TEMP/$archive" \
