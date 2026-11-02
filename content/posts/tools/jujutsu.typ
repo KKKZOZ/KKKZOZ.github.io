@@ -1,9 +1,11 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
+#import "/figures/jujutsu.typ" as fig
 
 #tola-meta((
   title: "Jujutsu (jj) Tutorial",
   date: "2025-04-04",
+  updated: "2026-11-02",
   tags: ("Dev",),
   weight: 10,
 ))
@@ -264,6 +266,31 @@ You track the issues below to know when will jj become more convenient in solvin
 - #link("https://github.com/jj-vcs/jj/issues/4555")[FR: GitHub integration · Issue \#4555 · jj-vcs/jj]
 
 = Advance Operations
+#quote(block: true)[
+几个常用 git 操作在 jj 中的对应：
+]
+
+#figure(
+  table(
+    columns: 2,
+    table.header([git], [jj]),
+    table.hline(),
+    [`git rebase`], [`jj rebase -s <source> -d <destination>`],
+    [`git rebase -i` + squash], [`jj squash --from <revset> --to <rev>`],
+    [`git cherry-pick`], [`jj duplicate <commit_id>`],
+  ),
+  kind: table,
+)
+
+== Rebase
+```bash
+jj rebase -s <source_commit_id> -d <destination_commit_id>
+```
+
+For example, `jj rebase -s M -d O` would transform your history like this (letters followed by an apostrophe are post-rebase versions):
+
+#figure(fig.fig-rebase(), caption: [`-s M` 选中 M 及其所有后代（M、N），`-d O` 把它们整体挪到 O 上，得到 M'、N'。K、L 不受影响。]) <fig-rebase>
+
 == Squash
 ```bash
 @  xrnotmor kkkzoz@qq.com 2025-05-31 19:20:11 4f515fd4
@@ -340,6 +367,22 @@ Parent commit (@-)      : urtyqupy 996fe48a B
 ◆  zzzzzzzz root() 00000000
 ```
 
+== Duplicate
+`jj duplicate` 对应 `git cherry-pick`：
+
+```bash
+jj duplicate <commit_id>
+```
+
+会在当前工作副本的位置创建一个新的提交，该提交包含与 `<commit_id>` 相同的变更内容
+
+或者使用一个组合:
+
+```bash
+jj new <commit_id>
+jj rebase -s <newly_created_commit> -d
+```
+
 == Revsets
 #quote(block: true)[
 `jj-vcs` supports a functional language for selecting a set of revisions. Expressions in this language are called \"revsets\".
@@ -363,6 +406,8 @@ Metal model:
 - `..` 都是左开右闭区间
 - `::` 都是闭区间
 
+#figure(fig.fig-revsets(), caption: [以 `x = B`、`y = D` 为例，每种写法选中的提交（实心点）。`..` 不含左端点，`::` 两端都含。]) <fig-revsets>
+
 = Common FAQ
 == How to untrack a file in jj?
 ```shell
@@ -381,6 +426,8 @@ jj file untrack my_secret.txt
 + `jj new <rev>` then `jj squash`
 + `jj edit <rev>`
 
+#figure(fig.fig-resume-edit(), caption: [修改旧提交 A 的两种方式。上：在 A 上新建 A' 修改，再 squash 回 A；下：直接 `jj edit A`，保存即改写 A。两种方式最后 B、C 都会自动 rebase 到新的 A 上。]) <fig-resume-edit>
+
 === `jj new <rev>` then `jj squash`
 + `jj new <rev>`:
 
@@ -388,13 +435,7 @@ jj file untrack my_secret.txt
 
   - 你的工作区会切换到这个新的提交 `A'`。
 
-  - 重要的是，原来的提交 `A` 以及其后续的 `B` 和 `C` 仍然存在并且没有被直接修改。你的 `jj log` 可能会看起来像这样（具体展现形式可能略有不同，但概念如此）：
-
-    ```shell
-    A -> B -> C
-    \
-     A'(@)  <-- 你现在在这里工作
-    ```
+  - 重要的是，原来的提交 `A` 以及其后续的 `B` 和 `C` 仍然存在并且没有被直接修改（@fig-resume-edit 上半部分左侧）。
 
   - 你现在可以在 `A'` 上进行你想要的修改。这些修改是独立的，不会立即影响 `A`, `B`, `C`。
 

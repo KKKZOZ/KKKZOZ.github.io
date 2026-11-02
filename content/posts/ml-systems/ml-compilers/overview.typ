@@ -1,7 +1,7 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, hint, xref
 #import "/utils/diagram.typ": diagram, divider, edge, flow, flows, n, node, note, timeline
-#import "/utils/figures/ml-compiler.typ" as fig
+#import "/figures/ml-compiler.typ" as fig
 
 #tola-meta((
   title: "ML Compilers Overview",
@@ -28,7 +28,7 @@ ML Compiler 位于深度学习框架和底层硬件之间，作用是把 TensorF
 
 下面这套 IR 划分描述的是一个典型 ML Compiler 从*高层模型计算*逐渐 lowering 到*硬件可执行 kernel* 的过程。不同编译器实际使用的 IR 名称和数据结构可能不同，但抽象层次通常可以归纳为：
 
-#flow(
+#figure(flow(
   n([Framework Program], sub: [使用 PyTorch、TensorFlow 等框架描述模型计算], tone: "dark"),
   [graph capture / import],
   n([Framework IR], sub: [表达框架级算子及其数据依赖关系]),
@@ -42,7 +42,7 @@ ML Compiler 位于深度学习框架和底层硬件之间，作用是把 TensorF
   n([Kernel IR], sub: [将调度决策落实为线程、内存和同步等硬件操作]),
   [target code emission],
   n([Target Code], sub: [生成面向具体硬件后端的源代码], tone: "accent"),
-)
+), caption: [典型 ML compiler 的 IR 划分：从框架程序逐层 lowering 到硬件可执行的 kernel。])
 
 #callout(kind: "note")[每向下一层，都会逐渐减少框架语义，增加执行、调度和硬件相关的信息]
 
@@ -111,7 +111,7 @@ mul          = multiply(silu, chunk_1)
 
 下图把这两件事画在一起：`x` 的两半没有被复制，而是由两个 IndexMap 直接按坐标读取；虚线框内是 `silu` decomposition 后的 elementwise 链。
 
-#fig.fig-tensor-ir()
+#figure(fig.fig-tensor-ir(), caption: [Tensor IR：`x` 的两半由两个 IndexMap 直接按坐标读取，虚线框内是 `silu` decomposition 后的 elementwise 链。]) <fig-tensor-ir>
 
 == Loop IR
 
@@ -142,7 +142,7 @@ for a0 in 0..32:
 
 以某一个 `(a0, a1)` 为例，一次 iteration 从 `x` 的同一行读取前后两半中对应的两个元素，在 loop body 中完成全部计算，再写出一个输出元素：
 
-#fig.fig-loop-ir()
+#figure(fig.fig-loop-ir(), caption: [Loop IR 中的一次 iteration：读取 `x` 同一行前后两半的对应元素，写出一个输出元素。]) <fig-loop-ir>
 
 此时 IR 已明确 iteration space、indexing 和 load/store，但还没有决定展开因子、worker 数量或 CUDA thread mapping。
 
@@ -193,7 +193,7 @@ store mul[0, a0, a1 * 4 + 3] = v5__u3
 
 一个逻辑 worker 现在处理 `a1 * 4 + {0, 1, 2, 3}` 四个连续位置。`__u0` 到 `__u3` 是四个彼此独立的 unrolled lane；前后两个 chunk 的 load 使用相同展开因子，为后续 vector store 准备连续结果。
 
-#fig.fig-tile-ir()
+#figure(fig.fig-tile-ir(), caption: [Tile IR：一个逻辑 worker 处理 4 个连续位置，`__u0` 到 `__u3` 是彼此独立的 unrolled lane。]) <fig-tile-ir>
 
 == Kernel IR
 
@@ -286,13 +286,13 @@ void k_slice_pointwise_dcfb6d(
 
 以 `blockIdx.x = 5`、`threadIdx.x = 37` 这个线程为例，它从 `gid` 还原出 `(a0, a1)`，最终写出输出第 2 行的 4 个连续元素：
 
-#fig.fig-kernel-map()
+#figure(fig.fig-kernel-map(), caption: [`blockIdx.x = 5`、`threadIdx.x = 37` 的线程从 `gid` 还原出 `(a0, a1)`，写出输出第 2 行的 4 个连续元素。]) <fig-kernel-map>
 
 == Summary
 
 整个 lowering 过程可以概括为：
 
-#flow(
+#figure(flow(
   n([Framework Program], tone: "dark"),
   [Graph capture / import],
   n[Framework IR],
@@ -308,11 +308,11 @@ void k_slice_pointwise_dcfb6d(
   n[Target Code],
   [Compile],
   n([Machine Code], tone: "accent"),
-)
+), caption: [整个 lowering 过程：各层 IR 以及它们之间的变换。])
 
 因此各层最核心的区别可以理解为：
 
-#flow(
+#figure(flow(
   n([Framework IR], sub: [算什么高层 operator]),
   n([Tensor IR], sub: [用 Elementwise、Reduction 和 IndexMap 表达什么张量计算]),
   n([Loop IR], sub: [张量计算如何展开并融合成 kernel loop nests]),
@@ -320,18 +320,18 @@ void k_slice_pointwise_dcfb6d(
   n([Kernel IR], sub: [调度决策如何落实为线程、内存和同步等硬件 primitive]),
   n([Target Code], sub: [Kernel IR 如何表示为目标 backend 源代码]),
   n([Machine Code], sub: [硬件最终执行什么], tone: "accent"),
-)
+), caption: [各层 IR 分别描述什么。])
 
 从 ML Compiler 的角度看，这整个过程本质上就是不断进行 *lowering*：
 
-#flow(
+#figure(flow(
   n([High-level semantics], tone: "dark"),
   n[Tensor semantics],
   n[Iteration semantics],
   n[Scheduling semantics],
   n[Kernel semantics],
   n([Hardware semantics], tone: "accent"),
-)
+), caption: [Lowering 就是语义层次的逐步下降：从高层语义到硬件语义。])
 
 也就是不断从“*描述计算是什么*”下降到“*描述硬件具体怎么执行这个计算*”。
 
@@ -351,7 +351,7 @@ Python 每执行一个 PyTorch op，就通过 Dispatcher 找到已经实现好�
 
 整体流程如下:
 
-#diagram(col: 200, row: 66,
+#figure(diagram(col: 200, row: 66,
   node("py", (0.5, 0), [Python / nn.Module], tone: "dark"),
   node("api", (0.5, 1), [PyTorch Python API], num: "1", sub: [torch.add / torch.matmul / F.relu / ...]),
   node("aten", (0.5, 2), [ATen Operator], num: "2", sub: [aten::add / aten::mm / aten::relu]),
@@ -370,17 +370,17 @@ Python 每执行一个 PyTorch op，就通过 Dispatcher 找到已经实现好�
   edge("kern", "rt", route: "ortho"),
   edge("lib", "rt", route: "ortho"),
   edge("rt", "gpu"),
-)
+), caption: [Eager mode 下一个 PyTorch op 的执行路径：Python API → ATen → Dispatcher → CUDA 实现 → kernel launch。])
 
 其中第 3 步的 Dispatcher 并不是一次查表。每个 Tensor 带有一组 dispatch key，Dispatcher 从优先级最高的 key 开始处理，每一层做完自己的工作后 redispatch 到下一层。以 `requires_grad=True` 的 CUDA tensor 执行 `torch.mul(a, b)` 为例：
 
-#fig.fig-dispatch()
+#figure(fig.fig-dispatch(), caption: [`requires_grad=True` 的 CUDA tensor 执行 `torch.mul` 时，Dispatcher 按 dispatch key 逐层 redispatch。]) <fig-dispatch>
 
 在 Eager Mode 下，CUDA code 大部分是*在 PyTorch / CUDA libraries 构建时*就编译好了
 
 这些 kernel 彼此独立，所以 eager 无法跨 op 优化。以前文的 SiluAndMul 为例（每个 tensor 有 N 个元素），eager 需要两个 kernel，`silu` 的结果必须先写回 HBM 再被 `mul` 读出；`torch.compile` 生成的 fused kernel 把中间值留在 register 中，HBM 传输从 5N 降到 3N，launch 也从 2 次降到 1 次：
 
-#fig.fig-eager-traffic()
+#figure(fig.fig-eager-traffic(), caption: [SiluAndMul 的 HBM 传输：eager 两个 kernel 共 5N，fused kernel 只有 3N。]) <fig-eager-traffic>
 
 = PyTorch torch.compile
 
@@ -393,7 +393,7 @@ Python 每执行一个 PyTorch op，就通过 Dispatcher 找到已经实现好�
   - Backend: 对 IR 进行优化和 scheduling，并将其逐步 lowering 为目标硬件可执行的代码
 ]
 
-#flow(
+#figure(flow(
   n([Python / nn.Module], tone: "dark"),
   n([TorchDynamo], num: "1", sub: [Python bytecode → FX Graph]),
   n([AOTDispatcher / AOTAutograd], num: "2", sub: [FX Graph → functionalized / decomposed ATen FX Graph]),
@@ -402,7 +402,7 @@ Python 每执行一个 PyTorch op，就通过 Dispatcher 找到已经实现好�
   n([TorchInductor IR + Scheduler], num: "4", sub: [ATen Graph → loop-level IR \ fusion / scheduling / memory planning]),
   n([Codegen], num: "5", sub: [GPU: Triton / CuTeDSL / external kernels \ CPU: C++ / OpenMP]),
   n([Kernel Compilation + Runtime], num: "6", sub: [Triton/CuTeDSL/CUDA/C++ 编译 → 执行], tone: "accent"),
-)
+), caption: [`torch.compile` 的整体 pipeline：Dynamo、AOTAutograd 和 Inductor。])
 
 总的来说可以分为四层
 
@@ -437,11 +437,11 @@ Dynamo 会 hook CPython 的 frame evaluation，解释 Python bytecode，把其�
 
 Dynamo 通过 PEP 523 接管 frame evaluation。每个 code object 带有一个 cache，每个 cache entry 都有一组 guard；调用时先检查 guard，命中就直接执行编译结果，未命中才重新 trace 和编译：
 
-#fig.fig-dynamo-cache()
+#figure(fig.fig-dynamo-cache(), caption: [Dynamo 的 cache：每个 cache entry 带一组 guard，命中就直接执行，未命中才重新 trace 和编译。]) <fig-dynamo-cache>
 
 遇到无法 trace 的代码（例如 `print`）时，Dynamo 会把已经捕获的部分编译成一张图，让 CPython 执行这段代码，再为剩余部分生成 `__resume_at_N` 函数。这个函数会在新的 frame 中再次被 Dynamo 捕获：
 
-#fig.fig-graph-break()
+#figure(fig.fig-graph-break(), caption: [Graph break：已捕获的部分编译成一张图，CPython 执行无法 trace 的代码，剩余部分进入 `__resume_at_N`。]) <fig-graph-break>
 
 === 2 Graph Normalize: AOTAutograd
 
@@ -449,11 +449,11 @@ Dynamo 通过 PEP 523 接管 frame evaluation。每个 code object 带有一个 
 
 这一阶段主要负责对 Dynamo 捕获的高层 PyTorch graph 进行 functionalization、decomposition 以及 alias/mutation 规范化，生成适合后续后端优化与 lowering 的 ATen FX Graph
 
-#flow(
+#figure(flow(
   n[Dynamo FX Graph],
   [functionalization \ decomposition \ alias / mutation normalization],
   n([ATen FX Graph], tone: "accent"),
-)
+), caption: [AOTAutograd：Dynamo FX Graph 经 functionalization、decomposition 和 alias / mutation 规范化，得到 ATen FX Graph。])
 
 典型工作包括：
 
@@ -470,10 +470,10 @@ Dynamo 通过 PEP 523 接管 frame evaluation。每个 code object 带有一个 
 
 Inductor 会先做一系列 FX-level optimization/pass，比如:
 
-#flow(
+#figure(flow(
   n[ATen FX Graph],
   n([pattern matching \ operator rewrite \ layout-related optimization \ fusion preparation \ ...], tone: "muted"),
-)
+), caption: [Inductor 在 ATen FX Graph 上做的 graph-level pass。])
 
 #callout(kind: "note")[可以把这个阶段理解为对计算图本身做 compiler optimization]
 
@@ -502,17 +502,17 @@ Inductor 会从 FX / ATen graph lower 到自己的 loop-level IR
 
 PyTorch 2.13 的一个重点是继续扩展 TorchInductor 的 GPU backend。对于 NVIDIA GPU，如果暂时忽略 external kernel，过去常将 Inductor 的主要 codegen path 简化为：
 
-#flow(dir: "ltr", n[Inductor], n([Triton], tone: "accent"))
+#figure(flow(dir: "ltr", n[Inductor], n([Triton], tone: "accent")), caption: [过去 Inductor 在 NVIDIA GPU 上的主要 codegen 路径。])
 
 从 PyTorch 2.13 开始，Inductor 增加了 CuTeDSL 这条 alternative code-generation path：
 
-#diagram(col: 190, row: 46,
+#figure(diagram(col: 190, row: 46,
   node("ind", (0, 0.5), [Inductor kernels]),
   node("tri", (1, 0), [Triton], tone: "accent"),
   node("cute", (1, 1), [CuTeDSL], tone: "accent"),
   edge("ind", "tri", route: "hvh"),
   edge("ind", "cute", route: "hvh"),
-)
+), caption: [从 PyTorch 2.13 开始，Inductor 多了 CuTeDSL 这条 codegen 路径。])
 
 CuTeDSL 是基于 NVIDIA CuTe（CUDA Templates）的 Python-native DSL，可以直接表达 GPU tensor layout、tiling strategy 和 memory access pattern。当前 Inductor 集成主要面向 GEMM 与 RMSNorm 等关键 operation，为这些 workload 提供 Triton 之外的另一条高性能 codegen path；它不是对所有 Inductor GPU kernel 的整体替换。
 
@@ -522,7 +522,7 @@ PyTorch 2.13 还将相关 kernel compilation 从 thread pool 移到 subprocess p
 
 在 NVIDIA GPU 上，默认仍是 Triton codegen path，对应 pipeline 为：
 
-#flow(
+#figure(flow(
   n[ATen FX Graph],
   [lowering.py],
   n[Inductor IR],
@@ -530,7 +530,7 @@ PyTorch 2.13 还将相关 kernel compilation 从 thread pool 移到 subprocess p
   n[Scheduled kernels],
   [TritonScheduling + TritonKernel codegen],
   n([Triton Python source], tone: "accent"),
-)
+), caption: [Inductor 默认的 Triton codegen pipeline。])
 
 = Emmy && TVM
 
@@ -538,7 +538,7 @@ PyTorch 2.13 还将相关 kernel compilation 从 thread pool 移到 subprocess p
 
 Emmy 和 TVM 的 compiler core 都不直接解释任意 Python，而是接收已经捕获的计算图。Graph 可以由不同 frontend 产生：
 
-#diagram(col: 10, row: 54,
+#figure(diagram(col: 10, row: 54,
   node("py", (0, 2), [Python / nn.Module], tone: "dark"),
   note((24, -0.75), text(fill: rgb("#CB4B22"), weight: 600, tracking: 1pt)[GRAPH CAPTURE]),
   node("dyn", (24, 0), [TorchDynamo / torch.compile], width: 232pt),
@@ -559,7 +559,7 @@ Emmy 和 TVM 的 compiler core 都不直接解释任意 Python，而是接收已
   edge("fx", "g", route: "hvh"),
   edge("ts", "g", route: "hvh"),
   edge("g", "c"),
-)
+), caption: [Emmy 和 TVM 的计算图可以来自不同的 graph capture frontend。])
 
 核心边界是：
 
@@ -569,7 +569,7 @@ Emmy 和 TVM 的 compiler core 都不直接解释任意 Python，而是接收已
 
 当前 Emmy 的默认 PyTorch frontend 为：
 
-#flow(
+#figure(flow(
   n[Python nn.Module],
   [torch.export.export()，默认 strict=True],
   n[ExportedProgram / FX Graph],
@@ -577,7 +577,7 @@ Emmy 和 TVM 的 compiler core 都不直接解释任意 Python，而是接收已
   n[Emmy Torch IR],
   [decomposition / fusion / scheduling / codegen],
   n([CUDA], tone: "accent"),
-)
+), caption: [Emmy 默认的 PyTorch frontend。])
 
 Emmy 自己不分析 Python bytecode，但当前源码调用 `torch.export.export()` 时没有传入 `strict=False`，因此默认 capture 路径仍然会使用 Dynamo。只有改用 `torch.export(..., strict=False)` 时，capture 部分才会变成 CPython 正常执行加 ProxyTensor/FakeTensor tracing，从而绕开 Dynamo 的 bytecode analysis。
 
@@ -590,11 +590,11 @@ Emmy 自己不分析 Python bytecode，但当前源码调用 `torch.export.expor
 
 因此，Emmy 将问题限制为：
 
-#flow(
+#figure(flow(
   n[满足约束的 PyTorch model],
   n[可捕获、可规范化的 Graph],
   n([Emmy compiler], tone: "accent"),
-)
+), caption: [Emmy 对输入模型的约束。])
 
 它避免了自己实现通用 Python tracer，但代价是模型必须符合更严格的 frontend contract。
 
@@ -606,37 +606,37 @@ TVM Relax 提供多条 PyTorch frontend 路径。
 
 推荐的 `ExportedProgram` 路径为：
 
-#flow(
+#figure(flow(
   n[PyTorch nn.Module],
   [torch.export.export(...)],
   n[ExportedProgram],
   [tvm.relax.frontend.torch.from_exported_program()],
   n([Relax IRModule], tone: "accent"),
-)
+), caption: [TVM Relax 的 `ExportedProgram` 路径。])
 
 这里 TVM 不解释 Python，但是否使用 Dynamo 取决于 `torch.export` 的 `strict` 参数：默认 `strict=True` 会使用 Dynamo，`strict=False` 才使用 non-strict tracing。
 
 TVM 也可以直接导入 FX Graph：
 
-#flow(
+#figure(flow(
   n[PyTorch nn.Module],
   [torch.fx.symbolic_trace()],
   n[FX GraphModule],
   [tvm.relax.frontend.torch.from_fx()],
   n([Relax IRModule], tone: "accent"),
-)
+), caption: [TVM Relax 直接导入 FX Graph 的路径。])
 
 这条路径不需要 Dynamo，但 `symbolic_trace()` 能处理的 Python 和 PyTorch 语义范围更窄。
 
 TVM 还可以作为 `torch.compile` backend：
 
-#flow(
+#figure(flow(
   n[Python / nn.Module],
   [torch.compile(backend=relax_dynamo())],
   n[TorchDynamo captured FX Graph],
   [TVM Relax backend],
   n([Relax IRModule → executable], tone: "accent"),
-)
+), caption: [TVM 作为 `torch.compile` backend 的路径。])
 
 `relax_dynamo()` 路径位于 `torch.compile` pipeline 内，因此会使用 Dynamo。三条路径的区别主要在 graph capture frontend，而不是 TVM compiler core 是否能够直接理解任意 Python。
 
@@ -648,7 +648,7 @@ TVM 还可以作为 `torch.compile` backend：
 
 从版本演进来看，`torch.export`、AOTInductor 与 deployment API 逐步沿着下面的主线收敛：
 
-#timeline(
+#figure(timeline(
   (version: [2.2], items: ("torch.export(strict=False) 出现", "AOTInductor Prototype 出现")),
   (version: [2.6], major: true, note: [第一个大分水岭], items: (
     "PT2 Archive", "aoti_compile_and_package", "ABI-compatible codegen", "AOTI Minifier", "Dim.AUTO",
@@ -662,13 +662,13 @@ TVM 还可以作为 `torch.compile` backend：
     "torch.export + AOTI → C++ / non-Python AOT deployment",
     "torch.compile().aot_compile() → Python runtime AOT deployment",
   )),
-)
+), caption: [`torch.export`、AOTInductor 与 deployment API 的版本演进。])
 
 这条主线反映了两个变化：graph capture API 逐步向 `torch.export.export()` 收敛；AOT deployment 则开始区分面向 C++ / non-Python runtime 的 `torch.export + AOTI`，以及保留 Python runtime 的 `torch.compile().aot_compile()`。
 
 下面继续比较 `strict=True` 与 `strict=False` 两种 graph capture 机制：
 
-#flows(
+#figure(flows(
   ([strict=True：Dynamo tracing], (
     n[Python bytecode],
     [Dynamo symbolic interpretation],
@@ -679,7 +679,7 @@ TVM 还可以作为 `torch.compile` backend：
     [FakeTensor 传播 metadata \ ProxyTensor 记录 Tensor op],
     n([FX Graph], tone: "accent"),
   )),
-)
+), caption: [`strict=True` 与 `strict=False` 两种 graph capture 机制。])
 
 #hint[*Dynamo 在分析 Python 程序的同时构图；non-strict tracing 则让 Python 正常执行，并记录实际执行到的 Tensor 操作。*]
 
@@ -700,7 +700,7 @@ def f(x):
 - *ProxyTensor* 拦截执行到的 Tensor 操作，并将 `aten.add`、`aten.relu` 和 `aten.mul` 等节点记录到 FX Graph。
 - 普通 Python 控制流仍由 CPython 执行，tracer 不需要解释完整的 Python bytecode。
 
-#diagram(col: 190, row: 62,
+#figure(diagram(col: 190, row: 62,
   node("py", (0.5, 0), [CPython 执行 Python], tone: "dark"),
   node("op", (0.5, 1), [Tensor op 被调用]),
   node("fake", (0, 2), [FakeTensor], sub: [推导输出 metadata]),
@@ -711,7 +711,7 @@ def f(x):
   edge("op", "proxy", route: "ortho"),
   edge("fake", "fx", route: "ortho"),
   edge("proxy", "fx", route: "ortho"),
-)
+), caption: [Non-strict tracing：CPython 正常执行，FakeTensor 推导输出 metadata，ProxyTensor 记录 FX node。])
 
 === 控制流差异
 
@@ -752,13 +752,13 @@ non-strict tracing 的简洁性也带来了限制：如果程序读取可变的 
 
 *TorchScript 的核心思路是定义一个静态、可编译的 PyTorch/Python 子集，而不是支持任意 Python 语义。*
 
-#flow(
+#figure(flow(
   n[TorchScript-compatible Python],
   [TorchScript frontend],
   n[TorchScript IR],
   [compiler / runtime],
   n([Executable program], tone: "accent"),
-)
+), caption: [TorchScript 的编译路径。])
 
 这与“为 compiler 设计一个受限 DSL”的思路非常接近。Frontend 只需要理解预先定义的语言子集，因此分析和编译更直接，但用户必须修改不兼容的 Python 代码。
 
@@ -803,14 +803,14 @@ TorchScript 选择了前一种路线，TorchDynamo 选择了后一种路线
 
 PyTorch 2.13 引入的 `aot_compile()` 会在调用该 API 时完成上述工作。它接收由 `torch.compile(..., fullgraph=True)` 创建的 callable 和一组 example inputs，输出可执行并可序列化的 compiled function：
 
-#flow(
+#figure(flow(
   n[Python callable + example inputs],
   [Dynamo full-graph capture],
   n[FX Graph],
   [Inductor lowering + backend codegen],
   n[Kernel compilation + autotuning],
   n([Serializable compiled callable], tone: "accent"),
-)
+), caption: [`aot_compile()` 的编译流程。])
 
 最小的编译、保存与加载流程为：
 
@@ -853,7 +853,7 @@ output = fn(model, input)
 
 把两种模式放在同一条时间轴上，区别在于编译发生在 deploy 之前还是之后，以及遇到新 shape 时能否重新编译：
 
-#fig.fig-jit-aot()
+#figure(fig.fig-jit-aot(), caption: [`torch.compile` 与 `aot_compile()`：编译发生在 deploy 之后还是之前，遇到新 shape 时能否重新编译。]) <fig-jit-aot>
 
 #callout(kind: "note")[对于相同的 Inductor backend，两种模式最终生成的 optimized kernels 可以非常接近。`aot_compile()` 的主要价值是消除 production compilation cold start，以及支持 artifact 保存、跨进程加载和 cross compilation，而不是提高 steady-state kernel performance。]
 
@@ -863,7 +863,7 @@ output = fn(model, input)
 
 对于模型结构相对固定、可以接受 export constraints、且不需要 arbitrary Python fallback 的 inference deployment，可以使用 `torch.export` 和 AOTInductor：
 
-#flow(
+#figure(flow(
   n[PyTorch nn.Module],
   [torch.export(..., strict=False)],
   n[ExportedProgram],
@@ -871,7 +871,7 @@ output = fn(model, input)
   n([Compiled package], sub: [.pt2，包含 shared library 等 artifact]),
   [C++ / non-Python runtime],
   n([Inference execution], tone: "accent"),
-)
+), caption: [`torch.export` + AOTInductor 的 inference deployment 路径。])
 
 AOTInductor 接收 `ExportedProgram`，通过 `torch._inductor.aoti_compile_and_package()` ahead-of-time 编译并生成可部署的 `.pt2` package。线上 runtime 直接加载编译产物，不需要在请求期间运行 Python、TorchDynamo 或即时 graph capture。
 
@@ -916,13 +916,13 @@ def matmul(x, y):
 
 Helion 使用普通 PyTorch 代码完成 host-side setup；最外层 `hl.tile` 循环内的代码表示 device computation，并通过 TorchInductor lower 到 Triton。整体路径为：
 
-#flow(
+#figure(flow(
   n[Helion kernel],
   [Helion compiler + TorchInductor lowering],
   n[Triton kernel],
   [Triton compiler],
   n([GPU code], tone: "accent"),
-)
+), caption: [Helion 的编译路径。])
 
 需要注意，Helion 是 *Kernel DSL*，不是 *Model DSL*：
 
@@ -943,11 +943,11 @@ Helion 使用普通 PyTorch 代码完成 host-side setup；最外层 `hl.tile` �
 
 PyTorch 最大的历史资产就是一个极其灵活的 Python eager framework，所以 PyTorch 2.x 面临的是：
 
-#diagram(col: 230,
+#figure(diagram(col: 230,
   node("a", (0, 0), [不能破坏已有 eager semantics]),
   note((0.5, 0), text(size: 14pt, weight: 700, fill: rgb("#CB4B22"))[+]),
   node("b", (1, 0), [又希望获得 compiler graph]),
-)
+), caption: [PyTorch 2.x 的两难：既不能破坏 eager semantics，又希望得到 compiler graph。])
 
 于是才出现 Dynamo。
 
@@ -955,7 +955,7 @@ Dynamo 并不是 ML compiler 架构中不可避免的一层。它的复杂性主
 
 从 PyTorch 2.13 的 compilation 与 deployment API 来看，可以将主要路线概括为：
 
-#diagram(col: 150, row: 56,
+#figure(diagram(col: 150, row: 56,
   node("m", (1, 0), [PyTorch model], tone: "dark"),
   node("cw", (0, 1), [compile world], tone: "ghost"),
   node("ew", (2, 1), [export world], tone: "ghost"),
@@ -977,7 +977,7 @@ Dynamo 并不是 ML compiler 架构中不可避免的一层。它的复杂性主
   edge("fx", "ac", route: "ortho"),
   edge("ep", "aoti"),
   edge("tc", "rt"), edge("ac", "pa"), edge("aoti", "na"),
-)
+), caption: [PyTorch 2.13 的两条主要路线：compile world 与 export world。])
 
 - `compile world` 保留 `torch.compile` 的 Dynamo semantics。普通 `torch.compile` 面向 runtime JIT，可以通过 guards、graph breaks 和 recompilation 适应 workload；`.aot_compile()` 使用同一类 frontend semantics，但要求 full graph，并将编译提前到 deployment 之前，产出由 Python runtime 加载的 serialized callable。
 
@@ -1003,18 +1003,18 @@ Dynamo 并不是 ML compiler 架构中不可避免的一层。它的复杂性主
 
 Lazy-first framework 则通常采用下面的路径：
 
-#flow(
+#figure(flow(
   n[Python],
   [overloaded Tensor / Array API],
   n[Computation Graph],
   [realization],
   n[Scheduling / optimization / lowering],
   n([Execution], tone: "accent"),
-)
+), caption: [Lazy-first framework 的执行路径。])
 
 以 `(x + y).relu() * 2` 为例：eager 中每个 op 立即 launch 一个 kernel；lazy 中这些调用只在扩展 graph，直到 `realize()` 才统一调度，并可以融合为一个 kernel。
 
-#fig.fig-lazy()
+#figure(fig.fig-lazy(), caption: [`(x + y).relu() * 2`：eager 每个 op launch 一个 kernel，lazy 到 `realize()` 才统一调度并融合成一个 kernel。]) <fig-lazy>
 
 #table(
   columns: 3,
@@ -1041,7 +1041,7 @@ z = (x + y).relu() * 2
 
 执行这段 Python 时，`Tensor.__add__()`、`relu()` 和乘法操作主要是在扩展 UOp graph，概念上可以表示为：
 
-#diagram(col: 64, row: 52,
+#figure(diagram(col: 64, row: 52,
   node("mul", (1, 0), [MUL], tone: "accent"),
   node("relu", (0.4, 1), [RELU]),
   node("two", (1.6, 1), [2], tone: "muted"),
@@ -1053,11 +1053,11 @@ z = (x + y).relu() * 2
   edge("relu", "add", arrow: false),
   edge("add", "x", arrow: false),
   edge("add", "y", arrow: false),
-)
+), caption: [`(x + y).relu() * 2` 在 tinygrad 中构造出的 UOp graph。])
 
 这些操作默认是 lazy 的，直到调用 `.realize()` 或 `.numpy()` 才触发实际计算。当前 tinygrad 实现中的主要处理路径为：
 
-#flow(
+#figure(flow(
   n[Tensor / UOp Graph],
   [Scheduler],
   n[LINEAR UOp + scheduled CALL work units],
@@ -1065,7 +1065,7 @@ z = (x + y).relu() * 2
   n[Backend-specific PROGRAM],
   [Renderer / Compiler],
   n([CUDA / Metal / LLVM / other backend], tone: "accent"),
-)
+), caption: [tinygrad 从 UOp graph 到 backend program 的处理路径。])
 
 Scheduler 会把 UOp dependency graph 组织成有序的 `CALL` work units。每个 work unit 可能表示 kernel、copy、view 或其他运行时工作；kernel 对应的 AST 会继续 lower、render 并编译为目标 backend 可执行的 program。
 
@@ -1079,7 +1079,7 @@ TinyJit 也不等价于 Dynamo。Dynamo 在 Tensor operation 执行前分析 Pyt
 - 第二次调用继续执行 Python，同时捕获生成的 scheduled work。
 - 后续兼容调用跳过 Python function，直接 replay 捕获的 `LINEAR` work。
 
-#fig.fig-tinyjit()
+#figure(fig.fig-tinyjit(), caption: [TinyJit：第一次调用正常执行，第二次边执行边捕获 scheduled work，之后的兼容调用直接 replay。]) <fig-tinyjit>
 
 因此，影响 kernel 的普通 Python value 可能在 capture 时被冻结。TinyJit 的目标是减少重复执行 Python frontend 和 scheduling 的开销，而不是为任意 Python control flow 建立 symbolic semantics。
 
@@ -1091,7 +1091,7 @@ TinyJit 也不等价于 Dynamo。Dynamo 在 Tensor operation 执行前分析 Pyt
 
 调用 `ggml_add()`、`ggml_mul_mat()` 等 Tensor operation 时，ggml 主要创建输出 tensor metadata，并通过 `src[]` 记录输入依赖，不立即执行对应 kernel。`ggml_build_forward_expand()` 从输出 tensor 展开依赖并形成 `ggml_cgraph`，实际计算由 backend graph compute 显式触发。
 
-#flow(
+#figure(flow(
   n[ggml Tensor Operations],
   [build dependency graph],
   n[ggml\_cgraph],
@@ -1099,7 +1099,7 @@ TinyJit 也不等价于 Dynamo。Dynamo 在 Tensor operation 执行前分析 Pyt
   n[Allocated Execution Graph],
   [graph compute],
   n([Backend Kernels], tone: "accent"),
-)
+), caption: [ggml 的 lazy graph：先构图，再做 backend split 和内存规划，最后执行。])
 
 因此 llama.cpp 不需要从 eager C++ program 中恢复 Tensor graph。模型的 C++ builder 本身就在调用 ggml Tensor API 显式构图，这与 tinygrad 通过 Python Tensor API 构造 UOp graph 的基本思路相似。区别在于，llama.cpp 是针对已知 model architecture 的 inference runtime，而不是面向用户程序的通用 Python Tensor framework。
 
@@ -1128,7 +1128,7 @@ Lazy graph 的一个重要作用是让 ggml 在执行前看到所有 intermediat
 
 下图中横轴是 graph 的执行顺序，纵轴是 buffer offset，每个矩形是一个 intermediate tensor 的生命周期。`t2` 在 `t0` 的最后一个 consumer 执行之后复用了同一段 offset；如果每个 tensor 单独分配，需要的总量远大于 peak：
 
-#fig.fig-gallocr()
+#figure(fig.fig-gallocr(), caption: [`ggml_gallocr` 的内存规划：横轴是执行顺序，纵轴是 buffer offset，生命周期不重叠的 tensor 复用同一段 offset。]) <fig-gallocr>
 
 初始化 `llama_context` 时，`llama_context::sched_reserve()` 会构造用于估算的 prompt-processing graph 和 token-generation graph，并使用较大的 graph 预留 compute buffers。源码将其称为 `worst-case graph`，目的是避免 inference 期间发生 `ggml-alloc` reallocation。
 

@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "/utils/ui.typ": callout
+#import "/figures/ggml-with-cpp.typ" as fig
 
 #tola-meta((
   title: "ggml with C++",
@@ -136,6 +137,8 @@ struct ggml_context ** ptr_to_ctx = &ctx;
 // 这个地址本身不是 NULL！
 ```
 
+#figure(fig.fig-pointer(), caption: [`ctx` 与 `&ctx`：`gguf_init_from_file` 通过 `params.ctx` 改写的是 `ctx` 这个变量本身。]) <fig-pointer>
+
 == 头文件
 头文件(.h)应该包含：
 
@@ -208,6 +211,8 @@ ggml_tensor * c = ggml_mul_mat(ctx, a, b)
 => c = b @ a^T
 ```
 
+#figure(fig.fig-mul-mat(), caption: [`ggml_mul_mat(a, b)`：`c` 的每个元素是 `a` 的一行和 `b` 的一行的点积，即 #box[`c = b @ a^T`]。]) <fig-mul-mat>
+
 关键代码位置：
 
 - `ggml_backend_cpu_buffer_type` - `ggml-backend.cpp:2172`
@@ -234,6 +239,8 @@ ggml_tensor * c = ggml_mul_mat(ctx, a, b)
 // nb[1] = 12 (跳过 3 个元素 = 12 字节才到下一行)
 ```
 
+#figure(fig.fig-strides(), caption: [`ne = {3, 2}` 的 F32 张量：逻辑视图与内存中的字节，`nb` 是每个维度前进一步跨过的字节数。]) <fig-strides>
+
 === ggml\_reshape
 - 要求输入连续
 - 输出也是连续的
@@ -246,6 +253,8 @@ ggml_tensor * c = ggml_mul_mat(ctx, a, b)
 - `[2, 2]` 的布局： `[a0(R0C0), a1(R0C1), a2(R1C0), a3(R1C1)]`
 - `[1, 4]` 的布局： `[a0(R0C0), a1(R0C1), a2(R0C2), a3(R0C3)]`
 ]
+
+#figure(fig.fig-reshape(), caption: [`ggml_reshape`：两个视图共享同一个 `data` 指针，只有 `ne` / `nb` 不同。]) <fig-reshape>
 
 === ggml\_view
 ```cpp
@@ -299,6 +308,8 @@ struct ggml_tensor * ggml_view_2d(
   - 在计算注意力时，Query (Q) 需要和#strong[所有]历史的 K (`0` 到 `t`) 进行计算。
   - 你需要一个 `cache[:, :, 0:t+1, :]` 的视图。
   - `ggml_view` 再次创建这个视图。这个视图在 `seq_len` 维度上是#strong[连续的]（从 0 开始的一个块），但它仍然是一个子集。
+
+#figure(fig.fig-view-kv(), caption: [同一个 KV cache 上的三个 view：写入一行、读取前缀，以及单个 head 的不连续 view。]) <fig-view-kv>
 
 #strong[其他常见例子：]
 
@@ -354,6 +365,9 @@ for (int i3 = 0; i3 < src->ne[3]; i3++) {
  }
 }
 ```
+
+
+#figure(fig.fig-cont(), caption: [`ggml_cont` 把 @fig-view-kv (c) 中不连续的 view 逐行 `memcpy` 到一块新的连续内存。]) <fig-cont>
 
 === ggml\_permute
 - 不要求输入连续
@@ -433,6 +447,9 @@ p[1][0] = data[4] -> b
 p[1][1] = data[12] -> d
 ```
 
+
+#figure(fig.fig-permute(), caption: [`ggml_permute` 只交换 `nb`：同样的 4 个元素，按 `P` 的步长读出来就是 `A` 的转置。]) <fig-permute>
+
 == overview
 GGML 中关键组件：
 
@@ -441,6 +458,9 @@ GGML 中关键组件：
 - ggml\_context：维护 tensor 的元数据
 - ggml\_backend：代表不同的后端，负责具体的算子计算逻辑
 - ggml\_backend\_buffer：后端分配的内存，比如 CPU 对应的就是内存，GPU 对应的就是显存
+
+
+#figure(fig.fig-components(), caption: [GGML 的几个核心组件：graph 存 tensor 指针，context 存 tensor 元数据，`tensor->data` 指向 backend buffer 中的数据。]) <fig-components>
 
 == GGML 内存分配机制
 在 `ggml/example/gpt-2` 中，给出了非常清晰的内存分配机制，从简单到复杂，依次是：
@@ -494,8 +514,9 @@ struct ggml_tensor {
 + 对于一张计算图，有两种节点：中间节点和叶子节点；叶子节点是权重，中间节点是计算产生的中间值
 ]
 
-#img("/assets/images/pasted-image-20251124151240.png", alt: "pasted-image-20251124151240")
-比如上图展示了一个 MLP 的计算图，绿色节点是叶子节点，叶子节点的数据需要我们在计算开始之前加载；蓝色节点是中间节点，中间节点的数据在计算过程中才会产生
+#figure(fig.fig-mlp-graph(), caption: [一个两层 MLP 的计算图，以及它在 `ggml_cgraph` 中的 `leafs` 和 `nodes` 数组。]) <fig-mlp-graph>
+
+比如 @fig-mlp-graph 展示了一个 MLP 的计算图，绿色节点是叶子节点，叶子节点的数据需要我们在计算开始之前加载；蓝色节点是中间节点，中间节点的数据在计算过程中才会产生
 
 在 GGML 中，计算图的表示是 `ggml_cgraph`:
 
@@ -541,6 +562,8 @@ ggml\_context 维护了一个 memory\_pool，这个 memory\_pool 的大小需要
 - main-alloc
 - main-backend
 - main-sched
+
+#figure(fig.fig-examples(), caption: [`ggml/examples/gpt-2` 中四个示例的内存管理方式。]) <fig-examples>
 
 === main-ctx
 - 手动分配权重
@@ -589,6 +612,8 @@ struct ggml_object * const obj_new = ggml_new_object(ctx, GGML_OBJECT_TYPE_TENSO
 
 }
 ```
+
+#figure(fig.fig-ctx-pool(), caption: [`no_alloc` 决定 tensor 的数据是否放在 context 的内存池里。]) <fig-ctx-pool>
 
 main-ctx 正是采用了这种方式，在加载模型时，需要手动计算模型权重需要的内存空间，然后根据大小初始化 ggml\_context:
 
@@ -683,6 +708,8 @@ struct ggml_context *ctx0 = ggml_init(params);
 
 所以这个 `n_batch` 既不能太大（造成内存浪费），也不能太小（虽然不会重复计算，但其中算子 kernel 启动会有开销）
 
+#figure(fig.fig-nbatch(), caption: [一个 70 token 的 prompt 按 `n_batch = 32` 分三次送进同一张计算图；reserve 时按最坏情况估计内存。]) <fig-nbatch>
+
 #callout(kind: "warning", title: "ATTENTION")[
 所以 `n_batch` 指的是单次计算图能够处理的最大 token 数量，不是单次同时能够处理的输入序列
 
@@ -716,6 +743,9 @@ alloc_graph(graph) {
     ...
 }
 ```
+
+
+#figure(fig.fig-reserve-alloc(), caption: [`ggml_gallocr`：启动时 reserve 一次，之后每次 eval 都复用同一块 compute buffer。]) <fig-reserve-alloc>
 
 两个函数都需要传入 gallocr 这个对象，是不是复用的内存也存放在 gallocr 内部呢？
 
@@ -822,6 +852,10 @@ bool ggml_gallocr_reserve_n(...){
 - matmul 的内存在 add 分配时可以被复用
 - 峰值内存 = leafs + max(matmul, add)
 
+把同样的规则放到 @fig-mlp-graph 那张更长的图上，5 个中间值只需要 2 块内存：
+
+#figure(fig.fig-galloc-reuse(), caption: [gallocr 在 @fig-mlp-graph 上的分配过程：原地复用加及时释放，峰值只有 2 块。]) <fig-galloc-reuse>
+
 对于 `ggml_gallocr_alloc_graph`：
 
 ```cpp
@@ -897,6 +931,8 @@ model.buffer_w = ggml_backend_alloc_ctx_tensors(ctx, model.backend);
 - 通过 `ggml_backend_buffer_type` 创建一个大小为 `cur_buf_size` 的 `ggml_backend_buffer`
 - 新建一个 `ggml_tallocr`\(tensor allocr)，在这个 `ggml_backend_buffer` 中为每个 tensor 分配空间
 
+#figure(fig.fig-backend-buffer(), caption: [`ggml_backend_alloc_ctx_tensors`：由 buffer type 申请一整块 buffer，再由 `ggml_tallocr` 顺序切给每个 tensor。]) <fig-backend-buffer>
+
 在 `main-backend` 中，虽然只支持单后端，但是在模型加载时，还是把 weights 和 KV Cache 分开初始化，分别使用 `ctx_w` 和 `ctx_kv` 维护其元数据
 
 #quote(block: true)[
@@ -927,6 +963,8 @@ ggml_backend_t backend = tensor_backends[name];
 ggml_tallocr * alloc = &backend_buffers.find(backend)->second;
 ggml_tallocr_alloc(alloc, tensor);
 ```
+
+#figure(fig.fig-sched-layers(), caption: [`main-sched` 中 12 层的 GPT-2 在 `n_gpu_layers = 4` 时的权重放置。]) <fig-sched-layers>
 
 #callout(kind: "info", title: "QUESTION / 为什么不在第 4 步之后统一创建呢？")[
 TODO: 测试一下效果
@@ -1022,6 +1060,9 @@ void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgra
 - #strong[Pass 5]: 图分割和标记需要复制的张量
 
 - 将图分割成多个子图，每个子图在一个后端上运行
+
+
+#figure(fig.fig-sched-passes(), caption: [`ggml_backend_sched_split_graph` 在 12 个节点上的分配过程（Pass 3、4 在这个例子里没有改变分配）。]) <fig-sched-passes>
 
 = llama.cpp Cheatsheet
 关键变量定义：
@@ -1187,41 +1228,7 @@ How to analyze?
   - 在哪里进行计算图的预留和分配
 
 == simple.cpp 流程分析
-```ascii
- llma_context_from_model() -- simple.cpp:116
-  │
-        ├─ new llama_context(): 进行 graph_reserve
-        │
-        ▼
-    llama_decode(ctx, batch)
-        │
-        ▼
-llama-context.cpp:2857
-    ctx->decode(batch)
-        │
-        ▼
-llama-context.cpp:946
-    llama_context::decode(batch_inp)
-        │
-        ├─ 准备 ubatch
-        │
-        ▼
-llama-context.cpp:1076
-    process_ubatch(ubatch, LLM_GRAPH_TYPE_DECODER, ...)
-        │
-        ├─ 步骤4: 定义计算图
-        │   ├─ get_graph_result()  // 尝试复用
-        │   └─ model.build_graph() // 新建图
-        │       └─ new llm_build_qwen3(model, params)
-        │           └─ 构造函数中构建计算图
-        │
-        │
-        ├─ 步骤5: 分配空间
-        │   └─ ggml_backend_sched_alloc_graph -- llama-context.cpp:750
-        │
-        └─ 步骤6: 执行计算
-            └─ ggml_backend_sched_graph_compute_async(sched, gf)
-```
+#figure(fig.fig-decode-flow(), caption: [`simple.cpp` 中一次 `llama_decode` 的调用链。]) <fig-decode-flow>
 
 TODO: 下面是一些零散的分析
 
@@ -1391,35 +1398,7 @@ struct llama_tensor_weight {
 
 #strong[GGUF 文件结构]：
 
-```ascii
-┌────────────────────────────────────────────────┐
-│ GGUF Header                                    │
-│  - Magic number                                │
-│  - Version                                     │
-│  - Tensor count                                │
-│  - KV metadata count                           │
-├────────────────────────────────────────────────┤
-│ KV Metadata                                    │
-│  - Model hyperparameters                       │
-│  - Tokenizer info                              │
-├────────────────────────────────────────────────┤
-│ Tensor Info (每个 tensor 的元数据)             │
-│  - name: "token_embd.weight"                   │
-│    offset: 0                                   │  ← 相对偏移
-│    shape: [4096, 32000]                        │
-│    type: F16                                   │
-│  - name: "blk.0.attn_q.weight"                 │
-│    offset: 262144000                           │  ← 相对偏移
-│    shape: [4096, 4096]                         │
-│  - ...                                         │
-├────────────────────────────────────────────────┤ ← data_offset
-│ Tensor Data (实际权重数据)                     │
-│  [token_embd.weight data]                      │ ← offset 0
-│  [padding if needed]                           │
-│  [blk.0.attn_q.weight data]                    │ ← offset 262144000
-│  ...                                           │
-└────────────────────────────────────────────────┘
-```
+#figure(fig.fig-gguf-layout(), caption: [GGUF 文件结构：tensor info 中的 offset 相对于 `data_offset`。]) <fig-gguf-layout>
 
 === Step 2: mmap 映射整个文件到内存
 ```cpp
@@ -1447,23 +1426,7 @@ void llama_model_loader::init_mappings(bool prefetch, llama_mlocks * mlock_mmaps
 
 #strong[mmap 后的内存布局]：
 
-```ascii
-文件:                      mmap 后的虚拟内存:
-┌─────────────────┐        ┌─────────────────┐
-│ GGUF Header     │ ────▶  │ 0x7f8000000000  │ (只读映射)
-│ Metadata        │        │                 │
-│ Tensor Info     │        │                 │
-├─────────────────┤        ├─────────────────┤
-│ data_offset     │        │ mmap_base       │ ← mapping->addr()
-│   token_embd    │        │   token_embd    │
-│   (offset=0)    │        │   (addr = base) │
-├─────────────────┤        ├─────────────────┤
-│   attn_q        │        │   attn_q        │
-│   (offset=262M) │        │   (addr = base+262M) │
-├─────────────────┤        ├─────────────────┤
-│   ...           │        │   ...           │
-└─────────────────┘        └─────────────────┘
-```
+#figure(fig.fig-mmap-range(), caption: [mmap 模式：文件就是 buffer，每个 tensor 的 `data` 直接指向映射后的地址。]) <fig-mmap-range>
 
 === Step 3: 创建 buffer\_from\_host\_ptr
 ```cpp
@@ -1546,34 +1509,3 @@ if (use_mmap) {
     }
 }
 ```
-
-== gguf 加载流程
-== simple-qwen3 from scratch
-只考虑在 cpu 上，所以使用的模型是 Qwen3-1.7B-Q6\_K.gguf
-
-meta\_kv 不用读，我们可以直接指定，只用读 tensor 就可以了
-
-只考虑单后端
-
-加载 tokenizer，加载权重
-
-从工作量和相关性上考虑，连 tokenizer 其实都不用加载，我们直接从现有的 simple.cpp 中获取 std::vector\<llama\_token\> 即可
-
-便于 ai 辅助，应该在 llama.cpp 的仓库中测试
-
-可以采用渐进式？gguf.c 那几个相关文件完全可以复用
-
-流程整理：
-
-+ 加载 gguf 文件到内存中
-+ 解析 gguf 文件，读 tensor\_info
-
-cb 有什么用？
-
-如果 qwen3 比较困难，可以考虑直接用 llama.cpp 里的 GPT2, 这样所有东西都是完整的
-
-memory\_v 的 shape 错了
-
-不行不行，这样写太难了
-
-我建议从 main-backend 开始改，先改为 mmap + 加载实际的 gguf 文件

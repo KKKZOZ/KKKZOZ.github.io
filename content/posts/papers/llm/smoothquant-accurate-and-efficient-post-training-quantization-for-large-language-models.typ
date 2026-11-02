@@ -136,7 +136,7 @@ for m in 0..M-1:
 
 The Equation 2 is the same meaning (but there are no extra two diga matrix multiplications):
 
-$ Y\[t\,j\]= Delta_X^(upright("FP16"))\[t\]\;#scale(x: 180%, y: 180%)[\(] sum_k macron(X)_(upright("INT8"))\[t\,k\]\;macron(W)_(upright("INT8"))\[k\,j\]#scale(x: 180%, y: 180%)[\)]\;Delta_W^(upright("FP16"))\[j\] $
+$ Y\[t\,j\]= Delta_X^(upright("FP16"))\[t\]\;lr(( sum_k macron(X)_(upright("INT8"))\[t\,k\]\;macron(W)_(upright("INT8"))\[k\,j\] ))\;Delta_W^(upright("FP16"))\[j\] $
 
 About W8A8 quantization:
 
@@ -166,7 +166,7 @@ $ Y =\(X d i a g\(s\)^(- 1)\)dot.op\(d i a g\(s\)W\)= hat(X) hat(W) $
 
 To balance the diffculity of quantization in activations and weights, SmoothQuant introduces a hyper-parameter:
 
-$ s_j = frac(max #scale(x: 120%, y: 120%)[\(]\|X_j\|#scale(x: 120%, y: 120%)[\)]^alpha, max #scale(x: 120%, y: 120%)[\(]\|W_j\|#scale(x: 120%, y: 120%)[\)]^(1 - alpha))\,quad j = 1\,2\,dots.h\,C_i $
+$ s_j = frac(max lr(( \|X_j\| ), size: #120%)^alpha, max lr(( \|W_j\| ), size: #120%)^(1 - alpha))\,quad j = 1\,2\,dots.h\,C_i $
 
 #img("/assets/images/pasted-image-20251116102707.png", alt: "pasted-image-20251116102707")
 #quote(block: true)[

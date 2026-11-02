@@ -546,7 +546,9 @@ a.density-bar:is(:hover, :focus-visible) { --fill: var(--ink); --rule: var(--ink
 /* l2 boxes line up with l1 titles: 10px pad + 7px box + 8px gap + "01" + 8px gap. */
 .toc-list .toc-l2 a { padding-left: 49px; font-size: 12px; }
 .toc-num { flex: none; color: var(--orange); font-weight: 500; }
-.toc-l2 .toc-num { font-weight: 400; }
+/* l3 boxes line up with l2 titles: 49px + 7px box + 8px gap + "3.1" + 8px gap. */
+.toc-list .toc-l3 a { padding-left: 94px; font-size: 12px; }
+.toc-l2 .toc-num, .toc-l3 .toc-num { font-weight: 400; }
 .toc-list a:hover { color: var(--ink); }
 .toc-list a.is-active { color: var(--ink); border-left-color: var(--orange); }
 
@@ -629,6 +631,22 @@ html { scroll-behavior: smooth; }
 .endnotes li:target { color: var(--ink); background: var(--tint); }
 .endnotes li > p { margin: 0 0 .4em; }
 .fn-back { margin-left: .4em; color: var(--orange) !important; text-decoration: none !important; }
+
+/* Terms (utils/ui.typ `term`): a dotted underline in the text, a Terms list
+   after the notes, each name over its definition. */
+.term-ref, .term-ref:hover { color: inherit; text-decoration: underline dotted; text-decoration-color: var(--orange); text-decoration-thickness: 1.5px; text-underline-offset: 4px; cursor: help; scroll-margin-top: 24px; }
+.term-ref:hover { background: var(--tint); }
+.endterms dl { margin: 8px 0 0; font-size: 13px; line-height: 1.65; color: var(--muted); }
+.endterms dl > div { padding: 2px 0 2px 2.4em; margin-bottom: .5em; scroll-margin-top: 24px; }
+.endterms dl > div:target { color: var(--ink); background: var(--tint); }
+.endterms dt { font: 500 12px var(--font-mono); color: var(--orange); letter-spacing: .03em; }
+.endterms dd { margin: 0; }
+.endterms dd > p { margin: 0 0 .4em; }
+/* A term's picture and its credit, in the list and in the popover (.fn-tip). */
+.term-img { max-width: 240px; margin: 4px 0 6px; }
+.fn-tip .term-img { max-width: none; }
+.term-img img { display: block; width: 100%; height: auto; }
+.term-credit { display: block; margin-top: 4px; font: 11px/1.5 var(--font-mono); color: var(--muted); }
 
 .fn-tip {
   position: absolute;
@@ -791,7 +809,7 @@ html { scroll-behavior: smooth; }
   border-left: 3px solid var(--orange);
   line-height: 1.55;
 }
-:where(.prose) pre code { font-size: 14px; }
+:where(.prose) pre code { font-size: 15px; }
 
 /* Code block wrapper (show rule in base.typ): language + copy bar over the pre. */
 :where(.prose) .code-block { margin: 0 0 1.1em; background: var(--pre-bg); border-left: 3px solid var(--orange); }
@@ -821,7 +839,7 @@ html { scroll-behavior: smooth; }
   border-collapse: collapse;
   display: block;
   overflow-x: auto;
-  font-size: 14px;
+  font-size: 15px;
 }
 :where(.prose) th, :where(.prose) td {
   padding: 7px 10px;
@@ -865,6 +883,11 @@ html { scroll-behavior: smooth; }
 [role="math"].is-selected svg { background: var(--tint); }
 /* An inline formula and the punctuation after it (assets/scripts/math.js). */
 .math-nobreak { white-space: nowrap; }
+/* Typst paints ink glyphs with the light-theme ink; take the surrounding text
+   colour instead (theme, table headers), and add a thin outline so New Computer
+   Modern's hairlines sit closer to the weight of IBM Plex Mono. Units are pt
+   (the frame's viewBox). */
+:is(.math-inline, .math-block) use[fill="#222a2d"] { fill: currentColor; stroke: currentColor; stroke-width: .2; stroke-linejoin: round; }
 .svg-frame svg, .cetz svg, :where(.prose) figure svg { max-width: 100%; height: auto !important; }
 /* Typst 0.15 writes frames as display: block; keep them inline so the
    wrapper's text-align places them, as before. */
@@ -929,6 +952,13 @@ figure:has(> :is(.img, .gallery)) > figcaption { text-align: left; }
 figure:has(> .img[style]) > figcaption { text-align: center; }
 .gallery { display: grid; grid-template-columns: repeat(var(--cols, 2), 1fr); gap: 12px; }
 .gallery-item .label { margin-top: 6px; }
+/* `two-cols` (utils/ui.typ): two blocks side by side, stacked when narrow. */
+.two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 0 0 1.1em; }
+.two-cols-item { min-width: 0; }
+.two-cols-item > .label { margin-bottom: 6px; }
+.two-cols :is(.code-block, pre) { margin-bottom: 0; }
+.two-cols pre code { font-size: 13.5px; }
+@media (max-width: 600px) { .two-cols { grid-template-columns: 1fr; } }
 @media (min-width: 601px) and (max-width: 760px) { .channel-grid { columns: 2; } }
 /* Past the column by up to 80px a side, as far as the window allows. */
 figure:has(> .img-bleed) { margin-inline: calc(-1 * clamp(0px, (100vw - var(--measure)) / 2 - var(--gutter), 80px)); }
@@ -1033,7 +1063,7 @@ html { scroll-behavior: smooth; }
 
 /* Inline SVG (math, cetz, html.frame) carries its colours as fill / stroke
    attributes, which CSS overrides. Each colour the figures draw with (the
-   `palette` in base.typ, utils/diagram.typ, utils/figures/) maps to its
+   `palette` in base.typ, utils/diagram.typ, figures/) maps to its
    night value; the day value is the original, so the day theme is unchanged.
    A colour missing here is drawn as is in both themes. */
 svg [fill="#000000"] { fill: var(--ink); }

@@ -1,13 +1,20 @@
 #import "@tola/source:0.0.0": tola-meta
+#import "/utils/ui.typ": img
+#import "/figures/macos.typ" as fig
 
 #tola-meta((
-  title: "Mac Development Environment Setup",
+  title: "macOS Setup & Workflow",
   date: "2024-11-21",
+  updated: "2026-11-02",
   tags: ("Dev",),
   weight: 10,
 ))
 
-= How to install Homebrew?
+#quote(block: true)[
+在 Mac 上搭开发环境、配工具链、调快捷键和窗口管理时整理的笔记
+]
+
+= Homebrew
 #quote(block: true)[
 #link("https://mirrors.tuna.tsinghua.edu.cn/help/homebrew/")[参考资料]
 ]
@@ -94,6 +101,8 @@ HOMEBREW\_BREW\_GIT\_REMOTE
 - 这个变量指向 Homebrew 的核心代码仓库
 - 它不直接对应你列出的三个步骤，而是用于更新 Homebrew 自身的代码
 ]
+
+#figure(fig.fig-brew-mirrors(), caption: [三个镜像变量各自负责的环节：`HOMEBREW_API_DOMAIN` 提供 Formula，`HOMEBREW_BOTTLE_DOMAIN` 提供预编译包，`HOMEBREW_BREW_GIT_REMOTE` 只在 `brew update` 更新 Homebrew 自身时用到。]) <fig-brew-mirrors>
 
 如果你使用的是 fish:
 
@@ -205,7 +214,7 @@ brew install jesseduffield/lazygit/lazygit  # 更新更快，版本更新
 
 - 如果软件作者建议使用他们的 Tap（如 lazygit 的例子），最好遵循他们的建议
 
-= How to install Java?
+= Java
 + 查看可用的 OpenJDK 版本
 
 使用 `brew search` 命令列出可用的 OpenJDK 版本：
@@ -275,7 +284,333 @@ export PATH="/opt/homebrew/opt/openjdk@17/bin:$PATH"
 java --version
 ```
 
-= 为什么有些时候我在 macos 上长按 jkhl 时会出现类似于希腊字母的选项，我只是想输入jjjjjj之类的
+= Clang on Apple
+最近在 macOS 上尝试编译 #link("https://github.com/ggerganov/llama.cpp")[llama.cpp] 的过程中，踩了不少坑。最后的结论其实很简单：#strong[在 macOS 上，最稳妥的方案就是直接用系统自带的 Apple Clang]。这样几乎不需要额外配置，避免了各种 ABI、SDK 的兼容性问题。
+
+== 遇到的问题
+一开始我用的是 Homebrew 安装的 LLVM/Clang：
+
+```bash
+brew install llvm
+```
+
+然后在 CMake 的 toolchain 或者 preset 里，把编译器指定成了：
+
+```shell
+/opt/homebrew/opt/llvm/bin/clang
+/opt/homebrew/opt/llvm/bin/clang++
+```
+
+结果一跑，问题接踵而至：
+
++ #strong[SDK 找不到]
+  链接时提示：
+
+  ```shell
+  ld: library 'System' not found
+  ```
+
+  这是因为 Homebrew 的 clang 默认不会自动找到 macOS SDK，导致 `libSystem` 等核心库无法链接。
+
++ #strong[ABI 不兼容]
+  在修复 SDK 之后，又遇到了链接报错：
+
+  ```shell
+  Undefined symbols for architecture arm64:
+    "std::__1::__hash_memory(void const*, unsigned long)", ...
+  ```
+
+  这些符号来自 #strong[libc++ 21 的新 ABI]（Homebrew 的 LLVM），但链接时却跑去用了 Apple SDK 里的老版本 libc++。结果头文件和库的版本不一致，出现了典型的 ABI mismatch。
+
++ #strong[target 设置问题]
+  有些 toolchain 文件里还写了奇怪的 target，比如 `arm64-apple-darwin-macho`。这种 target 会绕过 clang 的默认逻辑，进一步让 SDK 的自动发现失效。
+
+总结一下就是：#strong[编译器、头文件、库三者不一致 → 必炸]。
+
+== 为什么用系统自带的 Clang 就没问题？
+macOS 自带的 Apple Clang（`/usr/bin/clang`、`/usr/bin/clang++`）和 Xcode / Command Line Tools 深度绑定，默认就知道 SDK 在哪里，默认就用系统的 libc++，不会出现找不到 `libSystem` 或 ABI 符号冲突的问题。
+
+比如在终端里执行：
+
+```bash
+/usr/bin/clang --version
+```
+
+会看到类似：
+
+```shell
+Apple clang version 17.0.0 (clang-1700.0.13.5)
+Target: arm64-apple-darwin24.6.0
+```
+
+用这个编译 `llama.cpp`，基本就是一条龙流程：
+
+```bash
+cmake -B build
+cmake --build build
+```
+
+完全不需要额外指定 `-isysroot`、`-lc++abi`、`-nostdinc++` 等乱七八糟的参数。
+
+== 如果一定要用 Homebrew 的 LLVM？
+有些场景（比如需要最新的 Clang 特性）可能确实要用 Homebrew 的 LLVM。这时候必须#strong[保证头文件和库也来自 Homebrew 的 libc++]，不能混用 Apple 的。
+
+这意味着：
+
+- 编译时要加：
+
+  ```shell
+  -nostdinc++ -I/opt/homebrew/opt/llvm/include/c++/v1
+  ```
+
+- 链接时要加：
+
+  ```shell
+  -L/opt/homebrew/opt/llvm/lib -Wl,-rpath,/opt/homebrew/opt/llvm/lib -lc++ -lc++abi
+  ```
+
+- 同时还要指定 `-isysroot` 指向 macOS SDK，用来找系统框架。
+
+这种配置方式非常繁琐，稍有不慎就会 ABI 冲突。所以除非有强需求，否则不建议走这条路。
+
+== 结论
+在 macOS 上编译 #strong[llama.cpp]（以及大多数需要链接系统框架的 C++ 项目），#strong[最简单、最稳妥的选择就是直接使用 Apple 自带的 Clang]。
+
+- ✅ 无需额外配置
+- ✅ 自动找到 SDK 和系统库
+- ✅ 避免 libc++ ABI 冲突
+
+如果一定要用 Homebrew 的 LLVM，就要小心处理 C++ 标准库的头文件和动态库路径，否则很容易踩到 ABI mismatch 的坑。
+
+#html.hr()
+#quote(block: true)[
+!\[SUMMARY\]
+
+#strong[别折腾了，直接用系统自带的 clang，安心愉快地编译。]
+]
+
+= Keyboard Shortcuts
+#quote(block: true)[
+Summarize the various keyboard shortcuts I am currently using.
+]
+
+== Key Mapping
+- Map Caps Lock to Hyper key (Using Karabiner)
+
+== System Wide
+=== Open Apps
+#quote(block: true)[
+Use Karabiner
+]
+
+Open apps with Hyper key:
+
+- `Hyper + Q`: Open QQ
+- `Hyper + W`: Open WeChat
+- `Hyper + E`: Open Browser (Easy to press)
+- `Hyper + A`: Open Alacritty
+- `Hyper + S`: Open Sublime
+- `Hyper + D`: Open VSCode (Easy to press)
+- `Hyper + Z`: Open Zotero
+- `Hyper + X`: Open Typora (Easy to press)
+- `Hyper + C`: Open VSCode (Easy to press)
+- `Hyper + P`: Open PowerPoint
+- `Hyper + L`: Open Excel
+- `Hyper + H`: Hide Current Window (Combo: `Hyper + A`, then `+ H` to peek new messages)
+
+=== Open Utilities
+- `Option + W`: Bob Translate
+- `Option + .`: Raycast Note
+- `Cmd + Space`: Trigger Raycast
+- `Option + Space`: To be determined
+- `Hyper + Space`: Open Raycast AI Chat
+- `Option + Cmd + Space`: Open Spotlight
+- `Ctrl + Option + Space`: Trigger Emoji Search (Raycast)
+
+=== Windows Utilities
+- `Option + H`: First Two Thirds
+
+- `Option + L`: Last Third
+
+- `Option + J`: Left Half
+
+- `Option + K`: Right Half
+
+- `Option + =`: Make Larger
+
+- `Option + =`: Make Smaller
+
+- `Option + M`: Maximize Current Window
+
+- `Option + R`: Reasonable Size
+
+- `Option + C`: Center Current Window
+
+- `Option + Up`: Move Up
+
+- `Option + Down`: Move Down
+
+- `Option + Left`: Move Left
+
+- `Option + Right`: Move Right
+
+- `Option + Shift + H`: Move to Left Monitor
+
+- `Option + Shift + L`: Move to Right Monitor
+
+== VSCode
+=== Go to
+- `Cmd + P`: Search files by name
+  - By adding `@`, go to symbols
+- `Cmd + Shift + P`: Open Command Palette
+- `Cmd + Shift + O`: Go to symbol in file
+
+=== Copilot
+- `Tab`: Accept suggestion
+- `Cmd + Left`: Accept suggestion for next token
+- `Cmd + Down`: Accept suggestion for next line
+
+=== Tabs and Panels
+- `Ctrl + H`: Go to previous tab
+
+- `Ctrl + L`: Go to next tab
+
+- `Ctrl + J`: Move current tab forward
+
+- `Ctrl + K`: Move current tab backward
+
+- `Cmd + B`: Toggle Primary Side Bar
+
+- `Option + Cmd + B`: Toggle Secondary Side Bar
+
+- `Cmd + J`: Toggle Bottom Bar
+
+== Arc
+=== Go to
+- `Cmd + 1/2/3/4/5/6/7/8`: Go to favorite 1/2/3/4/5/6/7/8
+- `Cmd + T`: Go to tab
+- `Cmd + N`: New tab
+- `Cmd + ~`: Switch tab
+
+=== Utilities
+- `Shift + Cmd + C`: Copy link
+- `Shift + Option + Cmd + C`: Copy link in markdown format
+
+=== Extensions
+- `Cmd + 0`: Bionic On/Off
+
+== BetterTouchTool
+=== Three Fingers
+- `Swipe right`: Move cursor to the center of the right monitor
+- `Swipe left`: Move cursor to the center of the left monitor
+
+= AeroSpace
+== Concepts
+- Each workspace contains its own single root node
+- Each non-leaf node is called a \"Container\"
+- Each container can contain arbitrary number of children nodes
+- Windows are the only possible leaf nodes. Windows contain zero children nodes
+- Every container has two properties:
+  + #link("https://nikitabobko.github.io/AeroSpace/guide#layouts")[Layout] (Possible values: `tiles`, `accordion`)
+  + Orientation (Possible values: `horizontal`, `vertical`)
+
+Some examples:
+
+#img("/assets/images/image-20241220165926835.png", alt: "image-20241220165926835")
+#img("/assets/images/image-20241220170016430.png", alt: "image-20241220170016430")
+In total, AeroSpace provides 4 possible layouts:
+
+- `h_tiles` horizontal tiles (in i3, it's called \"horizontal split\")
+- `v_tiles` vertical tiles (in i3, it's called \"vertical split\")
+- `h_accordion` horizontal accordion (analog of i3's \"tabbed layout\")
+- `v_accordion` vertical accordion (analog of i3's \"stacked layout\")
+
+Accordion is a layout where windows are placed on top of each other.
+
+- #strong[The horizontal accordion] shows left and right paddings to visually indicate the presence of other windows in those directions.
+
+#img("/assets/images/image-20241220170411145.png", alt: "image-20241220170411145")
+- #strong[The vertical accordion] shows top and bottom paddings to visually indicate the presence of other windows in those directions.
+
+#img("/assets/images/image-20241220170424142.png", alt: "image-20241220170424142")
+== Normalization
+By default, AeroSpace does two types of tree normalizations:
+
++ Containers that have only one child are \"flattened\". The root container is an exception, it is allowed to have a single window child. Configured by `enable-normalization-flatten-containers`
+
+#quote(block: true)[
+Example 1
+]
+
+According to the first normalization, such layout isn't possible:
+
+```shell
+h_tiles (root node)
+└── v_tiles
+    └── window 1
+```
+
+it will be immediately transformed into
+
+```shell
+v_tiles (new root node)
+└── window 1
+```
+
+== Shortcuts
+=== Between Workspaces
+- Switch Workspaces
+
+```toml
+alt-1 = 'workspace 1'
+alt-2 = 'workspace 2'
+alt-3 = 'workspace 3'
+# ...
+alt-b = 'workspace B'
+alt-c = 'workspace C'
+alt-d = 'workspace D'
+```
+
+- Move Node to Workspaces
+
+```toml
+alt-shift-1 = 'move-node-to-workspace 1'
+alt-shift-2 = 'move-node-to-workspace 2'
+alt-shift-3 = 'move-node-to-workspace 3'
+# ...
+alt-shift-b = 'move-node-to-workspace B'
+alt-shift-c = 'move-node-to-workspace C'
+alt-shift-d = 'move-node-to-workspace D'
+```
+
+=== In a Workspace
+- Focus Different Node
+
+```toml
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+```
+
+- Change Node Position
+
+```toml
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+```
+
+- Resize Node
+
+```toml
+alt-shift-minus = 'resize smart -50'
+alt-shift-equal = 'resize smart +50'
+```
+
+= Miscellaneous
+== 为什么有些时候我在 macos 上长按 jkhl 时会出现类似于希腊字母的选项，我只是想输入jjjjjj之类的
 #quote(block: true)[
 \(玩 Vim 玩得)
 ]
@@ -290,7 +625,7 @@ defaults write -g ApplePressAndHoldEnabled -bool false
 
 执行后需要重启系统才能生效
 
-= MacOS 相册的底层组织逻辑
+== MacOS 相册的底层组织逻辑
 - #strong[Remove from Album]（从相册中移除）
 
   - #strong[作用]：仅将选中的照片从当前相册中移除，#strong[不影响照片在图库（Library）和其他相册中的存在]
@@ -314,7 +649,7 @@ defaults write -g ApplePressAndHoldEnabled -bool false
   - #strong[智能相册]：基于规则（如日期、关键词）自动生成的动态合集，无法手动移除照片，只能修改规则。
   - #strong[系统相册]：如「所有照片」「最近删除」等，具有特殊逻辑（如「最近删除」保留文件 30 天）
 
-== #strong[总结]
+=== #strong[总结]
 - #strong[Remove from Album] = 整理相册结构，不删原图
 - #strong[Delete Photos] = 彻底删除照片，释放存储空间
 - 底层逻辑：图库是核心，相册是“视图”，操作需区分引用与实体数据

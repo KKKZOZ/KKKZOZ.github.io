@@ -1,4 +1,4 @@
-// Detailed figures for content/posts/ml-systems/math/probability-and-statistics.typ,
+// Detailed figures for content/posts/ml-systems/math/matrix-math.typ,
 // drawn with cetz. Each `fig-*` function returns one canvas; coordinates are in
 // points (1pt per unit, y grows upward) and every figure stays under ~560pt
 // wide, so it renders at true scale in the 760px column.

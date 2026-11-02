@@ -5,7 +5,7 @@ run = '''
 set -euo pipefail
 
 # Files the blog maintains itself: theme changes to these are discarded (and listed).
-owned=(.github .gitignore tola.toml package.json package-lock.json templates/config.typ content assets/images utils/figures scripts)
+owned=(.github .gitignore tola.toml package.json package-lock.json templates/config.typ content assets/images figures scripts)
 # Files that only belong in the theme repo.
 theme_only=(docs LICENSE README.md README.zh-CN.md)
 

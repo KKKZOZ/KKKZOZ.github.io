@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
-#import "/utils/figures/tilelang.typ" as fig
+#import "/figures/tilelang.typ" as fig
 
 #tola-meta((
   title: "TileLang Programming Model",
@@ -99,7 +99,7 @@ extern "C" __global__ void __launch_bounds__(256, 1) tl_copy_1d_parallel_thread_
 
 假设一个 block 有 4 个线程，要搬 16 个格子：
 
-#fig.fig-copy-partition()
+#figure(fig.fig-copy-partition(), caption: [两种划分方式：block 视角下每个线程搬连续的 4 格（一次向量化 load），thread 视角下每轮每个线程搬 1 格（4 次标量 load）。]) <fig-copy-partition>
 
 Kernel 1 的切法（按块切，每人拿一整块）：每人拿到连续的 4 个，一次拿走。threadIdx.x \* 4 就是每人的起始位置。
 
@@ -170,7 +170,7 @@ T.alloc_shared((N,), dtype)    → 完全共享，所有 thread 访问同一份
 T.alloc_fragment((N,), dtype)  → 分布式，逻辑上是一个 tile，物理上切分给各 thread
 ```
 
-#fig.fig-alloc-scopes()
+#figure(fig.fig-alloc-scopes(), caption: [三种分配：`alloc_local` 每线程私有，`alloc_shared` 每 block 一份，`alloc_fragment` 是一个逻辑 tile、物理上分散在各线程的寄存器里。]) <fig-alloc-scopes>
 
 以 `T.alloc_fragment((BLOCK_N,), accum)` 且 threads=BLOCK\_N 为例：
 
@@ -187,7 +187,7 @@ T.alloc_fragment((N,), dtype)  → 分布式，逻辑上是一个 tile，物理�
 = 操作的层级归宿
 TileLang 对操作有严格的层级归属：
 
-#fig.fig-op-scopes()
+#figure(fig.fig-op-scopes(), caption: [操作的层级归属：tile 操作属于 block 级，`T.Parallel` 内只能写逐元素运算，`T.serial` 是单线程内的顺序循环。]) <fig-op-scopes>
 
 换句话说：
 

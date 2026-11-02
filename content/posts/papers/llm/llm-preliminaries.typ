@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, img
+#import "/utils/mitex.typ": mitex
 
 #tola-meta((
   title: "LLM Preliminaries",
@@ -40,7 +41,7 @@ $ y_j = sum_(i = 1)^3 x_i w_(i j) quad upright("for ") j = 1\,2\,dots.h\,6 $
 === 角度二：将 W 视为由 3 个行向量组成
 在这个视角下，我们将矩阵 $W$ 看作是由三个形状为 $\(1\,6\)$ 的行向量 $w_(upright("row1"))\,w_(upright("row2"))\,w_(upright("row3"))$ 堆叠而成的。
 
-$ W = mat(delim: "[", upright("— ") w_(upright("row1")) upright(" —"); upright("— ") w_(upright("row2")) upright(" —"); upright("— ") w_(upright("row3")) upright(" —")) $
+#mitex(`W = \begin{bmatrix} \text{— } w_{\text{row1}} \text{ —} \\ \text{— } w_{\text{row2}} \text{ —} \\ \text{— } w_{\text{row3}} \text{ —} \end{bmatrix}`)
 
 其中：
 
@@ -361,7 +362,7 @@ else:
 
 对 $W_(upright("gate"))\,W_(upright("up"))$ 做#strong[按列切分]（column-parallel），对 $W_(upright("down"))$ 做#strong[按行切分]（row-parallel）。设设备数为 $D$，把中间维 $I$ 均分为 $I = I_1 + dots.h.c + I_D$。对应地：
 
-$ W_(upright("gate")) = #scale(x: 120%, y: 120%)[\[] W_(upright("gate"))^(\(1\)) thick\|thick dots.h.c thick\|thick W_(upright("gate"))^(\(D\)) #scale(x: 120%, y: 120%)[\]]\,quad W_(upright("up")) = #scale(x: 120%, y: 120%)[\[] W_(upright("up"))^(\(1\)) thick\|thick dots.h.c thick\|thick W_(upright("up"))^(\(D\)) #scale(x: 120%, y: 120%)[\]]\, $
+$ W_(upright("gate")) = lr([ W_(upright("gate"))^(\(1\)) thick\|thick dots.h.c thick\|thick W_(upright("gate"))^(\(D\)) ], size: #120%)\,quad W_(upright("up")) = lr([ W_(upright("up"))^(\(1\)) thick\|thick dots.h.c thick\|thick W_(upright("up"))^(\(D\)) ], size: #120%)\, $
 
 其中 $W_(upright("gate"))^(\(i\))\,W_(upright("up"))^(\(i\)) in bb(R)^(H times I_i)$；
 
@@ -370,7 +371,7 @@ $ W_(upright("down")) = mat(delim: "[", W_(upright("down"))^(\(1\)); dots.v; W_(
 === 列并行拆分
 矩阵乘法按#strong[列块]的恒等式：
 
-$ X W_(upright("gate")) = #scale(x: 120%, y: 120%)[\[] thin X W_(upright("gate"))^(\(1\)) thick #scale(x: 120%, y: 120%)[\|] thick dots.h.c thick #scale(x: 120%, y: 120%)[\|] thick X W_(upright("gate"))^(\(D\)) thin #scale(x: 120%, y: 120%)[\]]\, $
+$ X W_(upright("gate")) = lr([ thin X W_(upright("gate"))^(\(1\)) thick mid(|) thick dots.h.c thick mid(|) thick X W_(upright("gate"))^(\(D\)) thin ], size: #120%)\, $
 
 因此每个设备 $i$ 都能独立得到本地的投影片段
 
@@ -382,16 +383,16 @@ $ H_(upright("fused"))^(\(i\)) = upright("SiLU")\(G^(\(i\))\)dot.o U^(\(i\)) in 
 
 而无需和别的设备通信；把所有 $H_(upright("fused"))^(\(i\))$ 横向拼起来就得到完整的
 
-$ H_(upright("fused")) = #scale(x: 120%, y: 120%)[\[] H_(upright("fused"))^(\(1\)) thick\|thick dots.h.c thick\|thick H_(upright("fused"))^(\(D\)) #scale(x: 120%, y: 120%)[\]] in bb(R)^(B times I) . $
+$ H_(upright("fused")) = lr([ H_(upright("fused"))^(\(1\)) thick\|thick dots.h.c thick\|thick H_(upright("fused"))^(\(D\)) ], size: #120%) in bb(R)^(B times I) . $
 
 === 行并行 + 外积展开
 把中间结果按#strong[列]切成块、把 W\_down 权重按#strong[行]切成块：
 
-$ H_(upright("fused")) = #scale(x: 120%, y: 120%)[\[] H^(\(1\)) thick\|thick H^(\(2\)) thick\|thick dots.h.c thick\|thick H^(\(D\)) #scale(x: 120%, y: 120%)[\]]\,quad W_(upright("down")) = mat(delim: "[", W^(\(1\)); W^(\(2\)); dots.v; W^(\(D\))) $
+$ H_(upright("fused")) = lr([ H^(\(1\)) thick\|thick H^(\(2\)) thick\|thick dots.h.c thick\|thick H^(\(D\)) ], size: #120%)\,quad W_(upright("down")) = mat(delim: "[", W^(\(1\)); W^(\(2\)); dots.v; W^(\(D\))) $
 
 那么最关键的乘法就是一个非常朴素的块矩阵恒等式：
 
-$ H_(upright("fused")) thin W_(upright("down")) = #scale(x: 120%, y: 120%)[\[] H^(\(1\))\|dots.h.c\|H^(\(D\)) #scale(x: 120%, y: 120%)[\]] mat(delim: "[", W^(\(1\)); dots.v; W^(\(D\))) = thick H^(\(1\)) W^(\(1\)) thick + thick dots.h.c thick + thick H^(\(D\)) W^(\(D\)) . $
+$ H_(upright("fused")) thin W_(upright("down")) = lr([ H^(\(1\))\|dots.h.c\|H^(\(D\)) ], size: #120%) mat(delim: "[", W^(\(1\)); dots.v; W^(\(D\))) = thick H^(\(1\)) W^(\(1\)) thick + thick dots.h.c thick + thick H^(\(D\)) W^(\(D\)) . $
 
 所以在列并行结束后，设备之间不用相互通信，正好可以用自己本地的 $H_(f u s e d)^(\(i\))$，在本地进行 $H^(\(i\)) W^(\(i\))$ 计算，最后再 `allreduce` 到一起。
 

@@ -2,7 +2,7 @@
 // the KTransformers slides. Colours are restricted to the ones that
 // assets/styles/site.css maps to night values, so every figure follows the
 // day / night switch.
-// Import: #import "/utils/figures/ktransformers.typ": diagram
+// Import: #import "/figures/ktransformers.typ": diagram
 
 #import "@preview/cetz:0.5.2"
 #import "/utils/cetz.typ": svg-frame

@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": hint, xref
-#import "/utils/figures/torch-compile.typ" as fig
+#import "/figures/torch-compile.typ" as fig
 
 #tola-meta((
   title: "torch.compile Walkthrough",
@@ -64,7 +64,7 @@ graph():
 - `num_users` 都是 `1`：每个中间结果只被下一个 node 使用一次。
 - `return (sum_1,)` 是 FX Graph 的 `output` node。
 
-#fig.fig-fx-graph()
+#figure(fig.fig-fx-graph(), caption: [Dynamo 捕获的 FX Graph：3 个 placeholder、4 个计算 node 和 1 个 output node。]) <fig-fx-graph>
 
 这一层还是 Python 语义：记录的是 `operator.add` 和 `Tensor.sum`，还没有对应到具体的 ATen overload。
 
@@ -105,7 +105,7 @@ def forward(self, arg0_1: "f32[4, 128]", arg1_1: "f32[4, 128]", arg2_1: "f32[4, 
 - 这四个 op 本身就是 Inductor 能直接 lower 的 ATen op，没有被继续 decompose；全程是 `float32`，也没有插入 dtype 转换。
 - 这是 inference 编译，没有 backward graph；函数里没有 mutation，functionalization 也没有改动任何东西。
 
-#fig.fig-aot-map()
+#figure(fig.fig-aot-map(), caption: [AOTAutograd 把 Dynamo FX Graph 的每个 node 一一对应到 ATen op。]) <fig-aot-map>
 
 = Graph Optimization：TorchInductor Graph Passes
 
@@ -126,7 +126,7 @@ aten.sum.dim_IntList
 
 `GraphLowering` 是一个 `torch.fx.Interpreter`：它按顺序执行 ATen FX Graph 中的每个 node，对每个 node 调用对应的 lowering 函数。lowering 函数的输入和输出都不是真实 tensor，而是一组通过 `.data` 串起来的 IR 对象。下图取本例的三个 FX node，画出 lowering 结束时它们各自的 `.data` 链，字段值都是实际打印出来的：
 
-#fig.fig-ir-model()
+#figure(fig.fig-ir-model(), caption: [lowering 结束时，三个 FX node 各自的 `.data` 链：`TensorBox` → `StorageBox` → buffer 或未 realize 的 `Pointwise`。]) <fig-ir-model>
 
 从左往右读：
 
@@ -171,7 +171,7 @@ sum_1   TensorBox → StorageBox → ComputedBuffer(buf0, size=[4], stride=[1]) 
 
 下图中的每一行对应上面输出的一行：
 
-#fig.fig-inductor-objects()
+#figure(fig.fig-inductor-objects(), caption: [每个 FX node lowering 后得到的 Inductor IR 对象：3 个 `InputBuffer`、3 个 `Pointwise` 和 1 个 `ComputedBuffer`。]) <fig-inductor-objects>
 
 - *Pointwise 内联*：`add`、`relu`、`mul` 的 lowering 各创建一个 `Pointwise`，它的 `inner_fn` 通过输入的 loader 读取输入。输入如果也是未 realize 的 `Pointwise`，读取就是直接调用对方的 `inner_fn`。所以这三个 `StorageBox` 从未 realize：`[4, 128]` 的中间结果既没有 buffer，也没有内存读写。
 - *Reduction*：`sum_1` 的 lowering 创建一个 `Reduction`，它的 `inner_fn` 读取 `mul`，也就是把 `(a + b) * relu(c)` 整个内联进了 reduction 的循环体。输出 ranges 是 `[4]`，reduction ranges 是 `[128]`，`reduction_type` 是 `sum`。
@@ -196,7 +196,7 @@ class StorageBox(MutableBox):
         return self.data.name
 ```
 
-#fig.fig-realize()
+#figure(fig.fig-realize(), caption: [`realize()` 前后：同一个 `StorageBox` 里的 `Reduction` 被包进 `ComputedBuffer buf0`，从此有了自己的内存。]) <fig-realize>
 
 `FlexibleLayout` 表示 stride 还可以由后续决定；`buf0` 最终被固定为 `FixedLayout(size=[4], stride=[1])`，也就是 Scheduler 日志中的 `buf0.layout`。
 
@@ -238,7 +238,7 @@ class op0_loop_body:
 
 下图画出 `p0 = 1` 这一行，以及其中 `p1 = 5` 这个元素；图中的 index 与上面 loop body 中的 index 相同：
 
-#fig.fig-reduction-index()
+#figure(fig.fig-reduction-index(), caption: [`p0 = 1` 这一行中 `p1 = 5` 元素的 index：三次 load 用 `128·p0 + p1`，store 用 `p0`。]) <fig-reduction-index>
 
 - 三个输入的 layout 相同，所以三次 `ops.load` 共用同一个 `index0 = 128*p0 + p1`；写出只依赖输出轴，`index1 = p0`。
 - 如果 reduction 的结果还要被后续 elementwise 使用（例如 RMSNorm 先求平方和再归一化），那个 elementwise 会成为第二个 `SchedulerNode`。它读取 `buf0`，所以它的 `unmet_dependencies` 里有 `buf0`，必须在 `op0` 之后执行。
@@ -265,7 +265,7 @@ op0.sizes = ([4], [128])
 
 下图把这些字段放回数据流里：左边是读依赖，右边是写依赖，`op0` 内部是 `sizes` 和 loop body：
 
-#fig.fig-scheduler-node()
+#figure(fig.fig-scheduler-node(), caption: [`op0` 这个 `SchedulerNode`：左边读 3 个输入，右边写 `buf0`，内部是 `sizes` 和 loop body。]) <fig-scheduler-node>
 
 - `MemoryDep` 记录一次读或写访问哪个 buffer、用什么 index、在什么范围上。三个输入的读依赖就是 loop body 里的 `index0 = 128*p0 + p1`（变量换成了 `d0`、`d1`），范围 `{d0: 4, d1: 128}`；写出是 `buf0` 的 `d0`，即 `index1 = p0`。
 - `met_dependencies` 里全是 graph 输入，`unmet_dependencies` 为空：`op0` 不依赖任何其他 `SchedulerNode`。
@@ -334,7 +334,7 @@ XBLOCK: 1, num_warps: 2, num_stages: 1    (n_regs 19)
 
 `XBLOCK = 1`，所以 grid 是 `xnumel / XBLOCK = 4` 个 program，每个 program 负责一行。`num_warps = 2` 即 64 个线程，一行 128 个元素平均每个线程分到 2 个：
 
-#fig.fig-triton-programs()
+#figure(fig.fig-triton-programs(), caption: [生成的 Triton kernel：4 个 program 各处理一行，每行 128 个元素由 2 个 warp 共 64 个线程各取 2 个。]) <fig-triton-programs>
 
 Wrapper 中只有一次 output allocation 和一次 kernel launch（省略了 device guard 和释放输入的 `del`）：
 

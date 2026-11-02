@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
-#import "/utils/figures/tilelang-ops.typ" as fig
+#import "/figures/tilelang-ops.typ" as fig
 
 #tola-meta((
   title: "Production Ready TileLang Ops Framework",
@@ -49,7 +49,7 @@ jit_kernel = jit_impl(block_m=4, threads=128)
 y = jit_kernel(x, weight)
 ```
 
-#fig.fig-binding-stages()
+#figure(fig.fig-binding-stages(), caption: [一个算子分三个阶段绑定参数：① workload 确定 `JITImpl`，② schedule 确定 `JITKernel`，③ runtime 传入 Tensor 启动。]) <fig-binding-stages>
 
 - 第一步绑定 workload 参数，得到 TileLang `JITImpl`
   - 描述一个确定的计算问题，例如处理形状为 `(M, N)`、数据类型为 `dtype` 的 RMSNorm，但尚未确定具体的调度方案。
@@ -64,7 +64,7 @@ y = jit_kernel(x, weight)
 
 首次遇到一个 workload 时，完整路径如下：
 
-#fig.fig-lookup-chain()
+#figure(fig.fig-lookup-chain(), caption: [首次遇到一个 workload 时的查找路径，依次经过 L3、L2、L1 三层缓存。]) <fig-lookup-chain>
 
 在当前延迟初始化的设计中，模块导入只会定义带有 `lru_cache` 的 `_rms_norm_kernel`，不会立即执行函数体中的 `@tilelang.jit`，也不会编译 CUDA kernel。构造 `RMSNormFwdOp` 时会保存 `N/eps/dtype` 等固定配置并创建空的 workload cache，真正的 kernel 构造发生在首次收到输入之后。
 
@@ -209,7 +209,7 @@ class TransformerBlock(nn.Module):
 
 三个 block 一共会创建六个独立的 RMSNorm `Op` 实例。假设它们都使用 `N=4096`、`eps=1e-5` 和 `bfloat16`，prefill 时 `M=128`，decode 时 `M=1`，缓存关系如下：
 
-#fig.fig-transformer-cache()
+#figure(fig.fig-transformer-cache(), caption: [3 个 block 共 6 个 RMSNorm `Op`：prefill 和 decode 两种 workload 在 L2、L1 上只对应 2 个 `JITImpl` 和 2 个 `JITKernel`。]) <fig-transformer-cache>
 
 虽然本文按照从底层到上层的顺序编号，但一次实际调用的查找顺序是第三层、第二层、第一层：`Op` 先根据 `M` dispatch 到 `RMSNormKernel`，后者取得共享的 `JITImpl`，最后由 workload、schedule 和 target 定位编译结果。
 
@@ -413,7 +413,7 @@ _rms_norm_wrapped(x, weight, "140001")
 get_instance("140001")._eager_forward(x, weight)
 ```
 
-#fig.fig-instance-registry()
+#figure(fig.fig-instance-registry(), caption: [全局只有一个 custom op `tilelang_ops::rms_norm`，它通过 `instance_key` 在 registry 里找回对应的 `Op` 实例。]) <fig-instance-registry>
 
 `instance_key` 本质上是一个可以进入 PyTorch graph 的“Python 对象引用替代品”。registry 应使用不会冲突的稳定 key，并通过弱引用或显式注销管理实例生命周期，避免全局注册表阻止对象释放。这个 key 只在当前进程的 registry 中有效；如果需要跨进程加载或导出 graph，就必须重建映射，或者改用显式传递配置的无状态设计。
 
@@ -492,7 +492,7 @@ class RMSNormFwdOp:
 
 Dynamo 捕获 `forward()` 时只看到全局 custom-op 节点；执行编译后的 graph 时，Dispatcher 才调用 `_rms_norm_wrapped()`，通过 registry 找回实例并进入 `_eager_forward()`。因此，第三层 workload cache、第二层 `JITImpl` cache 和第一层编译结果 cache 都位于 compile boundary 内部。
 
-#fig.fig-compile-boundary()
+#figure(fig.fig-compile-boundary(), caption: [compile boundary：trace 时只运行 `register_fake` 推导 shape，执行编译后的 graph 时才进入 `_eager_forward()` 和三层缓存。]) <fig-compile-boundary>
 
 如果把 custom-op 边界放到更深的 `kernel.forward()`，使 `_get_kernel()` 留在边界外，那么第一次遇到新 workload 时，Dynamo 仍会看到 Python 字典修改和 `RMSNormKernel` 构造。提前 warmup 可以让已知 workload 变成 cache hit，但不能覆盖 cold start 或之后出现的新 shape。
 

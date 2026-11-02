@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": img
+#import "/utils/mitex.typ": mitex
 
 #tola-meta((
   title: "Paper Note: Chain Replication",
@@ -89,7 +90,7 @@ master 能够检测三种类型的异常：
 
 作者提到了一个更新传播不等式（Update Propagation Invariant）: 对于满足 $i lt.eq j$ 的节点 $i$ 和 $j$ (即 $i$ 在链中是 $j$ 的前继节点)，有
 
-$ H i s t_(o b j I D)^j prec.curly.eq H i s t_(o b j I D)^i $
+#mitex(`Hist_{objID}^j \preccurlyeq Hist_{objID}^i`)
 
 #quote(block: true)[
 $H i s t_(o b j I D)^i$ 代表的是 $i$ 通过的 update 请求序列。

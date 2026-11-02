@@ -1,9 +1,11 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, img
+#import "/figures/triton.typ" as fig
 
 #tola-meta((
-  title: "Triton: Built-in Tutorial",
+  title: "Triton Notes: Tutorials and Kernel Paradigms",
   date: "2026-01-07",
+  updated: "2026-11-02",
   tags: ("GPU", "Triton"),
   weight: 10,
 ))
@@ -174,6 +176,7 @@ Softmax:
 
 启动 10000 个 Programs 的开销太大了
 
+== Fixed-Size Grid vs Grid-Stride Loop
 这里其实涉及到两个范式：
 
 - Fixed-Size Grid
@@ -239,30 +242,41 @@ grid_stride_kernel[grid](data, n_elements, BLOCK_SIZE)
 
 对于 Fixed-Size Grid 来说，每个 Program 只处理一个 Block; 但是对于 Grid-Stride Loop 来说，每个 Program 需要处理多个 Block
 
-```asciiart
-# Fixed-Size Grid
+#figure(fig.fig-grid-mapping(), caption: [10 个 block 的两种分配方式：Fixed-Size Grid 每个 program 处理一个 block 后退出；Grid-Stride Loop 只启动 4 个 program，program $p$ 依次处理 block $p, p+4, p+8$。]) <fig-grid-mapping>
 
-grid = (10,)  # 启动 10 个 programs
+== Persistent Kernel
+Grid-Stride Loop 其实就是 persistent kernel 的写法。两种 kernel 范式的对比：
 
-Program 0 → Block 0 (元素 0-1023)
-Program 1 → Block 1 (元素 1024-2047)
-Program 2 → Block 2 (元素 2048-3071)
-...
-Program 9 → Block 9 (元素 9216-9999)
+- 传统 kernel：`grid = (num_tiles,)`，每个 block 处理一个 tile 后结束
+  #quote(block: true)[
+  每个 SM 从 grid 里领一个 work item，做完就退出, CTA 调度由硬件自动完成
+  ]
+- Persistent kernel：每个 CTA 长期驻留在 SM 上，自己软件调度 work
 
-每个 program 处理 1 个 block 后结束
+除了上面的 `for` 写法，也可以写成 `while` 循环：
 
-# Grid-Stride Loop
+```python
+@triton.jit
+def kernel(..., n_tiles: tl.constexpr, ...):
+    pid = tl.program_id(0)
+    n_progs = tl.num_programs(0)   # grid(0) 启动的 program 数
 
-grid = (4,)  # 只启动 4 个 programs
-
-Program 0 → Block 0, Block 4, Block 8  (循环 3 次)
-Program 1 → Block 1, Block 5, Block 9  (循环 3 次)
-Program 2 → Block 2, Block 6           (循环 2 次)
-Program 3 → Block 3, Block 7           (循环 2 次)
-
-每个 program 通过循环处理多个 blocks
+    tile = pid
+    while tile < n_tiles:
+        # 处理 tile 对应的那一块工作
+        # ...
+        tile += n_progs            # 跳到下一个属于自己的 tile
 ```
+
+persistent kernel 常见动机：
+
++ 任务总 tile 数不够多（比如小 batch、小矩阵、很多小 GEMM / MoE / grouped GEMM）:普通写法 programs 数 \< SM，GPU 吃不满；persistent 让每个 SM 都有活干，并通过循环把剩余工作吃完。
+
++ 减少 launch / 调度开销: 不是启动成千上万个短命 programs，而是少量长命 programs，尤其在大量小任务时可能更划算。
+
++ 更好的 locality / cache 复用（有时）: 同一批常驻 programs 反复处理相邻/相关的 tile，有机会提高 L2/共享数据的命中（取决于你的访问模式）。
+
+== Software Pipelining
 
 考虑 Grid-Stride Loop 中的下面这个循环：
 
@@ -278,13 +292,7 @@ for i in range(10):
 
 我们可以同时处理 3 个迭代的不同阶段
 
-```asciiart
-迭代 0: [加载 0]
-迭代 1: [加载 1] [计算 0]
-迭代 2: [加载 2] [计算 1] [存储 0]
-迭代 3:          [计算 2] [存储 1] ← 加载迭代 3
-迭代 4:                   [存储 2] ← 计算迭代 3 ← 加载迭代 4
-```
+#figure(fig.fig-pipeline(), caption: [把每次迭代拆成 Load / Compute / Store 三个阶段后，相邻迭代可以错开执行：稳定状态下同一时刻有三个迭代分别处于不同阶段，内存等待被计算掩盖。]) <fig-pipeline>
 
 在 Triton 中可以使用 Software Pipeline:
 
@@ -310,6 +318,7 @@ grid = (256,)
 kernel_with_pipelining[grid](data, n_elements, BLOCK_SIZE=1024, num_stages=3)
 ```
 
+== Fused Softmax Kernel
 知道这些背景知识后，我们再来看 Fused Softmax 的实现：
 
 ```python
@@ -409,38 +418,7 @@ pid_n = pid % grid_n
 
 由于在 C 中，横向的数字是连续，所以我们可以划分为一个 GROUP，所以一个 GROUP 大小为 `GROUP_SIZE_M * num_pid_n`
 
-```shell
-pid=0  pid=4  pid=8  pid=12 pid=16 pid=20 pid=24 pid=28
-  ↓      ↓      ↓      ↓      ↓      ↓      ↓      ↓
-┌────┬────┬────┬────┬────┬────┬────┬────┐
-│ 0  │ 4  │ 8  │12  │16  │20  │24  │28  │ ← 行0
-├────┼────┼────┼────┼────┼────┼────┼────┤
-│ 1  │ 5  │ 9  │13  │17  │21  │25  │29  │ ← 行1
-├────┼────┼────┼────┼────┼────┼────┼────┤
-│ 2  │ 6  │10  │14  │18  │22  │26  │30  │ ← 行2
-├────┼────┼────┼────┼────┼────┼────┼────┤
-│ 3  │ 7  │11  │15  │19  │23  │27  │31  │ ← 行3
-└────┴────┴────┴────┴────┴────┴────┴────┘
-
-
-C 矩阵（12 行 × 8 列 blocks）：
-
-           8 列（num_pid_n = 8）
-        ←―――――――――――――――→
-      ┌────────────────────┐ ↑
-      │    Group 0         │ │
-      │  (32 个 programs)  │ │ 4行
-      │                    │ │ (GROUP_SIZE_M)
-      ├────────────────────┤ ↓
-      │    Group 1         │ ↑
-      │  (32 个 programs)  │ │ 4行
-      │                    │ │
-      ├────────────────────┤ ↓
-      │    Group 2         │ ↑
-      │  (32 个 programs)  │ │ 4行
-      │                    │ │
-      └────────────────────┘ ↓
-```
+#figure(fig.fig-grouped-pid(), caption: [C 矩阵有 12 × 8 个 block 时每个 block 对应的 pid。Row-major 下 pid 0–15 铺满前两行，要读 A 的 2 个行块和 B 的全部 8 个列块；Grouped ordering（`GROUP_SIZE_M = 4`，组内按列排序）下同样 16 个 program 只覆盖 4 × 4 的区域，读 A、B 各 4 个块。每组 `GROUP_SIZE_M * num_pid_n = 32` 个 program。]) <fig-grouped-pid>
 
 在一个 (m, n) 的矩阵中，如果是 row-major:
 
@@ -594,6 +572,21 @@ c_mask = (offs_cm[:, None] < M) & (offs_cn[None, :] < N)
 tl.store(c_ptrs, c, mask=c_mask)
 ```
 
-$ upright("TPOT")\(t\)= k_1 dot.op log\(t\)+ b_1 quad upright("(2个参数)") $
+= Kernel Paradigms
+== GEMM
+对矩阵来说，就是将其外围维度使用 PID 并行划分，最后一个维度采用 for loop 的方式分布处理
 
-$ upright("TTFT")\(s\,t\)= k_2 dot.op log\(t\)+ k_3 dot.op log\(s\)+ b_2 quad upright("(3个参数)") $
+- 前者是为了最大化并行度
+- 后者是为了控制加载到单个 SM 中的数据
+
+#img("/assets/images/pasted-image-20260227114939.png", alt: "pasted-image-20260227114939")
+== GEMV
+仍然是对矩阵外围维度通过 PID 进行划分
+
+计算时不通过矩阵方法：
+
+- 先把向量延展到相同形状
+- 进行 element-wise product
+- 再通过 tl.sum 进行缩减
+
+#img("/assets/images/pasted-image-20260227144215.png", alt: "pasted-image-20260227144215")

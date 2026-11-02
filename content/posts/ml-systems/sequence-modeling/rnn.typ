@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout
-#import "/utils/figures/sequence-modeling.typ" as fig
+#import "/figures/sequence-modeling.typ" as fig
 
 #tola-meta((
   title: "[Sequence Modeling 01] RNN",
@@ -25,7 +25,7 @@ RNN 的核心结构是一个循环单元。它在处理序列时，并不是一�
 
 将循环单元沿时间维度展开后，可以看到隐藏状态是连接相邻时间步的唯一通道；每个时间步的输入只进入当前单元，而单元参数在整个序列中共享：
 
-#fig.fig-rnn-unroll()
+#figure(fig.fig-rnn-unroll(), caption: [RNN 沿时间展开：每步共享同一套权重，隐藏状态是相邻时间步之间唯一的通道。]) <fig-rnn-unroll>
 
 这里的“两个 RNN 单元”并不是两个独立的 module，而是同一个 RNN module 在相邻时间步的两次调用。推理时，`for` 循环每次传入新的 `x_t` 和当前的隐藏状态，并计算出下一时刻的 `h_t`；正是这种从 $h_(t - 1)$ 到 $h_t$ 的依赖，使 RNN 必须按顺序计算。
 
@@ -35,7 +35,7 @@ RNN 的核心结构是一个循环单元。它在处理序列时，并不是一�
 
 - #strong[计算当前输出（可选）]：$ y_t = W_(h y) h_t + b_y $如果需要每个时间步都输出（比如序列标注），就用当前的 $h_t$ 映射出 $y_t$。如果只需要句向量（比如文本分类），则直接取最后一个时间步的 $h_n$ 即可。
 
-#fig.fig-rnn-cell()
+#figure(fig.fig-rnn-cell(), caption: [一个 RNN cell：$W_(x h) x_t + W_(h h) h_(t-1)$ 经 $tanh$ 得到 $h_t$，再可选地映射出 $y_t$。]) <fig-rnn-cell>
 
 = 伪代码实现
 #callout(kind: "note", title: "NOTE")[
@@ -98,7 +98,7 @@ class VanillaRNN(nn.Module):
 = RNN vs Transformer
 基于上述工作流，这两种架构在工程特性上有显著差异：
 
-#fig.fig-rnn-vs-transformer()
+#figure(fig.fig-rnn-vs-transformer(), caption: [RNN 必须逐步计算、只保存固定大小的 $h_t$；Transformer 一次算完所有位置，但 KV cache 随 $t$ 线性增长。]) <fig-rnn-vs-transformer>
 
 - #strong[计算图与并行性]
   - #strong[Transformer]：输入序列可以一次性通过矩阵乘法完成 Attention 计算，极其适合 GPU 的高度并行计算

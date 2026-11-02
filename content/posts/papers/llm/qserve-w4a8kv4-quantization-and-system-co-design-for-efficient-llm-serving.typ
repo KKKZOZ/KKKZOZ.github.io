@@ -262,9 +262,9 @@ Key observation: #strong[the Value matrices show no significant outlier pattern,
 
 QServe proposes SmoothAttention to scale down the outlier channels in Key cache by a per-channel factor:
 
-$ Z =\(Q Lambda\)#scale(x: 120%, y: 120%)[\(] K Lambda^(- 1) #scale(x: 120%, y: 120%)[\)]^top $
+$ Z =\(Q Lambda\)lr(( K Lambda^(- 1) ), size: #120%)^top $
 
-$ lambda_i = #scale(x: 120%, y: 120%)[\(] max\(\|K_i\|\)#scale(x: 120%, y: 120%)[\)]^alpha\,#h(2em) i = 1\,dots.h\,D $
+$ lambda_i = lr(( max\(\|K_i\|\) ), size: #120%)^alpha\,#h(2em) i = 1\,dots.h\,D $
 
 #quote(block: true)[
 The paper claims that $alpha = 0.5$ is good enough

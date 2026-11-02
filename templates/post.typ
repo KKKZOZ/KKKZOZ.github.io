@@ -136,7 +136,8 @@
 // existing section links keep working; ToC links use the same slug. Headings
 // whose slugs repeat get "-2", "-3", ... in document order.
 
-/// Deepest heading level listed in the ToC (1 = `=`, 2 = `==`, ...).
+/// Deepest heading level numbered and listed in the ToC (1 = `=`, 2 = `==`,
+/// ...) unless a post sets `toc-depth` in its metadata.
 #let toc-depth = 2
 
 /// Slug of a heading's text.
@@ -149,24 +150,27 @@
 #let with-suffix(slug, n) = if n <= 1 { slug } else { slug + "-" + str(n) }
 
 /// Section number shared by headings and the ToC, for a heading of `level`
-/// at `loc`. Level 1: "01", "02", ...; level 2: "1.1", "1.2", ...
-/// restarting per section. Needs `context`.
+/// at `loc`. Level 1: "01", "02", ...; level 2: "1.1", "1.2", ...; level 3:
+/// "1.1.1", ...; each restarting under its parent. Needs `context`.
 #let heading-num(level, loc) = {
-  let (n, m) = (0, 0)
+  let (n, m, k) = (0, 0, 0)
   // `before` is inclusive, so the count includes this heading.
   for x in doc-query(selector(heading).before(loc)) {
-    if x.level == 1 { n += 1; m = 0 } else if x.level == 2 { m += 1 }
+    if x.level == 1 { n += 1; m = 0; k = 0 } else if x.level == 2 { m += 1; k = 0 } else if x.level == 3 { k += 1 }
   }
-  if level == 1 { if n < 10 { "0" } + str(n) } else if n > 0 { str(n) + "." + str(m) } else { str(m) }
+  let parts = if n > 0 { (n, m, k) } else { (m, k) }
+  if level == 1 { if n < 10 { "0" } + str(n) } else {
+    parts.slice(0, level - (if n > 0 { 0 } else { 1 })).map(str).join(".")
+  }
 }
 
-#let heading-with-id(it) = context {
+#let heading-with-id(it, depth: toc-depth) = context {
   let slug = heading-slug(plain-text(it.body))
   let n = doc-query(selector(heading).before(it.location())).filter(h => heading-slug(plain-text(h.body)) == slug).len()
   let tag = "h" + str(calc.min(it.level + 1, 6))
   let id = with-suffix(slug, n)
   html.elem(tag, attrs: (id: id), {
-    if it.level <= toc-depth { html.span(class: "heading-num", heading-num(it.level, it.location())) }
+    if it.level <= depth { html.span(class: "heading-num", heading-num(it.level, it.location())) }
     it.body
     // Revealed on hover; copy.js copies the section URL on click.
     html.elem("a", attrs: (class: "heading-anchor", href: "#" + id, aria-label: "Copy link to this section", data-pagefind-ignore: ""), "#")
@@ -174,14 +178,14 @@
 }
 
 /// Floating on wide screens, a box above the text on narrow ones (see CSS).
-#let toc() = context {
+#let toc(depth: toc-depth) = context {
   let seen = (:)
   let entries = ()
   // @tola/document: this page's headings, `text` being the plain text.
   for h in headings() {
     let slug = heading-slug(h.text)
     seen.insert(slug, seen.at(slug, default: 0) + 1)
-    if h.level <= toc-depth { entries.push((h, with-suffix(slug, seen.at(slug)))) }
+    if h.level <= depth { entries.push((h, with-suffix(slug, seen.at(slug)))) }
   }
   if entries.len() < 2 { return }
   html.aside(class: "toc", html.nav(class: "toc-inner", aria-label: "Table of contents", {
@@ -205,7 +209,7 @@
   let body = include page.source.file
   let article = (published: m.date, updated: m.updated, tags: m.tags)
   html-document(page.output, m.title, description: m.summary, article: article, posts: posts, {
-    show heading: heading-with-id
+    show heading: heading-with-id.with(depth: m.toc-depth)
     layout.shell(html.article(class: "post", {
       // Fixed reading-progress bar at the top of the viewport (reading.js).
       html.div(class: "read-progress", role: "presentation")
@@ -221,7 +225,7 @@
         series-box(if m.series != none { m.series.at(0, default: none) }, posts, page.output)
       })
       html.div(class: "post-body", {
-        toc()
+        toc(depth: m.toc-depth)
         // Only the text is indexed for search (Pagefind); title, date and doc
         // number are tagged as result metadata where they are shown above. The
         // id selects the text for the RSS feed (feeds.typ).

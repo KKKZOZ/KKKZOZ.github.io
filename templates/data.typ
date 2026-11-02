@@ -24,6 +24,8 @@
   // pins a post to the top and `weight: 200` sinks it.
   weight: optional(int, default: 100),
   draft: optional(bool, default: false),
+  // Deepest heading level that is numbered and listed in the ToC (post.typ).
+  toc-depth: optional(int, default: 2),
 ))
 
 /// A source's output file. Routes follow the file layout, each segment

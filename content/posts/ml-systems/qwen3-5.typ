@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/figures/qwen3-5.typ" as fig
+#import "/figures/qwen3-5.typ" as fig
 
 #tola-meta((
   title: "Qwen3.5 Dense Model Architecture",
@@ -17,7 +17,7 @@
 
 在默认配置中，`full_attention_interval=4`，因此每第 4 个 layer 使用 `full_attention`，其余 layer 使用 `linear_attention`。
 
-#fig.fig-hybrid-stack()
+#figure(fig.fig-hybrid-stack(), caption: [Qwen3.5 文本主干：每 4 层为一组，前 3 层是 Gated DeltaNet（linear attention），第 4 层是 gated full attention。]) <fig-hybrid-stack>
 
 = 配置定义
 #strong[`Qwen3_5TextConfig` 同时定义模型宽度、层数、两类 attention 的维度和层类型。]
@@ -74,7 +74,7 @@ x = residual + x
 
 因此一个 layer 的输出形状仍为 `[B, T, H]`。
 
-#fig.fig-decoder-layer()
+#figure(fig.fig-decoder-layer(), caption: [一个 decoder layer：两次 pre-norm + residual，token mixer 由 `layer_types[i]` 决定。]) <fig-decoder-layer>
 
 `Qwen3_5RMSNorm` 的权重初始化为零，实际缩放因子是 `1 + weight`，而不是直接使用 `weight`。这是该版本实现的特定行为，不应直接套用普通 RMSNorm 的参数语义。
 
@@ -103,7 +103,7 @@ conv_dim  = 2 * key_dim + value_dim
 + 在 prefill 阶段调用 chunked gated-delta rule；在单 token decode 阶段调用 recurrent gated-delta rule
 + 用 recurrent state 与 query 计算输出，再用 gated RMSNorm 和 `z` 做门控，最后经过 `out_proj` 回到 `H` 维
 
-#fig.fig-gdn-flow()
+#figure(fig.fig-gdn-flow(), caption: [Gated DeltaNet 的数据流：投影、短卷积、gated delta rule，再经 gated RMSNorm 和 `out_proj` 回到 `H` 维。]) <fig-gdn-flow>
 
 可将单步状态更新抽象为：
 
@@ -266,7 +266,7 @@ V: [B, Nkv, T, D]
 Grouped-Query Attention (GQA): 当 `Nq > Nkv` 时，`repeat_kv` 将 K/V 复制到 query head 的分组数量，这就是
 ]
 
-#fig.fig-gqa()
+#figure(fig.fig-gqa(), caption: [GQA：8 个 query head 共享 2 个 K/V head，cache 只存 2 个 head，`repeat_kv` 在计算时复制。]) <fig-gqa>
 
 == 工作机制
 #strong[全注意力先计算 Q/K/V，再使用 causal mask 对历史位置做 attention，最后应用 query-side gate。]
@@ -278,11 +278,11 @@ Grouped-Query Attention (GQA): 当 `Nq > Nkv` 时，`repeat_kv` 将 K/V 复制�
 + 将当前 K/V 写入该层的 cache，再通过 `ALL_ATTENTION_FUNCTIONS` 选择 eager、SDPA 或其他已注册实现。
 + attention 输出乘以 `sigmoid(gate)`，reshape 回 `[B, T, H]`，再经过 `o_proj`。
 
-#fig.fig-full-attn-flow()
+#figure(fig.fig-full-attn-flow(), caption: [Full attention 层的数据流：QK norm、写入 KV cache、attention，再乘以 `sigmoid(gate)` 后经过 `o_proj`。]) <fig-full-attn-flow>
 
 `q_proj` 的输出按 head 交错排列 query 和 gate：`chunk` 切分的是每个 head 内部的 `2D` 维，而不是整个输出向量的前后两半。
 
-#fig.fig-q-gate()
+#figure(fig.fig-q-gate(), caption: [`q_proj` 的输出按 head 交错存放 query 和 gate，`chunk(2, -1)` 在每个 head 内部切分。]) <fig-q-gate>
 
 == 最小示例
 #strong[下面的代码保留了 `Qwen3_5Attention.forward` 的核心数据流，用于展示一个 full-attention layer 如何从 `[B, T, H]` 生成输出。]
@@ -409,7 +409,7 @@ y = down_proj(silu(gate) * up)
 
 `gate_proj`、`up_proj` 和 `down_proj` 都是 `bias=False` 的线性层。FFN 前有 `post_attention_layernorm`，FFN 输出通过第二次 residual connection 加回 token mixer 的结果。
 
-#fig.fig-swiglu()
+#figure(fig.fig-swiglu(), caption: [SwiGLU MLP：`gate_proj` 和 `up_proj` 从 `H` 升到 `I`，`down_proj` 再降回 `H`。]) <fig-swiglu>
 
 == 最小示例
 ```python
@@ -443,4 +443,4 @@ Final RMSNorm -> lm_head -> logits [B, T, vocab_size]
 
 图中的两类 cache 不是同一种张量：linear layer 保存有限状态，full-attention layer 保存历史 K/V。生成时，模型必须在每个 layer 使用与 `layer_types` 对应的 cache 更新路径。
 
-#fig.fig-cache-growth()
+#figure(fig.fig-cache-growth(), caption: [每层 cache 大小随序列长度 $T$ 的变化：full attention 线性增长，linear attention 固定不变。]) <fig-cache-growth>

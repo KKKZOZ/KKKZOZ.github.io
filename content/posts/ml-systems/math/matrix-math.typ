@@ -1,8 +1,9 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, img
+#import "/figures/matrix-math.typ" as fig
 
 #tola-meta((
-  title: "Matrix Math",
+  title: "Math for ML",
   date: "2026-03-18",
   tags: ("Math",),
   weight: 10,
@@ -251,7 +252,33 @@ $ C = D A = mat(delim: "[", lambda_1, 0, dots.h.c, 0; 0, lambda_2, dots.h.c, 0; 
 = 矩阵乘法
 TODO
 
-= L\_2 误差
+= L1 范数
+The $L_1$ norm calculates the sum of the absolute values of all elements within a vector or matrix.
+
+Calculation: For a weight vector $w$ with $n$ elements, the $L_1$ norm is defined as:
+
+$ parallel w parallel_1 = sum_(i = 1)^n\|w_i\| $
+
+#callout(kind: "info", title: "INFO / Related to LLM")[
+Pruning Context: When applying the $L_1$ norm to a structural group (like a specific attention channel), you take the absolute value of every single parameter in that channel and sum them up. A low $L_1$ norm indicates that the parameters in that group are collectively very close to zero.
+
+]
+= L2 范数
+The $L_2$ norm calculates the standard Euclidean distance of the weight vector from the origin. It is the square root of the sum of the squared values of the elements.
+
+Calculation: For the same weight vector $w$, the $L_2$ norm is defined as:
+
+$ parallel w parallel_2 = sqrt(sum_(i = 1)^n w_i^2) $
+
+#figure(fig.fig-l1-l2(), caption: [The same vector under $L_1$ and $L_2$: squaring shrinks elements below 1 and amplifies those above 1.]) <fig-l1-l2>
+
+#callout(kind: "info", title: "INFO / Related to LLM")[
+Pruning Context: Because the $L_2$ norm squares each parameter before summing them, #strong[it disproportionately heavily weights larger parameters]. A structural group with just a few very large weights will have a high $L_2$ norm, even if the rest of the weights are near zero. Conversely, a group with consistently small weights will have a low $L_2$ norm and will be targeted for pruning.
+
+]
+#figure(fig.fig-pruning-groups(), caption: [Two groups of weights: $L_1$ and $L_2$ disagree on which one is smaller and should be pruned.]) <fig-pruning-groups>
+
+== L\_2 误差
 $L_2$ 误差（$L_2$ Error，或基于 $L_2$ 范数的误差）是一种用于衡量两个向量、矩阵或张量之间差异的标准指标。在几何意义上，它等价于多维空间中的欧几里得距离
 
 给定一个真实值张量 $Y$ 和一个预测值（或近似值）张量 $hat(Y)$，假设它们被展平为包含 $n$ 个元素的向量。$L_2$ 误差的计算方式是将它们对应位置元素的差值进行平方，然后求和，最后对总和开平方根。其标准的数学公式表示为：
@@ -259,6 +286,52 @@ $L_2$ 误差（$L_2$ Error，或基于 $L_2$ 范数的误差）是一种用于�
 $ E = parallel Y - hat(Y) parallel_2 = sqrt(sum_(i = 1)^n\(Y_i - hat(Y)_i\)^2) $
 
 平方的特性：使得正负误差不会相互抵消，且由于平方项的存在，它会对较大的个别偏差施加极其严厉的惩罚（例如，差值为 2 的惩罚是 4，而差值为 10 的惩罚高达 100）。
+
+= KL 散度
+KL Divergence calculates the expected excess surprise from using an approximation distribution instead of the true distribution.
+
+Calculation: For two discrete probability distributions, $P$ (the true distribution) and $Q$ (the approximated or predicted distribution), defined on the same probability space $cal(X)$, the KL Divergence from $Q$ to $P$ is defined as:
+
+$ D_(K L)\(P parallel Q\)= sum_(x in cal(X)) P\(x\)log (frac(P\(x\), Q\(x\))) $
+
+Mathematical Breakdown:
+
+- $P\(x\)$ represents the actual probability of an event $x$ occurring.
+- $Q\(x\)$ represents the model\'s predicted probability of that same event $x$.
+- The ratio $frac(P\(x\), Q\(x\))$ compares these probabilities. If they are identical, the ratio is 1, and the $log\(1\)$ becomes 0, meaning there is zero divergence.
+- We multiply the log value by $P\(x\)$ to compute the expected value (the weighted average) across the entire true distribution.
+
+== Application in ML
+While norms are typically used to penalize or prune network weights, KL Divergence is predominantly used to optimize network outputs that represent probabilities.
+
+- Knowledge Distillation
+  - When compressing a massive neural network (the \"teacher\") into a smaller network (the \"student\"), KL divergence is used as the loss function.
+  - The student model is trained to minimize the KL divergence between its output probability distribution ($Q$) and the teacher\'s output probability distribution ($P$), forcing the student to mimic the teacher\'s exact confidence levels across all classes.
+- Cross-Entropy Loss
+  - In standard classification tasks, minimizing the Cross-Entropy loss is mathematically equivalent to minimizing the KL Divergence between the training data\'s one-hot encoded labels ($P$) and the model\'s softmax predictions ($Q$).
+
+== Calculation Example
+- Vector $P$ (The True Distribution): This represents the actual, ground-truth probabilities.
+
+  $ P =\[0.5\,0.2\,0.2\,0.1\] $
+
+- Vector $Q$ (The Predicted Distribution): This represents what our neural network predicts the probabilities are.
+
+  $ Q =\[0.4\,0.3\,0.2\,0.1\] $
+
+- Element 1: $0.5 times ln (0.5 / 0.4) = 0.5 times ln\(1.25\)approx 0.5 times 0.2231 = 0.1116$
+
+- Element 2: $0.2 times ln (0.2 / 0.3) = 0.2 times ln\(0.6667\)approx 0.2 times - 0.4055 = - 0.0811$
+
+- Element 3: $0.2 times ln (0.2 / 0.2) = 0.2 times ln\(1\)= 0.2 times 0 = 0$
+
+- Element 4: $0.1 times ln (0.1 / 0.1) = 0.1 times ln\(1\)= 0.1 times 0 = 0$
+
+#figure(fig.fig-kl-example(), caption: [KL divergence term by term: single terms can be negative, but the sum never is.]) <fig-kl-example>
+
+Finally, we sum these individual components together:
+
+$ D_(K L)\(P parallel Q\)= 0.1116 +\(- 0.0811\)+ 0 + 0 = 0.0305 upright(" nats") $
 
 = ML
 == Linear
