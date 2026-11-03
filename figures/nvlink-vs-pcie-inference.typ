@@ -24,6 +24,114 @@
 }
 
 // ============================================================================
+// Bandwidth along the path between two GPUs on different sockets
+// ============================================================================
+
+/// Each link as a pipe whose height is its rated bandwidth per direction. The
+/// orange band is the measured peer copy; the dashed box in a PCIe pipe is the
+/// ~80% a large copy normally reaches.
+#let fig-link-path() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let k = 1.4 // pt per GB/s
+  let (gw, cw, nh) = (56, 60, 54)
+  let xs = (0, gw + 120, gw + 120 + cw + 80, gw + 120 + cw + 80 + cw + 120)
+  let node-w = (gw, cw, cw, gw)
+  let rows = (
+    ("Machine 1: RTX A6000, Xeon Gold 6248R", ("GPU0", "CPU0", "CPU1", "GPU1"),
+      (("PCIe 3.0 x16", 15.75, true), ("UPI 10.4 GT/s,\none of two links", 20.8, false), ("PCIe 3.0 x16", 15.75, true)),
+      9.75, "peer copy: 9.75 GB/s"),
+    ("Machine 2: A100 GPU1 and GPU2, Xeon Platinum 8368", ("GPU1", "CPU0", "CPU1", "GPU2"),
+      (("PCIe 4.0 x16", 31.5, true), ("UPI 11.2 GT/s,\none of three links", 22.4, false), ("PCIe 4.0 x16", 31.5, true)),
+      18.5, "peer copy: 18.5 GB/s"),
+  )
+  for (r, (title, names, links, flow, flow-label)) in rows.enumerate() {
+    let y = -r * 128
+    content((0, y + 52), txt(title, size: 7.5pt, fill: c.ink, weight: 700), anchor: "west")
+    // Pipes between the nodes.
+    for (i, (name, bw, pcie)) in links.enumerate() {
+      let (xa, xb) = (xs.at(i) + node-w.at(i), xs.at(i + 1))
+      let h = bw * k
+      rect((xa, y + h / 2), (xb, y - h / 2), fill: c.blue1, stroke: .7pt + c.blue)
+      if pcie {
+        let hn = .8 * h
+        rect((xa, y + hn / 2), (xb, y - hn / 2), fill: none, stroke: (paint: c.blue, thickness: .7pt, dash: "dashed"))
+      }
+      let mid = (xa + xb) / 2
+      content((mid, y + h / 2 + 3), align(center, txt([#name\ *#bw GB/s*], size: 7pt, fill: c.ink)), anchor: "south")
+    }
+    // The measured copy, end to end.
+    let fh = flow * k
+    rect((xs.at(0) + gw / 2, y + fh / 2), (xs.at(3) + gw / 2, y - fh / 2), fill: c.orange, stroke: none)
+    // Nodes on top.
+    for (i, n) in names.enumerate() {
+      let x = xs.at(i)
+      rect((x, y + nh / 2), (x + node-w.at(i), y - nh / 2), fill: white, stroke: .8pt + c.ink, radius: 3)
+      content((x + node-w.at(i) / 2, y), txt(n, size: 8pt, fill: c.ink, weight: 700))
+    }
+    content((xs.at(3) + gw / 2, y - nh / 2 - 4), txt(flow-label, size: 7pt, fill: c.ink, weight: 600), anchor: "north-east")
+  }
+  let ly = -2 * 128 + 52
+  legend(0, ly, [rated, per direction], box-swatch(0, ly, c.blue1, stroke: .7pt + c.blue))
+  legend(130, ly, [80% of PCIe: what a large copy normally reaches], box-swatch(130, ly, none, stroke: (paint: c.blue, thickness: .7pt, dash: "dashed")))
+  legend(400, ly, [measured], box-swatch(400, ly, c.orange))
+})
+
+// Host copies and peer copies on both machines, against what a large copy
+// over the GPU's PCIe link normally reaches (80% of the rated speed).
+// Host copies: pinned memory registered with cudaHostRegister, CPU thread and
+// pages bound to one NUMA node, 256 MiB, median of three runs. (low, high) over
+// the two GPUs measured; the bar is drawn to the high end.
+#let copy-groups = (
+  ("Machine 1", "RTX A6000 · PCIe 3.0", 12.6, (
+    ("host → GPU, own node", 8.23, 8.26, "h2d"),
+    ("host → GPU, other node", 8.43, 8.45, "h2d"),
+    ("GPU → host, own node", 8.66, 8.71, "d2h"),
+    ("GPU → host, other node", 8.01, 8.03, "d2h"),
+    ("GPU → GPU, other socket", 9.75, 10.25, "p2p"),
+  )),
+  ("Machine 2", "A100 · PCIe 4.0", 25.2, (
+    ("host → GPU, own node", 24.58, 24.63, "h2d"),
+    ("host → GPU, other node", 24.58, 24.64, "h2d"),
+    ("GPU → host, own node", 25.93, 26.03, "d2h"),
+    ("GPU → host, other node", 25.89, 26.01, "d2h"),
+    ("GPU → GPU, other socket", 18.4, 18.5, "p2p"),
+  )),
+)
+
+#let fig-host-copy() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (x0, s, bh, rh, gap) = (180, 11, 14, 19, 40)
+  let tone = (h2d: (c.blue1, c.blue), d2h: (c.teal1, c.teal), p2p: (c.blue, c.blue))
+  let y = 0
+  let top = 0
+  let bottom = 0
+  for (gi, (name, sub, optimal, rows)) in copy-groups.enumerate() {
+    let gy0 = y
+    let gy1 = gy0 - (rows.len() - 1) * rh - bh
+    // What a large copy normally reaches over this link, under the bars.
+    let ox = x0 + optimal * s
+    line((ox, gy0 + 6), (ox, gy1 - 4), stroke: (paint: c.danger, thickness: .9pt, dash: "dashed"))
+    content((ox, gy0 + 8), txt("optimal " + str(optimal), size: 7.5pt, fill: c.danger, weight: 700), anchor: "south")
+    for (lab, lo, hi, kind) in rows {
+      content((x0 - 8, y - bh / 2), txt(lab, size: 7.5pt, fill: c.ink), anchor: "east")
+      let (fill, stroke) = tone.at(kind)
+      rect((x0, y), (x0 + hi * s, y - bh), fill: fill, stroke: .6pt + stroke)
+      let val = if lo == hi { str(lo) } else { str(lo) + "–" + str(hi) }
+      content((x0 + hi * s - 5, y - bh / 2), txt(val, size: 7.5pt, fill: if kind == "p2p" { white } else { c.ink }, weight: 600), anchor: "east")
+      y -= rh
+    }
+    // Group label on the far left.
+    content((0, (gy0 + gy1) / 2 + 6), txt(name, size: 9pt, fill: c.ink, weight: 700), anchor: "west")
+    content((0, (gy0 + gy1) / 2 - 7), txt(sub, size: 7pt), anchor: "west")
+    if gi == 0 { top = gy0 + 22 }
+    y -= gap
+    bottom = gy1
+  }
+  line((x0, top), (x0, bottom - 4), stroke: axis-stroke)
+  content((x0 + 27 * s, bottom - 10), txt("GB/s, one way", size: 7.5pt), anchor: "north-east")
+})
+
+// ============================================================================
 // NCCL transports and NCCL_P2P_LEVEL
 // ============================================================================
 
@@ -210,34 +318,48 @@
 #let ar-a100-pcie = (7.01, 7.26, 7.61, 8.45, 8.95, 10.87, 15.22, 33.96, 41.26, 58.26, 96.75, 168.54, 322.70, 633.53, 1249.24, 2497.91, 4967.69, 9886.57)
 #let ar-a6000 = (6.58, 6.74, 7.38, 8.81, 10.76, 14.81, 23.32, 40.63, 53.68, 86.66, 149.27, 287.00, 585.39, 1175.72, 2346.34, 4661.30, 9344.24, 18674.10)
 
+/// Two panels with linear time axes: small messages in µs, large ones in ms.
+/// Message size doubles per step along x.
 #let fig-allreduce() = cetz.canvas(length: 1pt, {
   import cetz.draw: *
-  let (x0, w, h) = (46, 400, 200)
-  let (e0, e1) = (10, 27)
-  let (l0, l1) = (.6, 4.4)
-  let px(e) = x0 + (e - e0) / (e1 - e0) * w
-  let py(v) = (calc.log(v, base: 10) - l0) / (l1 - l0) * h
-  for (v, lab) in ((10, "10 µs"), (100, "100 µs"), (1000, "1 ms"), (10000, "10 ms")) {
-    line((x0, py(v)), (x0 + w, py(v)), stroke: grid-stroke)
-    content((x0 - 5, py(v)), txt(lab, size: 7pt), anchor: "east")
+  let (pw, ph, gap, x0) = (220, 150, 56, 40)
+  let all = ((ar-a6000, c.muted, "dashed"), (ar-a100-pcie, c.blue, none), (ar-nvlink, c.orange, none))
+  let panels = (
+    // (first index, last index, unit divisor, y max, y step, unit, title, ticks, guides)
+    (0, 8, 1, 60, 20, "µs", "Small messages",
+      ((0, "1 KiB"), (2, "4 KiB"), (4, "16 KiB"), (6, "64 KiB"), (8, "256 KiB")),
+      ((calc.log(10240, base: 2) - 10, [decode, 1 token:\ 10 KiB]), (calc.log(163840, base: 2) - 10, [16 tokens:\ 160 KiB]))),
+    (10, 17, 1000, 20, 5, "ms", "Large messages",
+      ((10, "1 MiB"), (12, "4 MiB"), (14, "16 MiB"), (16, "64 MiB"), (17, "128 MiB")),
+      ((calc.log(80 * 1048576, base: 2) - 10, [prefill chunk:\ 80 MiB]),)),
+  )
+  for (p, (i0, i1, div, ymax, ystep, unit, title, ticks, guides)) in panels.enumerate() {
+    let ox = x0 + p * (pw + gap)
+    let px(i) = ox + (i - i0) / (i1 - i0) * pw
+    let py(v) = v / div / ymax * ph
+    for k in range(int(ymax / ystep) + 1) {
+      let v = k * ystep
+      line((ox, v / ymax * ph), (ox + pw, v / ymax * ph), stroke: if v == 0 { axis-stroke } else { grid-stroke })
+      content((ox - 5, v / ymax * ph), txt(str(v) + " " + unit, size: 7pt), anchor: "east")
+    }
+    for (i, lab) in ticks {
+      line((px(i), 0), (px(i), -3), stroke: axis-stroke)
+      content((px(i), -6), txt(lab, size: 7pt), anchor: "north")
+    }
+    content((ox + pw / 2, ph + 26), txt(title, size: 7.5pt, fill: c.ink, weight: 700))
+    for (i, lab) in guides {
+      line((px(i), 0), (px(i), ph + 2), stroke: (paint: c.muted, thickness: .6pt, dash: "dashed"))
+      content((px(i), ph + 4), align(center, txt(lab, size: 6.5pt, fill: c.ink)), anchor: "south")
+    }
+    for (vals, col, dash) in all {
+      let pts = range(i0, i1 + 1).map(i => (px(i), py(vals.at(i))))
+      series(pts, col, dash: dash)
+      let v = vals.at(i1) / div
+      content((ox + pw + 5, py(vals.at(i1))), txt(str(calc.round(v, digits: 1)) + " " + unit, size: 7pt, fill: c.ink, weight: 600), anchor: "west")
+    }
   }
-  line((x0, 0), (x0 + w, 0), stroke: axis-stroke)
-  for (e, lab) in ((10, "1 KiB"), (12, "4 KiB"), (14, "16 KiB"), (16, "64 KiB"), (18, "256 KiB"), (20, "1 MiB"), (22, "4 MiB"), (24, "16 MiB"), (26, "64 MiB")) {
-    line((px(e), 0), (px(e), -3), stroke: axis-stroke)
-    content((px(e), -6), txt(lab, size: 7pt), anchor: "north")
-  }
-  content((x0 + w / 2, -22), txt("message size", size: 7.5pt), anchor: "north")
-  // The messages tensor parallelism sends.
-  for (e, lab) in ((calc.log(10240, base: 2), "decode, one token: 10 KiB"), (calc.log(80 * 1048576, base: 2), "prefill, 8192 tokens: 80 MiB")) {
-    line((px(e), 0), (px(e), h + 2), stroke: (paint: c.muted, thickness: .6pt, dash: "dashed"))
-    content((px(e), h + 6), txt(lab, size: 7pt, fill: c.ink), anchor: "south")
-  }
-  let all = ((ar-a6000, c.muted, "dashed", "A6000 PCIe"), (ar-a100-pcie, c.blue, none, "A100 PCIe"), (ar-nvlink, c.orange, none, "A100 NVLink"))
-  for (vals, col, dash, lab) in all {
-    series(vals.enumerate().map(((i, v)) => (px(e0 + i), py(v))), col, dash: dash, dots: false)
-    content((px(e1) + 6, py(vals.last())), txt(lab, size: 7pt, fill: c.ink, weight: 600), anchor: "west")
-  }
-  let ly = -46
+  content((x0 + pw + gap / 2, -22), txt("message size", size: 7.5pt), anchor: "north")
+  let ly = -44
   legend(x0, ly, [A100, NVLink pair], line-swatch(x0, ly, c.orange))
   legend(x0 + 120, ly, [A100, across sockets], line-swatch(x0 + 120, ly, c.blue))
   legend(x0 + 250, ly, [RTX A6000, across sockets], line-swatch(x0 + 250, ly, c.muted, dash: "dashed"))
@@ -351,6 +473,56 @@
 // A100: NVLink over PCIe at TP=2
 // ============================================================================
 
+// A100 output throughput (tok/s, prefill included), 1K..128K input, 128 output
+// tokens, MTP off, FP8 KV, FlashInfer, prefix cache; rows are concurrency 1,
+// 2, 4, 8. TP=1 on GPU0; TP=2 on GPU0+1 (NVLink) and GPU1+2 (PCIe).
+#let a100-tp1 = (
+  (40.45, 42.45, 40.03, 41.94, 39.34, 34.14, 31.01, 26.88),
+  (70.64, 77.98, 70.08, 78.40, 70.41, 56.05, 50.08, 43.17),
+  (114.14, 135.70, 112.94, 137.93, 114.62, 82.29, 71.76, 60.84),
+  (166.55, 217.51, 164.02, 223.57, 168.30, 106.83, 90.80, 76.44),
+)
+#let a100-nv = (
+  (61.57, 63.97, 60.95, 63.42, 59.33, 52.02, 46.71, 40.55),
+  (109.27, 118.48, 108.64, 118.08, 107.32, 88.14, 77.69, 67.92),
+  (184.21, 210.61, 179.76, 212.84, 181.43, 135.29, 116.38, 101.84),
+  (279.72, 341.49, 270.67, 352.61, 273.28, 181.50, 152.17, 133.56),
+)
+#let a100-pcie = (
+  (59.15, 62.61, 58.49, 62.00, 57.57, 49.64, 45.09, 39.49),
+  (102.01, 114.20, 101.79, 115.07, 102.09, 81.82, 73.08, 65.64),
+  (162.90, 194.93, 160.84, 199.87, 166.12, 120.21, 105.16, 96.03),
+  (230.14, 300.56, 228.17, 314.81, 238.37, 155.19, 135.31, 123.10),
+)
+
+#let fig-a100-tp() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (pw, ph, gap, x0) = (104, 120, 28, 30)
+  let labels = ("1K", "2K", "4K", "8K", "16K", "32K", "64K", "128K")
+  for (k, (conc, ymax, ystep)) in ((1, 80, 20), (2, 160, 40), (4, 240, 60), (8, 400, 100)).enumerate() {
+    let ox = x0 + k * (pw + gap)
+    let px(i) = ox + i / 7 * pw
+    let py(v) = v / ymax * ph
+    for j in range(int(ymax / ystep) + 1) {
+      let v = j * ystep
+      line((ox, py(v)), (ox + pw, py(v)), stroke: if v == 0 { axis-stroke } else { grid-stroke })
+      content((ox - 4, py(v)), txt(str(v), size: 6.5pt), anchor: "east")
+    }
+    for i in (0, 3, 7) { content((px(i), -5), txt(labels.at(i), size: 7pt), anchor: "north") }
+    content((ox + pw / 2, ph + 10), txt("concurrency " + str(conc), size: 7.5pt, fill: c.ink, weight: 700))
+    let pts(rows) = rows.at(k).enumerate().map(((i, v)) => (px(i), py(v)))
+    series(pts(a100-tp1), c.muted, dash: "dashed")
+    series(pts(a100-pcie), c.blue)
+    series(pts(a100-nv), c.orange)
+  }
+  content((x0 + 2 * pw + 1.5 * gap, -18), txt("input tokens", size: 7.5pt), anchor: "north")
+  let ly = -40
+  let sw(x, y, col, dash: none) = line((x, y), (x + 12, y), stroke: (paint: col, thickness: 2pt, dash: dash))
+  legend(x0, ly, [TP=2, NVLink (GPU0 + GPU1)], sw(x0, ly, c.orange))
+  legend(x0 + 150, ly, [TP=2, PCIe (GPU1 + GPU2)], sw(x0 + 150, ly, c.blue))
+  legend(x0 + 300, ly, [TP=1, GPU0], sw(x0 + 300, ly, c.muted, dash: "dashed"))
+})
+
 // Output throughput gain of GPU0+1 (NVLink) over GPU1+2 (PCIe), in %.
 // Columns: concurrency 1, 2, 4, 8, 16.
 #let gain-rows = (
@@ -431,3 +603,202 @@
     }
   }
 })
+
+// ============================================================================
+// Roofline
+// ============================================================================
+
+// Spec-sheet peaks: dense BF16 tensor FLOPS (W8A16 GEMMs run in BF16) and
+// memory bandwidth.
+#let gpu-spec = (
+  a6000: (name: "RTX A6000", peak: 154.8e12, bw: 768e9),
+  a100: (name: "A100 80 GB PCIe", peak: 312e12, bw: 1935e9),
+)
+// Qwen3.8-27B per token: FLOPs of the linear layers and the output layer, and
+// the bytes of those weights (INT8 linear layers, BF16 output layer).
+#let model-flop = 51.24e9
+#let model-bytes = 26.89e9
+
+#let log10(v) = calc.log(v, base: 10)
+
+/// All-reduce time (µs) for `s` bytes from one of the ar-* arrays: linear
+/// between measured sizes, proportional beyond 128 MiB.
+#let ar-time(vals, s) = {
+  let top = calc.pow(2, 9 + vals.len())
+  if s <= 1024 { return vals.first() }
+  if s >= top { return vals.last() * s / top }
+  let i = int(calc.floor(calc.log(s, base: 2))) - 10
+  let lo = calc.pow(2, 10 + i)
+  vals.at(i) + (s - lo) / lo * (vals.at(i + 1) - vals.at(i))
+}
+
+/// A log axis from 10^e0 to 10^e1 at y = 0, with region shading split at
+/// `split` (left `lfill`, right `rfill`) and tick labels from `ticks`.
+#let log-strip(x0, w, e0, e1, ticks, split, lfill, rfill, ltext, rtext, hh: 26) = {
+  import cetz.draw: *
+  let px(v) = x0 + (log10(v) - e0) / (e1 - e0) * w
+  rect((x0, 0), (px(split), hh), fill: lfill, stroke: none)
+  rect((px(split), 0), (x0 + w, hh), fill: rfill, stroke: none)
+  content((x0 + 6, hh / 2), txt(ltext, size: 7.5pt, fill: c.ink, weight: 600), anchor: "west")
+  content((x0 + w - 6, hh / 2), txt(rtext, size: 7.5pt, fill: c.ink, weight: 600), anchor: "east")
+  line((x0, 0), (x0 + w, 0), stroke: axis-stroke)
+  for (v, lab) in ticks {
+    line((px(v), 0), (px(v), -3), stroke: axis-stroke)
+    content((px(v), -6), txt(lab, size: 7pt), anchor: "north")
+  }
+}
+
+/// Where the parts of a step sit against the two GPUs' ridge points.
+#let fig-intensity() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (x0, w, e0, e1, hh) = (10, 500, 0, 5, 26)
+  let px(v) = x0 + (log10(v) - e0) / (e1 - e0) * w
+  log-strip(x0, w, e0, e1,
+    ((1, "1"), (10, "10"), (100, "100"), (1000, "1,000"), (10000, "10,000"), (100000, "100,000")),
+    161, c.blue1, c.grey1, "memory-bound", "compute-bound", hh: hh)
+  content((x0 + w / 2, -20), txt("FLOPs per byte read from memory", size: 7.5pt), anchor: "north")
+  // Ridge points.
+  for (v, lab, dx, anchor) in ((161, "A100 ridge: 161", -3, "south-east"), (202, "RTX A6000 ridge: 202", 3, "south-west")) {
+    line((px(v), 0), (px(v), hh + 12), stroke: (paint: c.ink, thickness: .8pt))
+    content((px(v) + dx, hh + 6), txt(lab, size: 7pt, fill: c.ink, weight: 600), anchor: anchor)
+  }
+  // Decode attention: a range, 12 per query token, 48 with MTP.
+  rect((px(12), 0), (px(48), hh), fill: c.teal2, stroke: none)
+  // What a step does, below the axis.
+  let marks = (
+    (1.9, "linear layers,\n1 token per step", -40),
+    (30, "decode attention,\n12–48", -40),
+    (61, "linear layers, 32 tokens:\nA6000 concurrency 8 + MTP", -74),
+    (244, "linear layers, 128 tokens:\nA100 concurrency 128", -40),
+    (15600, "linear layers,\n8192-token prefill chunk", -40),
+  )
+  for (v, lab, y) in marks {
+    line((px(v), 0), (px(v), y + 2), stroke: (paint: c.grey2, thickness: .6pt, dash: "dotted"))
+    circle((px(v), 0), radius: 2.6, fill: c.blue, stroke: 1pt + white)
+    content((px(v), y), txt(lab, size: 7pt, fill: c.ink), anchor: "north")
+  }
+})
+
+/// One layer at TP=1 and TP=2: compute halves, two all-reduces are added.
+#let fig-tp-layer() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (x0, s, bh, gap) = (96, 1.0, 18, 10)
+  // Attention (GDN or full) and MLP in proportion to their weights (30% and 70%).
+  let (mix, mlp, ar) = (96, 224, 34)
+  let rows = (
+    ("TP=1", ((mix, "blue2", "Attention"), (mlp, "blue", "MLP"))),
+    ("TP=2, free link", ((mix / 2, "blue2", "Attn"), (mlp / 2, "blue", "MLP / 2"))),
+    ("TP=2, real link", ((mix / 2, "blue2", "Attn"), (ar, "orange", "AR"), (mlp / 2, "blue", "MLP / 2"), (ar, "orange", "AR"))),
+  )
+  for (r, (lab, parts)) in rows.enumerate() {
+    let y = -r * (bh + gap)
+    content((x0 - 8, y - bh / 2), txt(lab, size: 7.5pt, fill: c.ink, weight: 600), anchor: "east")
+    let x = x0
+    for (wdt, tone, body) in parts {
+      seg(x, x + wdt, y, tone, body: body, h: bh)
+      x += wdt
+    }
+    let note = (
+      [one GPU reads all the weights],
+      [each GPU reads half: twice as fast],
+      [plus two all-reduces, one after the other],
+    ).at(r)
+    content((x + 8, y - bh / 2), txt(note, size: 7pt), anchor: "west")
+  }
+  let ly = -3 * (bh + gap) - 4
+  legend(x0, ly, [AR: all-reduce of _B_ × 10 KiB for _B_ tokens. A step is 64 such layers: 128 all-reduces.], box-swatch(x0, ly, c.orange))
+})
+
+/// One machine's roofline. Left: the classic roofline of one GPU, with where
+/// this machine's runs sit. Right: tokens per second for a step of B tokens,
+/// on one GPU, on a TP=2 pair over a free link, and over each real link.
+/// `marks`: (label, tokens per step); `links`: (name, ar-* array, colour).
+#let fig-gpu-roofline(spec, marks, links) = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let per-tok = model-flop / model-bytes
+  let (peak, bw) = (spec.peak / 1e12, spec.bw / 1e12)
+  let ridge = peak / bw
+  let roof(x) = calc.min(peak, x * bw)
+  let h = 170
+
+  // Left: TFLOPS against FLOPs per byte.
+  let (x0, lw) = (40, 190)
+  let (ly0, ly1) = (-0.3, 2.7)
+  let px(v) = x0 + log10(v) / 5 * lw
+  let py(v) = (log10(v) - ly0) / (ly1 - ly0) * h
+  for (v, lab) in ((1, "1"), (10, "10"), (100, "100")) {
+    line((x0, py(v)), (x0 + lw, py(v)), stroke: grid-stroke)
+    content((x0 - 5, py(v)), txt(lab, size: 7pt), anchor: "east")
+  }
+  content((x0 - 26, h / 2), txt("TFLOPS", size: 7.5pt), angle: 90deg)
+  line((x0, 0), (x0 + lw, 0), stroke: axis-stroke)
+  for (v, lab) in ((1, "1"), (10, "10"), (100, "100"), (1000, "1K"), (10000, "10K"), (100000, "100K")) {
+    line((px(v), 0), (px(v), -3), stroke: axis-stroke)
+    content((px(v), -6), txt(lab, size: 7pt), anchor: "north")
+  }
+  content((x0 + lw / 2, -20), txt("FLOPs per byte read from memory", size: 7.5pt), anchor: "north")
+  content((x0 + lw / 2, h + 12), txt(spec.name + ": " + str(calc.round(peak, digits: 1)) + " TFLOPS, " + str(calc.round(spec.bw / 1e9)) + " GB/s", size: 7.5pt, fill: c.ink, weight: 700))
+  // Decode attention over FP8 KV: 12 FLOPs per byte, 48 with MTP.
+  rect((px(12), 0), (px(48), h), fill: c.teal1, stroke: none)
+  content((px(24), 4), txt([decode\ attention], size: 6.5pt, fill: c.ink), anchor: "south")
+  line((px(1), py(bw)), (px(ridge), py(peak)), (px(1e5), py(peak)), stroke: (paint: c.ink, thickness: 1.5pt, join: "round"))
+  content((px(ridge) - 4, py(peak) + 4),
+    txt(str(calc.round(ridge)) + " FLOPs/B = " + str(calc.round(ridge / per-tok)) + " tokens", size: 7pt, fill: c.ink, weight: 600),
+    anchor: "south-east")
+  // Where the linear layers of this machine's runs sit.
+  for (lab, b) in marks {
+    let x = per-tok * b
+    circle((px(x), py(roof(x))), radius: 2.6, fill: c.blue, stroke: 1pt + white)
+    content((px(x) + 3, py(roof(x)) - 4), txt(lab, size: 7pt, fill: c.ink), anchor: "north-west")
+  }
+
+  // Right: tokens per second against tokens per step.
+  let (rx0, rw) = (x0 + lw + 64, 216)
+  let (ry0, ry1) = (1.2, 5.3)
+  let qx(b) = rx0 + calc.log(b, base: 2) / 14 * rw
+  let qy(v) = (log10(v) - ry0) / (ry1 - ry0) * h
+  for (v, lab) in ((100, "100"), (1000, "1K"), (10000, "10K"), (100000, "100K")) {
+    line((rx0, qy(v)), (rx0 + rw, qy(v)), stroke: grid-stroke)
+    content((rx0 - 5, qy(v)), txt(lab, size: 7pt), anchor: "east")
+  }
+  content((rx0 - 30, h / 2), txt("tokens/s", size: 7.5pt), angle: 90deg)
+  line((rx0, 0), (rx0 + rw, 0), stroke: axis-stroke)
+  for (b, lab) in ((1, "1"), (8, "8"), (64, "64"), (512, "512"), (4096, "4K")) {
+    line((qx(b), 0), (qx(b), -3), stroke: axis-stroke)
+    content((qx(b), -6), txt(lab, size: 7pt), anchor: "north")
+  }
+  content((rx0 + rw / 2, -20), txt("tokens per step", size: 7.5pt), anchor: "north")
+  content((rx0 + rw / 2, h + 12), txt("Qwen3.8-27B, TP=1 and TP=2", size: 7.5pt, fill: c.ink, weight: 700))
+  line((qx(8192), 0), (qx(8192), h), stroke: (paint: c.muted, thickness: .6pt, dash: "dashed"))
+  content((qx(8192) - 3, 4), txt([prefill\ chunk], size: 6.5pt), anchor: "south-east")
+  let bs = range(57).map(k => calc.pow(2, k / 4))
+  // Step time in seconds on `n` GPUs, and of the all-reduces.
+  let t-gpu(n, b) = calc.max(model-bytes / n / spec.bw, b * model-flop / n / spec.peak)
+  let t-link(vals, b) = 128 * ar-time(vals, b * 10240) * 1e-6
+  let curve(f, stroke) = line(..bs.map(b => (qx(b), qy(b / f(b)))), stroke: stroke)
+  curve(b => t-gpu(1, b), (paint: c.ink, thickness: 1.2pt, dash: "dotted", join: "round"))
+  curve(b => t-gpu(2, b), (paint: c.ink, thickness: 1pt, join: "round"))
+  for (name, vals, col) in links {
+    curve(b => t-link(vals, b), (paint: col, thickness: 1pt, dash: "dashed", join: "round"))
+    curve(b => t-gpu(2, b) + t-link(vals, b), (paint: col, thickness: 1.8pt, join: "round"))
+  }
+
+  let sw(x, y, col, th, dash: none) = line((x, y), (x + 12, y), stroke: (paint: col, thickness: th, dash: dash))
+  let ly = -44
+  legend(x0, ly, [linear layers at a run’s tokens per step], circle((x0 + 6, ly), radius: 2.6, fill: c.blue, stroke: 1pt + white))
+  legend(rx0, ly, [TP=1], sw(rx0, ly, c.ink, 1.2pt, dash: "dotted"))
+  legend(rx0 + 60, ly, [TP=2, link free], sw(rx0 + 60, ly, c.ink, 1pt))
+  for (k, (name, _, col)) in links.enumerate() {
+    let y = ly - 16 * (k + 1)
+    legend(rx0, y, [TP=2 over #name], sw(rx0, y, col, 1.8pt))
+    legend(rx0 + 120, y, [#name all-reduces only], sw(rx0 + 120, y, col, 1pt, dash: "dashed"))
+  }
+})
+
+#let fig-a6000-roofline() = fig-gpu-roofline(gpu-spec.a6000,
+  (("c2", 8), ("c8", 32), ("prefill", 8192)),
+  (("PCIe", ar-a6000, c.muted),))
+
+#let fig-a100-roofline() = fig-gpu-roofline(gpu-spec.a100,
+  (("c1", 1), ("c16", 16), ("c128", 128), ("prefill", 8192)),
+  (("NVLink", ar-nvlink, c.orange), ("PCIe", ar-a100-pcie, c.blue)))

@@ -45,3 +45,17 @@ if [ -n "$skipped" ]; then
   echo "$skipped" | sed 's/^/  /'
 fi
 '''
+
+[tasks.publish]
+description = "Stage everything, commit as \"YYYY-MM-DD update\", and push"
+shell = "bash -c"
+run = '''
+set -euo pipefail
+git add --all
+if git diff --cached --quiet; then
+  echo "Nothing to commit."
+else
+  git commit -m "$(date +%F) update"
+fi
+git push
+'''
