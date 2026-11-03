@@ -1,5 +1,6 @@
-// In-article components: callouts, hints, terms, images and cross-post links.
-// Import: #import "/utils/ui.typ": callout, hint, term, img, gallery, two-cols, xref, related
+// In-article components: callouts, hints, folds, terms, images, cross-post
+// links and source-plus-output demos.
+// Import: #import "/utils/ui.typ": callout, hint, fold, term, img, gallery, two-cols, xref, related, demo
 
 #import "@tola/address:0.0.0": asset-url
 #import "@tola/image:0.0.0": image-metadata, img as responsive-img
@@ -50,6 +51,18 @@
   })
   html.div(class: "hint-rule hint-rule-bottom", role: "presentation", spans(4))
 })
+
+/// A panel folded shut under its title, for an answer, a long listing or a
+/// detail most readers skip: `#fold(title: [Show the answer])[...]`.
+/// `open: true` starts it unfolded.
+#let fold(body, title: [Details], open: false) = html.elem(
+  "details",
+  attrs: (class: "fold") + if open { (open: "") } else { (:) },
+  {
+    html.elem("summary", title)
+    html.div(class: "fold-body", body)
+  },
+)
 
 // ============================================================================
 // Images
@@ -212,3 +225,38 @@
     })
   })
 })
+
+// ============================================================================
+// Demos
+// ============================================================================
+
+/// Typst source, then what it renders. `src` is a raw block (or a string);
+/// the code block shows it as written and the panel under it is the same
+/// text evaluated, so the two cannot drift apart. `#import` lines are shown
+/// but not run (evaluated code cannot read files): pass the names they bring
+/// in through `scope`, e.g. `#let demo = demo.with(scope: (callout: callout))`.
+/// `fold: true` puts the output first and folds the source away under it,
+/// for drawings whose code is too long to read before the picture.
+#let demo(src, scope: (:), fold: false) = {
+  let text = if type(src) == str { src } else { src.text }
+  let code = text.split("\n").filter(l => not l.trim().starts-with("#import")).join("\n")
+  let shown = raw(text, lang: "typst", block: true)
+  let out = eval(code, mode: "markup", scope: scope)
+  if fold {
+    html.div(class: "demo demo-fold", {
+      html.div(class: "demo-body", out)
+      html.elem("details", attrs: (class: "demo-src"), {
+        html.elem("summary", attrs: (data-pagefind-ignore: ""), [Typst source])
+        shown
+      })
+    })
+  } else {
+    html.div(class: "demo", {
+      shown
+      html.div(class: "demo-out", {
+        html.elem("div", attrs: (class: "demo-label", data-pagefind-ignore: ""), [Renders as])
+        html.div(class: "demo-body", out)
+      })
+    })
+  }
+}
