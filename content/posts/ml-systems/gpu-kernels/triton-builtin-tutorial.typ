@@ -5,6 +5,7 @@
 #tola-meta((
   title: "Triton Notes: Tutorials and Kernel Paradigms",
   date: "2026-01-07",
+  summary: "GPU 内存层级与 SM、warp 结构，CUDA 与 Triton 编程模型的区别，官方 tutorial 中 vector add、fused softmax、matmul 的实现要点，以及 GEMM 与 GEMV 的 kernel 划分方式。",
   updated: "2026-11-02",
   tags: ("GPU", "Triton"),
   weight: 10,

@@ -5,6 +5,7 @@
 #tola-meta((
   title: "TileLang Programming Model",
   date: "2026-08-18",
+  summary: "用 TileLang 写 kernel 的 Block 视角与 Thread 视角、常用原语的区别、内存分配，以及各类操作最终落在哪一层执行。",
   tags: ("TileLang",),
   weight: 10,
 ))

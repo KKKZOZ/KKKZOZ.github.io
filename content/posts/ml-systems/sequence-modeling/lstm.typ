@@ -4,6 +4,7 @@
 #tola-meta((
   title: "[Sequence Modeling 02] LSTM",
   date: "2026-03-16",
+  summary: "Vanilla RNN 为何存在梯度消失与信息覆盖问题，LSTM 如何用细胞状态和门控机制缓解它，以及 LSTM 的四个计算步骤与代码实现。",
   weight: 10,
   series: "Sequence Modeling",
 ))

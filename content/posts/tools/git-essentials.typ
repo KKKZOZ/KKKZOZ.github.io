@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "/utils/ui.typ": callout
+#import "/figures/git-essentials.typ" as fig
 
 #tola-meta((
   title: "Git Essentials",
@@ -23,6 +24,8 @@ Essential Understandings about Git.
 - #strong[Branch]
   - 是 Git 中用于并行开发的核心概念
   - 每个分支都是一个独立的开发线，可以在上面进行修改而不影响其他分支
+
+#figure(fig.fig-three-areas(), caption: [一次改动依次经过的三个地方，以及在它们之间移动改动的命令。]) <fig-three-areas>
 
 == Remote & Upstream
 Remote 是指你本地仓库关联的远程 Git 仓库的引用。
@@ -87,21 +90,14 @@ git push -u origin main
 git push   # Git 知道推送到 origin/main
 git pull   # Git 知道从 origin/main 拉取
 
----
-
-我的本地分支: main
-     ↓ (upstream 关系)
-远程分支: origin/main  
-     ↓ (remote 关系)
-实际地址: https://github.com/user/repo.git 的 main 分支
-
----
 # 允许有多个 remote, 但是每个本地分支只能有一个 upstream
 # 设置 upstream 之后, 仍然可以手动推送到其他地方
 git push backup main         # 手动推送到 backup（不改变 upstream）
 git push origin main         # 手动推送到 origin
 git push                     # 默认推送到 upstream（origin/main）
 ```
+
+#figure(fig.fig-upstream(), caption: [upstream 把本地分支 `main` 映射到 remote-tracking 分支 `origin/main`，remote 再把 `origin` 这个名字映射到实际的仓库地址。]) <fig-upstream>
 
 == Pull & Push Command
 - `git pull`
@@ -236,6 +232,8 @@ Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路
 结果：  冲突！需要人工决定
 ```
 
+#figure(fig.fig-three-way(), caption: [三路合并：每个分支都和共同祖先比较。只有一侧改动时直接取这一侧，两侧改了同一处才是冲突。]) <fig-three-way>
+
 === Conflict Mark
 当 Git 无法自动合并两个分支的修改时，会在文件中插入冲突标记：
 
@@ -252,9 +250,10 @@ Git 在进行合并时, 并不是简单地比较两个分支, 而是采用三路
 - `=======`：分隔符，区分两个版本的内容
 - `>>>>>>> other-branch`：表示冲突区域结束，上面是其他分支的内容
 
-在 VSCode 中, 通常会这么显示:
+在 VSCode 中, 通常会这么显示（以下面 EXAMPLE 中的冲突为例）:
 
-#img("/assets/images/git-conflict.png", alt: "git-conflict")
+#figure(fig.fig-conflict(), caption: [VS Code 中的冲突块：`<<<<<<< HEAD` 到 `=======` 是 Current，`=======` 到 `>>>>>>>` 是 Incoming，上方一行是可点击的操作。]) <fig-conflict>
+
 #callout(kind: "note", title: "EXAMPLE")[
 假设你在 `main` 分支修改了一个文件，同时 `feature` 分支也修改了同一行：
 
@@ -329,16 +328,9 @@ index 1234567..abcdefg 100644             # 索引信息
  another unchanged line                    # 上下文行
 ```
 
-块头的含义:
+块头的含义见 @fig-hunk。
 
-```diff
-@@ -1,4 +1,6 @@
-#   ↑ ↑ ↑ ↑
-#   │ │ │ └── 新文件这个块有6行
-#   │ │ └──── 新文件从第1行开始
-#   │ └────── 旧文件这个块有4行  
-#   └──────── 旧文件从第1行开始
-```
+#figure(fig.fig-hunk(), caption: [块头 `@@ -1,4 +1,6 @@`：这个块在旧文件中从第 1 行开始、共 4 行，在新文件中从第 1 行开始、共 6 行。]) <fig-hunk>
 
 #callout(kind: "note", title: "EXAMPLE")[
 ```diff
@@ -403,6 +395,8 @@ git reset 主要有三种模式：`--soft`、`--mixed`（默认）和 `--hard`�
   )
   , kind: table
   )
+
+#figure(fig.fig-reset(), caption: [`HEAD` 从 C 回到 B 时三种模式的效果：`--soft` 只移动 HEAD，`--mixed` 再重置暂存区，`--hard` 连工作目录一起重置。最右列是 C 引入的改动最终留在哪里。]) <fig-reset>
 
 - #strong[`git reset --soft <commit>`]
   - 将 `HEAD` 指针移动到指定的 `<commit>`，而你的工作目录和暂存区的文件内容都不会改变。
@@ -594,7 +588,8 @@ Git rebase is closer to a merge. The difference in rebase is:
 
 So that means that all your local commits are moved to the end, after all the remote commits. If you have a merge conflict, you have to solve it too.
 
-#img("/assets/images/merge-rebase.png", alt: "merge-rebase")
+#figure(fig.fig-merge-rebase(), caption: [用上面 rebase 示例中的提交对比两种做法。merge 保留原有历史，新增一个有两个 parent 的提交 M；rebase 在 main 之后重建 b1d4′ 和 c3f2′，原来的两个提交不再被 feature 引用。]) <fig-merge-rebase>
+
 `git rebase` helps create #strong[a linear project history] by transferring your feature branch commits to the top of the main branch, effectively \"replaying\" changes as if they were applied sequentially after the main branch\'s most recent commits. This linearity makes the history easier to read and understand.
 
 #callout(kind: "warning", title: "CAUTION")[
@@ -701,6 +696,8 @@ main 分支的历史记录将如下所示:
 * a0b1c2d Initial commit
 ```
 
+#figure(fig.fig-cherry-pick(), caption: [`git cherry-pick c3b2` 只把这一个提交的改动应用到 main，得到 parent 为 z8y7 的新提交 c3b2′；develop 保持不变。]) <fig-cherry-pick>
+
 == Summary
 我们在描述 `rebase`, `squash`, `cherry-pick` 这三种操作时, 总会提到 \"把提交应用到xxx\"
 
@@ -748,10 +745,14 @@ HEAD 可以认为是指向当前分支的最新提交
 
 这样，不仅把改动“同步”到新的基线 M 上，而且生成了一组全新的快照（A′/B′/C′），保持线性历史，删掉了原来的 P→A→B→C 旧链
 
+#figure(fig.fig-replay(), caption: [rebase 按顺序重放每个提交相对其 parent 的 diff：ΔPA、ΔAB、ΔBC 依次应用到 M 上，生成 A′、B′、C′，feature 指针移到 C′。]) <fig-replay>
+
 == Git Worktree
 `git worktree` 命令允许你在一个 Git 仓库中同时 check out 多个分支到不同的目录。
 
 可以把每个 worktree 看作是一个“链接”到主 `.git` 数据库的独立工作目录。它们共享同一个仓库历史、对象和引用（refs），但各自拥有独立的工作区和暂存区。
+
+#figure(fig.fig-worktree(), caption: [一个仓库、三个 worktree：对象和 refs 只存一份，每个目录有自己的 HEAD、暂存区和工作文件。]) <fig-worktree>
 
 #callout(kind: "info", title: "QUESTION / 为什么要使用 Git Worktree?")[
 想象一下这个情景：

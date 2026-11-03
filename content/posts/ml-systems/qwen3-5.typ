@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Qwen3.5 Dense Model Architecture",
   date: "2026-08-19",
+  summary: "基于 transformers 源码拆解 Qwen3.5 文本主干：每 4 层中 3 层 Gated DeltaNet、1 层 gated full attention 的 hybrid 结构，两类 attention 的工作机制与 cache 组织，以及端到端数据流。",
   tags: ("Model-Architecture",),
   weight: 10,
 ))

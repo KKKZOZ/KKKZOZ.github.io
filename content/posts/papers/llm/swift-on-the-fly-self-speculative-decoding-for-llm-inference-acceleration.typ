@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Swift On-the-fly Self-speculative Decoding For LLM Inference Acceleration",
   date: "2026-02-08",
+  summary: "SWIFT searches for layers to skip on the fly using the already generated context, so the LLM serves as its own draft model for self-speculative decoding without any training.",
   tags: ("ICLR-25",),
 ))
 

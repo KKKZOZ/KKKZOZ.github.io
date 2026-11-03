@@ -4,6 +4,7 @@
 #tola-meta((
   title: "AIConfigurator Lightning-Fast Configuration Optimization for Multi-Framework LLM Serving",
   date: "2026-02-05",
+  summary: "AIConfigurator profiles GEMM, attention, communication and memory primitives once per GPU and composes them to predict serving performance, searching static, aggregated and disaggregated deployments without benchmarking each one.",
   tags: ("arXiv-2601", "llm-serving", "auto-tuning"),
 ))
 

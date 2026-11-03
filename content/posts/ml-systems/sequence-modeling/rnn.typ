@@ -5,6 +5,7 @@
 #tola-meta((
   title: "[Sequence Modeling 01] RNN",
   date: "2026-03-16",
+  summary: "RNN 如何按时间步迭代，用固定大小的隐藏状态压缩历史；附伪代码，并从并行性和上下文容量对比 RNN 与 Transformer。",
   weight: 10,
   series: "Sequence Modeling",
 ))

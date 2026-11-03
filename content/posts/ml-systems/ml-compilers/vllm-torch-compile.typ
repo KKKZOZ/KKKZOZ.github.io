@@ -1,8 +1,10 @@
 #import "@tola/source:0.0.0": tola-meta
+#import "/figures/vllm-torch-compile.typ" as fig
 
 #tola-meta((
   title: "vLLM and torch.compile",
   date: "2026-08-10",
+  summary: "vLLM 中与 FX 和 torch.compile 相关的几条路径：Transformers backend 的 FX 改写，以及 vLLM 自定义 backend 的图分区、shape 管理、custom pass、缓存与 CUDA Graph 协同。",
   tags: ("ML Compilers", "torch.compile", "vLLM"),
   weight: 10,
 ))
@@ -34,15 +36,9 @@ Piecewise CUDA Graph 不是第四条独立的 tracing 路径，而是建立在 v
 - FX 图仅用于结构匹配
 - 真正的修改通过 AST 重写原始 forward 源码完成
 
-调用链大致是：
+调用链大致如 @fig-hf-fx 所示。
 
-```ascii
-HF nn.Module
--> custom fx.Tracer
--> fx.Graph
--> pattern matching
--> AST rewrite / module replacement
-```
+#figure(fig.fig-hf-fx(), caption: [Transformers backend 的调用链。FX graph 只用来看结构、匹配可融合的模式；真正的改动发生在 AST 和 module 层面，与 `torch.compile` 无关。]) <fig-hf-fx>
 
 get\_fuser() 对每种 module class trace 一次，然后匹配 vllm 中对应的 fuser：
 
@@ -103,43 +99,9 @@ torch.compile(
 === Stitching codegen
 Graph 被拆分后，各个 region 可以分别交给 Inductor，但系统仍需要恢复原始 `forward` 的调用顺序和 Tensor 数据依赖。当前实现中的 `vllm/compilation/codegen.py` 为此生成一个 straight-line Python function：它负责调用 compiled region 和 custom op、传递中间结果并返回最终输出，不负责生成 Tensor kernel。(#link("https://github.com/vllm-project/vllm/blob/main/vllm/compilation/codegen.py")[vLLM codegen.py])
 
-整个过程可以概括为：
+整个过程可以概括为 @fig-stitching：编译期把各个 region 分别编译，运行时 `execution_fn(...)` 只是按顺序依次调用它们。
 
-```text
-                    split GraphModule
-                           │
-              ┌────────────┼────────────┐
-              ▼            ▼            ▼
-          subgraph 0    Attention    subgraph 1
-              │        custom op         │
-              ▼                          ▼
-           Inductor                   Inductor
-              │                          │
-       compiled callable 0       compiled callable 1
-              │                          │
-              └──────────┬───────────────┘
-                         ▼
-              vLLM stitching codegen
-                         │
-                         ▼
-                Python execution_fn
-```
-
-最终执行：
-
-```python
-execution_fn(...)
-```
-
-实际上只是：
-
-```text
-Python dispatcher
-   │
-   ├─ call compiled region 0
-   ├─ call Attention custom op
-   └─ call compiled region 1
-```
+#figure(fig.fig-stitching(), caption: [Stitching codegen。左：split graph 中的 subgraph 交给 Inductor，Attention custom op 不参与编译；`codegen.py` 把它们串成一个 Python 函数。右：运行时执行的就是这个函数，依次调用 compiled region 与 custom op。]) <fig-stitching>
 
 下面的代码是对生成结果的概念化简化：
 
@@ -178,17 +140,7 @@ torch.compile(
 
 这里的 `dynamic=False` 很容易被误解为“vLLM 只做 static-shape compilation”，但实际含义是：不让 PyTorch 自动判断哪些维度需要动态化。第一次 compilation 之前，`support_torch_compile` 会根据模型声明的 `dynamic_arg_dims` 显式调用 `torch._dynamo.mark_dynamic()`；当前版本还可以根据 dynamic-shape configuration 调用 `torch._dynamo.decorators.mark_unbacked()`。(#link("https://github.com/vllm-project/vllm/blob/main/vllm/compilation/decorators.py")[vLLM decorators.py])
 
-整个策略可以概括为：
-
-```text
-dynamic=False
-     │
-     └── 不让 PyTorch 自动决定哪些 shape 动态化
-                       +
-        vLLM 显式 mark_dynamic / mark_unbacked
-                       +
-        vLLM 自己管理 compile ranges / specialization
-```
+整个策略可以概括为 @fig-shape-policy 上半部分的三层。
 
 因此，`dynamic=False` 关闭的是 PyTorch 的自动 dynamic-shape inference，而不是 vLLM 所有输入维度的动态性。哪些 argument 的哪些 dimension 需要动态处理，由 `support_torch_compile` 的 metadata 和 vLLM compilation configuration 明确指定。(#link("https://github.com/vllm-project/vllm/blob/main/vllm/compilation/wrapper.py")[vLLM wrapper.py])
 
@@ -202,6 +154,8 @@ vllm serve model \
 ```
 
 例如，将 `compile_sizes` 设置为 `[1, 2, 4, 8]` 后，`num_tokens=1` 或 `8` 可以使用对应的 specialized kernel，而 `num_tokens=3` 或 `37` 仍由 general kernel 覆盖。这样不需要为每一种请求尺寸生成独立 kernel，同时保留对高频 shape 的优化机会。
+
+#figure(fig.fig-shape-policy(), caption: [上：`dynamic=False` 只关闭 PyTorch 的自动推断，动态维度由 vLLM 显式标记，compile range 与 specialization 也由 vLLM 管理。下：设置 `compile_sizes: [1, 2, 4, 8]` 后不同 `num_tokens` 落到哪个 kernel。]) <fig-shape-policy>
 
 当 shape 完全静态时，Inductor 可以比较更多 Triton configuration，并通过 autotuning 选择更合适的 kernel。首次 tuning 可能需要数秒到数分钟，但结果可以进入 compilation cache；vLLM 会在开始 serving 前完成这些 specialization，避免在线请求承担编译延迟。(#link("https://docs.vllm.ai/en/latest/design/torch_compile/")[vLLM torch.compile])
 
@@ -261,46 +215,18 @@ vLLM 的明确设计目标是：
 
 因此，vLLM 会在模型初始化和 warmup 阶段完成 general shape compilation、`compile_sizes` 对应的 specialization，以及所需的 CUDA Graph capture，随后才开始处理请求。Cache 解决重复启动时的 artifact 复用问题；提前 compilation 则解决单次 serving 生命周期中编译进入请求路径的问题。
 
+#figure(fig.fig-lifecycle(), caption: [两种编译时机（长度为示意，非实测）。普通 `torch.compile` 在首次调用和 guard miss 时编译，编译落在请求路径上；vLLM 在开始 serving 之前完成所有编译与 capture，cache hit 时还可以跳过 Inductor 编译。]) <fig-lifecycle>
+
 == CUDA Graph 协同
 Piecewise CUDA Graph 不是独立于 compilation 的另一项优化，而是直接建立在 Piecewise Compilation 的输出之上。Piecewise Compilation 先决定 graph boundary，并将 Attention 与相邻的稳定计算拆开；Inductor 再编译这些 safe regions；初始化阶段则对 compiled callable 进行 CUDA Graph capture。(#link("https://docs.vllm.ai/en/latest/design/torch_compile/")[vLLM torch.compile])
 
-Attention 往往需要处理 KV Cache、sequence metadata 和 backend-specific runtime state，执行行为更动态；两个 Attention 之间的 Linear、Norm、FFN 和 residual 等计算通常更稳定。因此，Piecewise 模式可以让这些 Inductor regions 使用 CUDA Graph replay，同时让 Attention 保持 normal/custom execution：
+Attention 往往需要处理 KV Cache、sequence metadata 和 backend-specific runtime state，执行行为更动态；两个 Attention 之间的 Linear、Norm、FFN 和 residual 等计算通常更稳定。因此，Piecewise 模式可以让这些 Inductor regions 使用 CUDA Graph replay，同时让 Attention 保持 normal/custom execution（@fig-piecewise-exec）。
 
-```text
-Inductor Region
-      │
-      │ CUDA Graph
-      ▼
-    replay
+#figure(fig.fig-piecewise-exec(), caption: [Piecewise 模式下的一次 forward：Inductor region 以 CUDA Graph replay 执行，Attention 在两段 graph 之间正常执行。]) <fig-piecewise-exec>
 
-Attention
-      │
-      │ normal/custom execution
-      ▼
+这里的关键是，vLLM backend 不只生成 compiled regions，还保留 region boundary、capture artifact 和 runtime dispatch 所需的 metadata。运行时再把三类信息连接起来（@fig-cudagraph-dispatch）。
 
-Inductor Region
-      │
-      │ CUDA Graph
-      ▼
-    replay
-```
-
-这里的关键是，vLLM backend 不只生成 compiled regions，还保留 region boundary、capture artifact 和 runtime dispatch 所需的 metadata。运行时再把三类信息连接起来：
-
-```text
-compiler decision
-        +
-runtime batch information
-        +
-CUDA Graph availability
-        │
-        ▼
-CudagraphDispatcher
-        │
-        ├─ FULL
-        ├─ PIECEWISE
-        └─ eager fallback
-```
+#figure(fig.fig-dispatch(), caption: [`CudagraphDispatcher` 综合三类信息，为每个 batch 选择执行路径。右侧色条示意各路径 replay 的范围：蓝色为 CUDA Graph，橙色为 Attention，灰色为普通执行。]) <fig-cudagraph-dispatch>
 
 三类信息分别回答不同问题：
 

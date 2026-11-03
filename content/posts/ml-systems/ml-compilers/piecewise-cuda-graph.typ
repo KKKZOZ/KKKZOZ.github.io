@@ -1,8 +1,10 @@
 #import "@tola/source:0.0.0": tola-meta
+#import "/figures/piecewise-cuda-graph.typ" as fig
 
 #tola-meta((
   title: "Piecewise CUDA Graph",
   date: "2026-08-09",
+  summary: "vLLM 的 Piecewise CUDA Graph 如何以 Attention 为边界拆分模型、只 capture CUDA-Graph-safe 的区域，FX-level split 与 Inductor-level partition 两种实现，以及它与 Full CUDA Graph 的关系。",
   tags: ("ML Compilers",),
   weight: 10,
 ))
@@ -29,23 +31,13 @@ vLLM 当前将 `PIECEWISE` 定义为：Attention 或其他 CUDA Graph 不兼容�
 = 分区机制
 传统 vLLM Piecewise Compilation 使用 `splitting_ops` 指定分区边界，默认边界主要是 Attention custom op。Attention 自身成为独立 submodule，相邻 Attention 之间的计算则组成 CUDA Graph candidate。(#link("https://docs.vllm.ai/en/latest/design/torch_compile/")[vLLM])
 
-假设简化后的 Transformer 包含三个 Attention：
-
-```text
-Embedding
-  -> Attn0
-  -> MLP0 / Norm / Projection
-  -> Attn1
-  -> MLP1 / Norm / Projection
-  -> Attn2
-  -> MLP2 / FinalNorm
-```
-
-以 `vllm::unified_attention_with_output` 为 `splitting_ops` 时，逻辑分区结果为：
+假设简化后的 Transformer 包含三个 Attention，以 `vllm::unified_attention_with_output` 为 `splitting_ops` 时，逻辑分区结果为：
 
 - `Attn0`、`Attn1` 和 `Attn2` 分别作为 eager boundary；
 - `Embedding`、两个 Attention 之间的计算以及末尾计算分别成为 CUDA-Graph-safe region；
 - 对于包含 `N` 个 Attention 的典型串行 Transformer，概念上会形成 `N` 个 eager boundaries 和 `N + 1` 个 safe regions。新的 Inductor partition 也遵循这一数量关系。(#link("https://docs.vllm.ai/en/latest/api/vllm/config/compilation/")[vLLM])
+
+#figure(fig.fig-partition(), caption: [同一串算子的两种划分：上方按 layer，下方按 Attention。每个 piece 由上一层的 O-proj·MLP 和下一层的 Norm·QKV 组成，横跨 layer 边界。]) <fig-partition>
 
 == `split_graph()` 的职责
 传统实现中的 `split_graph()` 遍历 FX nodes，遇到 `splitting_ops` 时建立新的 subgraph boundary。其核心逻辑可以简化为：
@@ -77,6 +69,8 @@ Attention 适合作为边界还有两个原因：
 = 性能收益与成本
 Piecewise CUDA Graph 不会消除 eager Attention 的 launch，但能把 Attention 之间的一串 token-wise kernels 压缩为一次 graph replay。原本需要 CPU 逐个 dispatch 的 RMSNorm、GEMM、activation、residual 和 projection 等操作，可以作为整体重复提交。CUDA Graph 的主要收益正是减少逐 kernel launch 的 CPU 开销。(#link("https://docs.nvidia.com/cuda/cuda-programming-guide/04-special-topics/cuda-graphs.html")[NVIDIA Docs])
 
+#figure(fig.fig-launch-timeline(), caption: [一个 Attention 前后各 4 个 kernel 的执行示意（时长为示意值，非实测）。小 batch decode 时单个 kernel 的 GPU 时间短于 CPU launch 时间，Eager 的 GPU 大部分时间在等待；Piecewise 把两侧的 safe kernel 各合并为一次 replay，只有 Attention 仍逐个 launch。]) <fig-launch-timeline>
+
 这一模式仍然不是完全动态的。vLLM 会针对一组 `cudagraph_capture_sizes` 分别 capture，例如：
 
 ```shell
@@ -86,11 +80,9 @@ vllm serve meta-llama/Llama-3.2-1B \
 
 运行时，`CUDAGraphWrapper` 根据 runtime mode 和 `BatchDescriptor` 选择 capture、replay 或直接调用原 callable。replay 还要求相关输入地址保持一致。(#link("https://docs.vllm.ai/en/stable/api/vllm/compilation/cuda_graph/")[vLLM])
 
-相应的代价是 graph artifacts 数量增加。模型越深、safe region 越多、capture size 越多，需要维护的 CUDA Graph 就越多，其规模通常与以下乘积相关：
+相应的代价是 graph artifacts 数量增加。模型越深、safe region 越多、capture size 越多，需要维护的 CUDA Graph 就越多，其规模通常与 safe region 数量 × capture size 数量相关：
 
-```text
-safe region 数量 x capture size 数量
-```
+#figure(fig.fig-graph-count(), caption: [4 个 piece、4 个 capture size 时，Piecewise 需要 16 个 graph，Full 只需要 4 个。运行时 batch 会被 pad 到某个 capture size，然后依次 replay 该行的 piece，中间穿插 eager Attention。]) <fig-graph-count>
 
 vLLM 社区也讨论过传统 Piecewise 模式可能产生约 `#layers × #capture_sizes` 量级的 graph artifacts。因此，当整个模型兼容 capture 时，Full CUDA Graph 通常能进一步减少 graph 数量和 replay 次数。(#link("https://github.com/vllm-project/vllm/issues/20098")[GitHub])
 
@@ -108,6 +100,8 @@ vLLM 社区也讨论过传统 Piecewise 模式可能产生约 `#layers × #captu
   )
   , kind: table
   )
+
+#figure(fig.fig-two-paths(), caption: [两条路径中分区发生的位置。FX-level split 在 Inductor 之前切分，Attn 与其后的 Quant 落在不同 piece，无法融合；Inductor-level partition 先在完整 graph 上融合，再按 `cudagraph_unsafe` 标记切分。]) <fig-two-paths>
 
 == FX-level split
 传统路径先根据 `splitting_ops` 调用 `split_graph()`，再分别处理生成的 pieces：

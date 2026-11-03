@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
+#import "/figures/java-threadlocal.typ" as fig
 
 #tola-meta((
   title: "A Piece of: ThreadLocal",
@@ -9,7 +9,8 @@
 ))
 
 = 原理
-#img("https://kkkzoz-1304409899.cos.ap-chengdu.myqcloud.com/img/v2-c78d9add1be08b178b8405fcce7f5ccb_b.jpg", alt: "img")
+#figure(fig.fig-threadlocal-map(), caption: [值存在线程里，不存在 ThreadLocal 里。每个 `Thread` 有自己的 `ThreadLocalMap`，ThreadLocal 对象只是 map 的 key，被所有线程共用；同一个 A 在两个线程中查到的是各自的值。]) <fig-threadlocal-map>
+
 ThreadLocal 是一种线程局部变量，它为每个线程提供了一个独立的变量副本，所以每个线程都可以拥有自己的局部变量，互不影响。
 
 ThreadLocal 可以做到线程隔离的原因在于，每次创建 ThreadLocal 的时候，都会创建一个新的线程局部存储区，这个存储区只存在于当前线程中，其他线程无法访问到。这样就实现了线程之间的隔离，每个线程都可以在自己的线程局部存储区中保存自己的数据，互不影响。
@@ -91,6 +92,8 @@ public class MyServlet extends HttpServlet {
 
 = 内存泄漏
 一句话总结：由于 ThreadLocalMap 的生命周期跟 Thread 一样长，如果没有手动删除对应 key 就会导致内存泄漏。
+
+#figure(fig.fig-threadlocal-leak(), caption: [Entry 对 key 是弱引用、对 value 是强引用。ThreadLocal 被回收后 key 变成 null，但只要线程还活着，value 就一直可达。]) <fig-threadlocal-leak>
 
 具体信息可以参考这篇文章：#link("https://juejin.cn/post/7250734439709458469")[ThreadLocal源码详解及内存泄漏原理 - 掘金]
 

@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, img
+#import "/figures/numpy-notes.typ" as fig
 
 #tola-meta((
   title: "NumPy Notes",
@@ -31,8 +32,12 @@ a_refilled = a_flat.reshape(3, 4)
 print("Refilled array: ", a_refilled)
 ```
 
+#figure(fig.fig-reshape(), caption: [`reshape` 先按行摊平成一条一维序列, 再按新形状逐行重铺: 元素的先后顺序从不改变, 变的只是"行"的分界线]) <fig-reshape>
+
 == transpose
 高维转置的本质是#strong[重新安排数组的索引顺序]，而不是传统意义上的\"矩阵转置\"
+
+#figure(fig.fig-transpose(), caption: [`a.transpose(2, 0, 1)`: 新的第 $i$ 个轴取自旧的第 `axes[i]` 个轴, 形状和 stride 一起被重排; 返回的是 view, 底层数据不动]) <fig-transpose>
 
 = concatenate & stack
 `concatenate`: #strong[沿着现有的轨道/维度进行延伸或对接]
@@ -62,6 +67,8 @@ np.concatenate((A, C), axis=1)
 # [[1, 2, 5, 6], 
 # [3, 4, 7, 8]] (列数增加了，行数不变)
 ```
+
+#figure(fig.fig-concatenate(), caption: [`concatenate` 沿已有的轴拼接: 被拼接的轴变长, 其余轴必须一致, 维度数不变]) <fig-concatenate>
 
 `stack`: #strong[将多个独立的层叠放起来，形成一个新的维度]
 
@@ -111,6 +118,8 @@ stacked_2 = np.stack((a, b), axis=2) # 或者 axis=-1
 #   [4, 8]]] <-- a[1,1] 和 b[1,1] 堆叠
 ```
 
+#figure(fig.fig-stack(), caption: [`stack` 新增一个轴 $k$ ($k = 0$ 取 `a`, $k = 1$ 取 `b`); `axis` 决定 $k$ 在索引里的位置, 三种结果形状相同, 内容的排布不同]) <fig-stack>
+
 = `concatenate` vs `stack` 总结
 #figure(
   table(
@@ -147,6 +156,8 @@ NumPy 广播遵循一套严格的规则来确定两个数组是否兼容：
 - #strong[c) 不匹配且均不为 1：] 如果两个维度的大小不同，并且没有任何一个是 1，那么这两个数组是不兼容的，NumPy 会抛出 `ValueError`
 
 #strong[规则 3：操作执行] 如果两个数组根据上述规则是兼容的，NumPy 就可以执行元素对元素的操作。结果数组的形状将是两个输入数组在各个维度上尺寸的最大值
+
+#figure(fig.fig-broadcast-rules(), caption: [广播的形状检查: 右对齐, 短的一方左侧补 1, 再从最后一维开始逐维比较]) <fig-broadcast-rules>
 
 标量与数组相加
 
@@ -213,6 +224,8 @@ y 变为:
 [0, 1, 2]] # 形状 (4, 3)
 ```
 
+#figure(fig.fig-broadcast-stretch(), caption: [`x + y`: 两边各自沿大小为 1 的轴"复制"; 虚线格子只是概念上的副本, NumPy 用 stride 0 实现, 并不真的分配内存]) <fig-broadcast-stretch>
+
 #html.hr()
 A three-dimensional array would be like a set of tables, perhaps stacked as though they were printed on separate pages
 
@@ -271,6 +284,8 @@ a_filtered_shape_preserved = np.where(five_up_condition, a, 0)
 ```
 
 ]
+
+#figure(fig.fig-mask(), caption: [布尔索引 `a[mask]` 只取出命中的元素, 结果总是一维的; `np.where` 保留原形状, 未命中的位置填入给定值]) <fig-mask>
 To get indices rather than value:
 
 ```py
@@ -376,3 +391,5 @@ arr = np.arange(6).reshape((2, 3)).T
 - `arr1 @ arr2[0]` 会计算出来。
 - `arr1 @ arr2[1]` 也会计算出来。
 - 结果 `result` 的形状将是 `(2, 3, 5)`。
+
+#figure(fig.fig-matmul-batch(), caption: [`(3, 4) @ (2, 4, 5)`: 最后两维做矩阵乘法, 前面的批处理维度按广播规则对齐, `arr1` 被复用到每个批次]) <fig-matmul-batch>

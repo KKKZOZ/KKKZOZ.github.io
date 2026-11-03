@@ -5,6 +5,7 @@
 #tola-meta((
   title: "Math for ML",
   date: "2026-03-18",
+  summary: "ML 中常用的数学：向量内积与外积（以及外积与线性注意力的关系）、按行和按列理解矩阵乘法、L1/L2 范数与 KL 散度。",
   tags: ("Math",),
   weight: 10,
 ))

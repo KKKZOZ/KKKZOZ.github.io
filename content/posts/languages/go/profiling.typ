@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
+#import "/figures/go-profiling.typ" as fig
 
 #tola-meta((
   title: "A Piece of: Golang Profile",
@@ -99,13 +99,7 @@ Showing top 10 nodes out of 26
 ]
 
 == flat and cum
-假设有以下函数调用关系：
-
-```bash
-main() --> A() --> B() --> D()
-           |
-           --> C()
-```
+假设有以下函数调用关系：main 调用 A，A 调用 B 和 C，B 调用 D（@fig-flat-cum）。
 
 各个函数的执行时间如下：
 
@@ -155,6 +149,8 @@ main() --> A() --> B() --> D()
   )
   , kind: table
   )
+
+#figure(fig.fig-flat-cum(), caption: [同一棵调用树画成 icicle：每个函数一条色条，长度是 cum，橙色部分是 flat；子函数画在调用者下方，宽度之和加上调用者的 flat 正好等于调用者的 cum。]) <fig-flat-cum>
 
 = Web UI
 使用 Web UI 比较方便：
@@ -232,33 +228,27 @@ Duration: 4.15s, Total samples = 36.24s(872.85%)
 - 采样总时间 是 36.24 秒。这是分析中从多个线程或核心收集到的 CPU 时间总和。
   - 872.85% 表示这个采样时间远远超过了实际运行时间（4.15 秒），通常是因为程序在多个 CPU 核心上并发运行，因此累积的 CPU 时间大于实际运行时间。
 
-比如下面的这个实际例子
+比如下面的这个实际例子（@fig-callgraph）
 
-#img("/assets/images/posts/languages/go/profiling/callgraph.png", alt: "callgraph")
+#figure(fig.fig-callgraph(), caption: [pprof 调用图的一段（gzip 压缩，按原图重绘）。三个红色节点在同一条热路径上，cum 都在 2000ms 左右；其中只有 deflate 的 flat 大，所以它的字最大。]) <fig-callgraph>
+
 举例：flate (\*compressor) deflate
 1305.64ms (41.49%) of 1993.68ms (63.36%)
 
-+ 1305.64ms - 累积时间 (cum)
-  这是当前函数及其所有调用的函数总共花费的时间。在这个例子中，flate (\*compressor) deflate 函数本身以及它调用的所有子函数一起总共消耗了 1305.64 毫秒。
-  也就是说，在 flate (\*compressor) deflate 内部及它的子调用中，总共占用了 1305.64ms 的 CPU 时间。
-+ \(41.49%) - 占程序总时间的比例
-  这个百分比表示这个函数及其调用链所花费的时间在整个程序执行中的占比。在这个例子中，flate (\*compressor) deflate 及其调用的子函数占了程序总执行时间的 41.49%。
-  这意味着：在整个程序运行期间，约有 41.49% 的时间是在执行 flate (\*compressor) deflate 及其子调用的相关操作。
-+ of 1993.68ms - 上级函数的累积时间
-  1993.68ms 表示调用当前函数的上级函数（或调用链的上层）总共花费的累积时间。在这个例子中，flate (\*compressor) deflate 的上级函数消耗了 1993.68 毫秒。
-  换句话说，flate (\*compressor) deflate 函数的调用链（包括它的上级和所有子级函数）一共占用了 1993.68ms。
-+ \(63.36%) - 上级函数在程序总时间中的占比
-  这个百分比表示当前函数所在的调用链（包含它的上级函数）所占用的程序总时间比例。在这个例子中，调用 flate (\*compressor) deflate 的上级函数及其调用链占了程序总执行时间的 63.36%。
-  也就是说，从 flate (\*compressor) deflate 及其上级函数开始的调用链，占用了程序总执行时间的 63.36%。
+节点标签的格式是 `flat (flat%) of cum (cum%)`：
 
-这意味着在 1993.68ms 的调用链时间中，该函数占了 1305.64ms，相当于 41.49% 的 CPU 时间，而这个调用链又占了整个程序的 63.36%
++ 1305.64ms - flat
+  deflate 函数自身消耗的时间，不包括它调用的子函数。
++ \(41.49%) - flat%
+  flat 占程序总采样时间的比例。
++ of 1993.68ms - cum
+  deflate 自身加上它调用的所有子函数一共消耗的时间。
++ \(63.36%) - cum%
+  cum 占程序总采样时间的比例。
 
-每个方框中的数据表示以下几点：
+这意味着 deflate 及其子调用一共占了程序的 63.36%，其中 41.49% 花在 deflate 自己身上，剩下约 688ms 花在它调用的函数里。
 
-- 当前函数消耗的时间（包括子函数），如 1305.64ms。
-- 当前函数消耗的总时间占整个程序执行时间的比例，如 41.49%。
-- 调用当前函数的上级函数及其整个调用链所消耗的总时间，如 1993.68ms。
-- 上级函数调用链占整个程序执行时间的比例，如 63.36%。
+也可以对照上面的节点验证：`flate (*compressor) write` 的 cum 是 2003.08ms，它到 deflate 的边是 1993.68ms，正好等于 deflate 的 cum。
 
 = Practice
 #link("https://nyadgar.com/posts/go-profiling-like-a-pro/") 对整个 Profile 的过程进行了实战，讲得很清楚，可以参考

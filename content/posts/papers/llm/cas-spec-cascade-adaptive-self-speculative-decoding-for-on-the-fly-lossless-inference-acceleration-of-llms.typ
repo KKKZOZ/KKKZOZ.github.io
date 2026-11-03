@@ -4,6 +4,7 @@
 #tola-meta((
   title: "CAS-Spec Cascade Adaptive Self-Speculative Decoding for On-the-Fly Lossless Inference Acceleration of LLMs",
   date: "2026-02-07",
+  summary: "CAS-Spec builds a cascade of draft models from the target model itself with layer sparsity, activation quantization and early exit, then routes between them and sets draft lengths adaptively, with no training.",
   tags: ("NeurIPS-25",),
 ))
 

@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Draft & Verify Lossless Large Language Model Acceleration via Self-Speculative Decoding",
   date: "2026-02-08",
+  summary: "Self-Speculative Decoding drafts tokens with the LLM itself by skipping intermediate layers and verifies them with the full model; the skipped layers are chosen offline by Bayesian optimization, introduced in a short primer.",
   tags: ("ACL-24",),
 ))
 

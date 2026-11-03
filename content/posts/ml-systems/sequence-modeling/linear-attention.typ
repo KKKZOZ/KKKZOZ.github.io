@@ -4,6 +4,7 @@
 #tola-meta((
   title: "[Sequence Modeling 04] Linear Attention",
   date: "2026-03-16",
+  summary: "从 Transformer 和线性 attention 两个视角，看 DeltaNet 的 delta rule 与 Mamba2 的 gating 如何组合成 Gated DeltaNet，并给出单头递推实现。",
   weight: 10,
   series: "Sequence Modeling",
 ))

@@ -4,6 +4,7 @@
 #tola-meta((
   title: "FlexPrefill A Context-Aware Sparse Attention Mechanism for Efficient Long-Sequence Inference",
   date: "2026-01-29",
+  summary: "FlexPrefill chooses a query-aware or vertical-slash sparse pattern per head and per input during prefill, and uses cumulative attention to decide which blocks to compute.",
   tags: ("ICML-25", "sparse-attention"),
 ))
 

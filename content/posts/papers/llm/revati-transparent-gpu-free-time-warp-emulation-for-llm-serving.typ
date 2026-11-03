@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Revati Transparent GPU-Free Time-Warp Emulation for LLM Serving",
   date: "2026-02-05",
+  summary: "Revati runs unmodified vLLM and SGLang without GPUs by intercepting CUDA calls and advancing a shared virtual clock by predicted kernel times, making configuration search cheap without a separate simulator.",
   tags: ("arXiv-2601", "llm-serving", "auto-tuning"),
 ))
 

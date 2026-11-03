@@ -1,5 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "/utils/ui.typ": callout
+#import "/figures/docker-network.typ" as fig
 
 #tola-meta((
   title: "Docker Network Introduction",
@@ -17,9 +18,10 @@ After a fresh Docker installation, you can find a default bridge network up and 
 
 ```shell
 docker network ls
+# NETWORK ID     NAME      DRIVER    SCOPE
+# 334be69b47a8   bridge    bridge    local
 ```
 
-#img("/assets/images/docker-bridge.png", alt: "docker-bridge")
 Docker uses a software-based bridge network that allows containers connected to the same bridge network to communicate while isolating them from other containers not running in the same bridge network.
 
 ```shell
@@ -61,6 +63,8 @@ This time automatic service discovery will work:
 # OK
 docker exec -it busybox2 ping busybox1
 ```
+
+#figure(fig.fig-bridges(), caption: [Both bridges connect `busybox1` and `busybox2`, but only a user-defined bridge runs Docker's embedded DNS server (`127.0.0.11`), so only there does `ping busybox1` resolve.]) <fig-bridges>
 
 #callout(kind: "success", title: "CONCLUSION")[
 User-defined bridge networks support automatic service discovery.
@@ -105,6 +109,8 @@ Note the distinction between `HOST_PORT` and `CONTAINER_PORT`:
 ]
 - Within the web container, your connection string to db would be `postgres://db:5432`
 - From the host machine, the connection string would be `postgres://{DOCKER_IP}:8001` for example `postgres://localhost:8001`.
+
+#figure(fig.fig-compose(), caption: [Inside `myapp_default`, `web` reaches `db` by service name on the container port 5432. The host goes through the published `HOST_PORT` 8001, and a container reaches the host via `host.docker.internal`.]) <fig-compose>
 
 = Summary
 - Container 之间的连接通过自定义的 docker network 最方便, 支持自动服务发现, 不需要向宿主机映射端口(通过 `CONTAINER_PORT` 访问)

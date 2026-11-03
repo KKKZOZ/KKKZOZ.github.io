@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Cascade Speculative Drafting for Even Faster LLM Inference",
   date: "2026-02-10",
+  summary: "Cascade Speculative Drafting speeds up the drafting itself: smaller models draft for the draft model (vertical cascade), and lighter models handle later positions, which are less likely to be accepted (horizontal cascade).",
   tags: ("NeurIPS-24", "speculative-decoding"),
 ))
 

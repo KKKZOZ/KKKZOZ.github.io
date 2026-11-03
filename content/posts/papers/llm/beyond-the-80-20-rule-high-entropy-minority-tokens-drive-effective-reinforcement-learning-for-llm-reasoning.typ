@@ -3,6 +3,7 @@
 #tola-meta((
   title: "Beyond the 80 20 Rule High-Entropy Minority Tokens Drive Effective Reinforcement Learning for LLM Reasoning",
   date: "2026-01-07",
+  summary: "Only about 20% of CoT tokens are high-entropy forking tokens that steer the reasoning path; restricting RLVR gradients to them beats full-token training on Qwen3-32B.",
   tags: ("NeurIPS-25",),
 ))
 

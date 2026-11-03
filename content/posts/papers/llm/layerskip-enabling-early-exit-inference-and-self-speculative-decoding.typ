@@ -4,6 +4,7 @@
 #tola-meta((
   title: "LayerSkip Enabling Early Exit Inference and Self-Speculative Decoding",
   date: "2026-02-09",
+  summary: "LayerSkip trains an LLM with layer dropout and an early-exit loss on a shared LM head, so early layers can predict tokens for early-exit inference and self-speculative decoding in one model.",
   tags: ("ACL-24",),
 ))
 

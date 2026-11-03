@@ -1,9 +1,11 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/ui.typ": callout, img
+#import "/figures/pytorch-notes.typ" as fig
 
 #tola-meta((
   title: "PyTorch Notes",
   date: "2026-01-15",
+  summary: "PyTorch 常用张量操作（高级索引、einsum、scatter、gather 等）、monkey patching，以及从前向传播、DataLoader 到训练循环和模型保存的基础流程。",
   tags: ("PyTorch",),
   weight: 10,
 ))
@@ -103,6 +105,9 @@ print("Result shape:", out.shape)
 # 解释：2个句子，每个句子3个词，每个词是4维向量。
 ```
 
+#figure(fig.fig-index-int(), caption: [`x[y]` 中 `y` 是"模具": 结果先继承 `y` 的形状 $(2, 3)$, 每个格子再整行填入 `x[y[i, j]]`, 于是末尾补上 `x` 剩下的维度 $(4,)$; 颜色标出每一行来自 `x` 的哪一行]) <fig-index-int>
+
+
 === y 为布尔值
 y 是一个筛子（Mask）。 y 必须和 x 形状相同（或者可广播）。y 中为 True 的位置，对应的 x 的值会被保留；为 False 的会被丢弃。
 
@@ -182,6 +187,9 @@ print("Result data:\n", result)
 #         [3, 3, 3, 3],  <- 来自 (0,2)
 #         [5, 5, 5, 5]]) <- 来自 (1,1)
 ```
+
+#figure(fig.fig-index-mask(), caption: [二维掩码盖在三维 `x` 的前两维上: 每个 `True` 位置取出一整条长度为 4 的向量, 按行优先顺序堆叠成 $(N_"true", 4)$]) <fig-index-mask>
+
 
 == repeat
 #quote(block: true)[
@@ -288,6 +296,9 @@ print(y)
 # Shape: [3, 2]
 ```
 
+#figure(fig.fig-repeat(), caption: [`repeat` 是"贴瓷砖": 整块张量按各维的次数物理复制; 参数比维度多时, 先把形状右对齐, 左侧补 1 再复制]) <fig-repeat>
+
+
 == torch.einsum
 #quote(block: true)[
 超级好用
@@ -331,6 +342,9 @@ res_einsum = torch.einsum('bik, bkj -> bij', A, B)
 # 我们想把 d 消掉 (点积)，保留 b h i j
 attention_scores = torch.einsum('bhid, bhjd -> bhij', Q, K)
 ```
+
+#figure(fig.fig-einsum(), caption: [`einsum` 的规则只有一条: 出现在 `->` 右边的字母保留, 只出现在输入里的字母先逐项相乘再求和; 左边是 `ik, kj -> ij` 计算 $C$ 的一个元素, 右边是 attention 打分中每个字母的去留]) <fig-einsum>
+
 
 einsum 简单到我要关心它是否在性能上有取舍
 
@@ -437,6 +451,9 @@ print("Top 2 Class Indices:\n", top_inds)
 #          [3, 2]])  -> Sample 2 predicts class 3, then class 2
 ```
 
+#figure(fig.fig-topk(), caption: [`topk(k=2, dim=1)` 沿类别维挑出每行最大的两个: `values` 和 `indices` 只有 `dim=1` 变成 $k$, 其余维度不变; `indices` 的第一列就是 `argmax(dim=1)`]) <fig-topk>
+
+
 == scatter
 scatter 主要用于根据指定的索引将源张量（source）中的值写入到目标张量（self）中
 
@@ -497,6 +514,9 @@ print(target)
 #         [0., 6., 0., 0., 5.]])
 ```
 
+#figure(fig.fig-scatter(), caption: [`scatter_(dim=1)`: `src[i][j]` 写到 `target` 的第 $i$ 行、第 `index[i][j]` 列; 颜色标出值来自 `src` 的哪一列, 没被写到的位置保留原值]) <fig-scatter>
+
+
 == gather
 gather 是#strong[从指定位置收集数据]
 
@@ -546,6 +566,9 @@ print(output)
 #         [9, 7]])
 ```
 
+#figure(fig.fig-gather(), caption: [`gather(dim=1)` 是 `scatter` 的反方向: `out[i][j]` 从 `input` 第 $i$ 行、第 `index[i][j]` 列读取; 输出形状与 `index` 相同, 同一个元素可以被读多次]) <fig-gather>
+
+
 == sum
 ```python
 a = torch.tensor([[1,2,3],[4,5,6]])
@@ -553,6 +576,9 @@ print(a.shape) # torch.Size([2, 3])
 print(a.sum(0)) # tensor([5, 7, 9])
 print(a.sum(1)) # tensor([ 6, 15])
 ```
+
+#figure(fig.fig-sum(), caption: [`sum(dim)` 沿指定维度把元素挤压在一起相加, 这一维从形状中消失; `keepdim=True` 时保留为大小 1]) <fig-sum>
+
 
 指定哪个维度（dim/axis），哪个维度就会被\"拍扁\"并求和，从而在形状中消失
 
@@ -628,17 +654,7 @@ Python 允许从序列的末尾开始计数。对于一个长度为 $n$ 的序�
 
 对于元组 `a = (1, 2, 3, 4)`，其索引映射如下：
 
-#figure(
-  table(
-    columns: 5,
-    align: (auto,auto,auto,auto,auto,),
-    table.header([元素内容], [1], [2], [3], [4],),
-    table.hline(),
-    [#strong[正数索引]], [0], [1], [2], [3],
-    [#strong[负数索引]], [-4], [-3], [-2], [-1],
-  )
-  , kind: table
-  )
+#figure(fig.fig-slice(), caption: [正数索引从 0 开始, 负数索引从 $-1$ 开始; 切片 `[start:stop]` 左闭右开, 负的 `stop` 先加上长度再截断]) <fig-slice>
 
 #quote(block: true)[
 在 Python 内部，负数索引 $i$ 实际上会被映射为 $i + upright("length")$

@@ -4,6 +4,7 @@
 #tola-meta((
   title: "3-Model Speculative Decoding",
   date: "2026-02-09",
+  summary: "PyramidSD inserts a qualifier model between the draft and target models in speculative decoding, and why the qualifier only helps when it accepts tokens by distribution similarity instead of exact match.",
   tags: ("NeurIPS-25-Workshop",),
 ))
 

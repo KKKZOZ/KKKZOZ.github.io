@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Think Big, Generate Quick LLM-to-SLM for Fast Autoregressive Decoding",
   date: "2026-01-07",
+  summary: "A frozen LLM encoder encodes the prompt, a projector adds its representation to the SLM's embeddings, and the SLM decodes autoregressively, plus why the approach depends on encoder-decoder LLMs.",
   tags: ("ICML-24-Workshop",),
 ))
 

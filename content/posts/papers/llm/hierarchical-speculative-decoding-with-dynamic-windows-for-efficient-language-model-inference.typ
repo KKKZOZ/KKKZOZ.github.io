@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Hierarchical Speculative Decoding with Dynamic Windows for Efficient Language Model Inference",
   date: "2026-02-07",
+  summary: "HSDDW stops drafting when draft entropy exceeds a threshold tuned from rejected tokens, and adds a middle model that pre-verifies drafts before the target model sees them.",
   tags: ("ACLFindings-25",),
 ))
 

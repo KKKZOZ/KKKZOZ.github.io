@@ -4,6 +4,7 @@
 #tola-meta((
   title: "XAttention Block Sparse Attention with Antidiagonal Scoring",
   date: "2026-01-29",
+  summary: "XAttention scores attention blocks by the sum of their antidiagonals and selects blocks by a cumulative threshold, with a worked example of the strided sampling that cuts estimation cost to 1/S.",
   tags: ("ICML-25", "sparse-attention"),
 ))
 

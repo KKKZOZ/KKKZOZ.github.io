@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Entropy Adaptive Decoding Dynamic Model Switching for Efficient Inference",
   date: "2026-01-07",
+  summary: "Entropy Adaptive Decoding switches between a small and a large model by a rolling-window entropy threshold, accepting output divergence for speed, with notes on where its evaluation falls short.",
   tags: ("arXiv-2502",),
 ))
 

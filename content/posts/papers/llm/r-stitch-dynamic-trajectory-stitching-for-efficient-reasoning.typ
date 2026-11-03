@@ -4,6 +4,7 @@
 #tola-meta((
   title: "R-Stitch Dynamic Trajectory Stitching for Efficient Reasoning",
   date: "2026-02-02",
+  summary: "R-Stitch hands decoding from a small model to a large one when token entropy rises and back once it falls; R-Stitch+ replaces the threshold with an RL-trained, latency-aware router.",
   tags: ("arXiv-2507",),
 ))
 

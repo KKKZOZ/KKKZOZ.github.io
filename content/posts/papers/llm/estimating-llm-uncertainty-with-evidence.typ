@@ -4,6 +4,7 @@
 #tola-meta((
   title: "Estimating LLM Uncertainty with Evidence",
   date: "2026-02-02",
+  summary: "LogTokU treats raw logits as evidence to split token uncertainty into aleatoric and epistemic parts, separating four states that softmax probability conflates, to detect hallucinations without sampling.",
   tags: ("arxiv-25",),
 ))
 

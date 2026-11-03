@@ -5,6 +5,7 @@
 #tola-meta((
   title: "[Sequence Modeling 03] Mamba",
   date: "2026-03-16",
+  summary: "Mamba 如何通过离散化的状态空间模型、输入相关的选择性机制和并行扫描，同时获得并行训练与 O(1) 推理；逐块解析一份概念实现，并与 RNN 对比。",
   weight: 10,
   series: "Sequence Modeling",
 ))

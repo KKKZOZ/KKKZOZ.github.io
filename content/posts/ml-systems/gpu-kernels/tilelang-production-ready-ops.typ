@@ -5,6 +5,7 @@
 #tola-meta((
   title: "Production Ready TileLang Ops Framework",
   date: "2026-08-17",
+  summary: "在生产环境使用 TileLang：三层算子缓存，用 custom_op 与 register_fake 兼容 torch.compile，以及它与 Triton 在缓存和 PyTorch 集成方式上的异同。",
   tags: ("TileLang",),
   weight: 10,
 ))

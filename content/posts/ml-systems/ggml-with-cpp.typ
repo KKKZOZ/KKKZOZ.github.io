@@ -5,6 +5,7 @@
 #tola-meta((
   title: "ggml with C++",
   date: "2026-03-18",
+  summary: "用 GGML 实现一个简单 LLM 推理引擎时遇到的问题：C++ 初始化与引用、GGML 的内存布局与四种内存分配方式，以及 llama.cpp 的整体流程和 mmap 加载权重。",
   tags: ("Dev", "LLM-Inference"),
   weight: 10,
 ))
