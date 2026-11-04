@@ -1,6 +1,6 @@
-// In-article components: callouts, hints, folds, terms, images, cross-post
-// links and source-plus-output demos.
-// Import: #import "/utils/ui.typ": callout, hint, fold, term, img, gallery, two-cols, xref, related, demo
+// In-article components: callouts, hints, folds, terms, images, columns,
+// cross-post links and source-plus-output demos.
+// Import: #import "/utils/ui.typ": callout, hint, fold, term, img, gallery, cols, xref, related, demo
 
 #import "@tola/address:0.0.0": asset-url
 #import "@tola/image:0.0.0": image-metadata, img as responsive-img
@@ -151,15 +151,27 @@
   }),
 )
 
-/// Two blocks side by side, such as two versions of the same code; stacked on
-/// narrow screens. Each item is content or (label, content).
-#let two-cols(..items) = html.div(class: "two-cols", for item in items.pos() {
-  let (sub, body) = if type(item) == array { item } else { (none, item) }
-  html.div(class: "two-cols-item", {
-    if sub != none { label(sub) }
-    body
+/// Blocks side by side, such as versions of the same code; stacked on narrow
+/// screens: `#cols(labels: ([Before], [After]))[...][...]`.
+/// - `labels`: one label per block, shown above it; `none` leaves them out.
+/// - `columns`: blocks per row; `auto` puts every block in one row.
+#let cols(labels: none, columns: auto, ..items) = {
+  let bodies = items.pos()
+  let labels = if labels == none or type(labels) == array { labels } else { (labels,) }
+  if labels != none {
+    assert(
+      labels.len() == bodies.len(),
+      message: "cols: " + str(labels.len()) + " labels for " + str(bodies.len()) + " blocks",
+    )
+  }
+  let n = if columns == auto { bodies.len() } else { columns }
+  html.div(class: "cols", style: "--cols: " + str(n), for (i, body) in bodies.enumerate() {
+    html.div(class: "cols-item", {
+      if labels != none and labels.at(i) != none { label(labels.at(i)) }
+      body
+    })
   })
-})
+}
 
 // ============================================================================
 // Terms
