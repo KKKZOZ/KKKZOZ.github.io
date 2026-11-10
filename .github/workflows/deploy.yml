@@ -24,7 +24,7 @@ env:
   # Bump together with the local Tola (mise).
   TOLA_VERSION: 0.8.1
   # CJK font for SVG frames (math, cetz) and the preview image (`cjk-font` in
-  # templates/config.typ); IBM Plex Mono and Rajdhani ship in typst-fonts/.
+  # config.typ); IBM Plex Mono and Rajdhani ship in typst-fonts/.
   SARASA_VERSION: 1.0.43
 
 jobs:

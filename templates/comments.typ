@@ -4,7 +4,7 @@
 // Import: #import "/templates/comments.typ": comments-box
 
 #import "@tola/address:0.0.0": asset-url
-#import "/templates/config.typ": comments
+#import "/config.typ": comments
 #import "/templates/layout.typ": label
 
 #let comments-box() = if comments != none {

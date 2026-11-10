@@ -4,6 +4,7 @@
 #import "@tola/address:0.0.0": join-route, output-of, output-url, slugify
 #import "@tola/schema:0.0.0": date, nullable, one-or-many, optional, schema
 #import "@tola/source:0.0.0": parse-sources
+#import "/config.typ": toc-depth
 
 /// The fields a source may declare with `tola-meta`; unknown keys are errors.
 #let page-schema = schema((
@@ -12,6 +13,9 @@
   // Last substantial revision: shown on the post, and the sitemap's lastmod.
   updated: optional(nullable(date), default: none),
   summary: optional(nullable(str), default: none),
+  // Preview image when the post is shared, in place of the one config.typ
+  // `social-image` gives: a file under assets/ ("/assets/…") or a URL.
+  image: optional(nullable(str), default: none),
   tags: optional(one-or-many(str), default: ()),
   // `series: "Name"` or `("Name",)`, as Hugo front matter writes it;
   // only the first entry counts.
@@ -25,7 +29,7 @@
   weight: optional(int, default: 100),
   draft: optional(bool, default: false),
   // Deepest heading level that is numbered and listed in the ToC (post.typ).
-  toc-depth: optional(int, default: 2),
+  toc-depth: optional(int, default: toc-depth),
 ))
 
 /// A source's output file. Routes follow the file layout, each segment
