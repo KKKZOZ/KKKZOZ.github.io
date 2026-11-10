@@ -7,6 +7,8 @@
   date: "2026-10-30",
   summary: "What NV#, PIX, PXB, PHB, NODE and SYS in nvidia-smi topo -m mean on the board of a two-socket GPU server, with two real machines.",
   tags: ("GPU", "Hardware"),
+  series: "AI Infra",
+  part: 2,
   weight: 10,
   toc-depth: 3,
 ))
@@ -31,7 +33,7 @@ Legend:
 
 Each code says what a transfer between two GPUs passes through on the way. To read them, you need a picture of the board.
 
-= The Output
+= `nvidia-smi topo -m`
 
 #figure(fig.fig-anatomy(), caption: [The parts of `nvidia-smi topo -m` output: the GPU-to-GPU matrix, then CPU affinity, NUMA affinity and GPU NUMA ID.]) <fig-anatomy>
 
@@ -40,7 +42,7 @@ Each code says what a transfer between two GPUs passes through on the way. To re
 + The NUMA node of those CPUs.
 + The NUMA node of the GPU's own memory, only on systems like Grace Hopper; `N/A` for PCIe cards.
 
-= The Board
+= Motherboard
 
 #figure(fig.fig-board(), caption: [A two-socket board: CPUs joined by UPI, each with PCIe host bridges on its on-die fabric.]) <fig-board>
 
@@ -66,11 +68,11 @@ GPU3    SYS     SYS     SYS      X      NODE
 NIC0    SYS     SYS     SYS     NODE     X
 ```
 
-= The Codes
+= Connection Types
 
 From nearest to farthest. Orange is the path between the two highlighted GPUs.
 
-== `NV#`: NVLink
+== `NV#`
 
 The GPUs talk over NVLink, not PCIe, and `#` is how many links the pair shares. On A100 one link carries 25 GB/s in each direction at the same time, so a pair gets `#` × 25 GB/s each way. NVIDIA's spec sheets add the two directions: "600 GB/s" for A100 is 300 GB/s each way.
 
@@ -118,7 +120,7 @@ Without switches, links are wired to fixed peers. A 4-GPU SXM board (HGX A100 4-
 
 Four GPUs is about the limit for this: with 8, each GPU would have 7 peers and fewer than 2 links per peer, which is why 8-GPU boards use switches. Like a bridge, NVLink hides the PCIe path: on this board GPU0 and GPU2 are on different sockets, which over PCIe would be `SYS`.
 
-== `PIX`: one PCIe switch
+== `PIX`
 
 === PCIe switches
 
@@ -205,25 +207,25 @@ Neither CPU nor host memory is on the path. Without GPUDirect RDMA, both ends wo
 
 An all-reduce over the 16 GPUs uses both kinds of links: NVLink inside each node, and all 8 NICs in parallel between the nodes, each GPU through the NIC next to it. `nvidia-smi topo -m` lists the NICs as extra rows (`NIC0`, `NIC1`, ...), and NCCL reads the same distances: when a NIC is too far from its GPU, NCCL skips GPUDirect RDMA and stages through host memory.
 
-== `PXB`: several PCIe switches
+== `PXB`
 
 #figure(fig.fig-pxb(), caption: [`PXB`: a path through several PCIe switches, still below the CPU.]) <fig-pxb>
 
 A tree of switches, still below the CPU.
 
-== `PHB`: one host bridge
+== `PHB`
 
 #figure(fig.fig-phb(), caption: [`PHB`: up to the CPU and back down through two root ports of the same host bridge.]) <fig-phb>
 
 Up to the CPU and back down, through two root ports of the same host bridge.
 
-== `NODE`: two host bridges, one CPU
+== `NODE`
 
 #figure(fig.fig-node(), caption: [`NODE`: across two host bridges of one CPU, over its on-die fabric.]) <fig-node>
 
 Also crosses the CPU's on-die fabric. The usual case for two GPUs on one socket of a current server.
 
-== `SYS`: across sockets
+== `SYS`
 
 #figure(fig.fig-sys(), caption: [`SYS`: across sockets, over UPI.]) <fig-sys>
 
@@ -233,7 +235,7 @@ Crosses UPI. Slowest path; GPU peer-to-peer often doesn't work here, and copies 
 
 #figure(fig.fig-ladder(), caption: [The topology codes from fastest to slowest, and what each path crosses.]) <fig-ladder>
 
-= Practical Examples
+= Examples
 
 == Machine 1: One GPU per Socket
 

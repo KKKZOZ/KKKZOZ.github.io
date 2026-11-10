@@ -8,6 +8,9 @@
   date: "2026-08-11",
   summary: "从 IR 分层到 torch.compile、torch.export 与 lazy execution：梳理 ML compiler 的整体结构与 PyTorch 的几条编译路线。",
   tags: ("ML Compilers", "torch.compile"),
+  series: "AI Infra",
+  part: 1,
+  weight: 10,
 ))
 
 = ML Compiler Overview

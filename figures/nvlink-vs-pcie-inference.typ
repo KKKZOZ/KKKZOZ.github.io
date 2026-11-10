@@ -5,7 +5,7 @@
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
 #import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, seg, tag, txt
+#import "/utils/figure.typ": arrow, box-swatch, c, legend, pill, seg, tag, txt
 
 #let grid-stroke = (paint: c.hair, thickness: .5pt, dash: "dotted")
 #let axis-stroke = .6pt + c.line
@@ -258,53 +258,6 @@
     content((x0 + 5 * cw + 8, y), txt(note, size: 7pt, fill: c.ink), anchor: "west")
   }
   content((x0 - 8, -44), txt("Measured pairs", size: 7pt), anchor: "east")
-})
-
-// ============================================================================
-// One pool for attention KV and GDN state
-// ============================================================================
-
-#let fig-kv-pool() = cetz.canvas(length: 1pt, {
-  import cetz.draw: *
-  let page(x, fill, stroke, title, l1, l2) = {
-    rect((x, 0), (x + 222, -54), fill: fill, stroke: .8pt + stroke, radius: 3)
-    content((x + 10, -12), txt(title, size: 8.5pt, fill: c.ink, weight: 700), anchor: "west")
-    content((x + 10, -28), txt(l1, size: 7.5pt), anchor: "west")
-    content((x + 10, -42), txt(l2, size: 7.5pt, fill: c.ink, weight: 600), anchor: "west")
-  }
-  page(0, c.orange1, c.orange, "Attention page, one layer",
-    [1568 tokens × 2 KV heads × 256 × (K, V) × 1 B], [1,605,632 B])
-  content((246, -27), text(size: 14pt, fill: c.muted, "="))
-  page(270, c.teal1, c.teal, "GDN page, one layer",
-    [24 heads × 128 × 128 × 4 B + 30 KiB conv state], [1,603,584 B, padded by 0.13%])
-
-  // The pool: one block = one page in each of a group's 16 layers.
-  let (w, h, y0) = (16, 18, -96)
-  let kinds = ("a",) * 2 + ("g",) * 6 + ("a",) * 7 + ("g",) * 6 + ("f",) * 9
-  let gdn = ("G1", "G1", "G2", "G2", "G3", "G3")
-  content((0, y0 + 10), txt([Block pool on one GPU. A block is one page in each of a group’s 16 layers: 25.7 MB.], size: 7.5pt, fill: c.ink), anchor: "west")
-  let gi = 0
-  for (i, k) in kinds.enumerate() {
-    let x = i * w
-    let (fill, stroke) = if k == "a" { (c.orange1, c.orange) } else if k == "g" { (c.teal1, c.teal) } else { (white, c.grey2) }
-    rect((x + .8, y0), (x + w - .8, y0 - h), fill: fill, stroke: .7pt + stroke, radius: 1.5)
-    let label = if k == "a" { "A" } else if k == "g" { gdn.at(calc.rem(gi, 6)) } else { none }
-    if k == "g" { gi += 1 }
-    if label != none { content((x + w / 2, y0 - h / 2), txt(label, size: 6pt, fill: c.ink, weight: 600)) }
-  }
-  // Which blocks belong to which request.
-  let brace(i0, i1, body) = {
-    let (xa, xb, y) = (i0 * w + 1, i1 * w - 1, y0 - h - 6)
-    line((xa, y + 3), (xa, y), (xb, y), (xb, y + 3), stroke: .6pt + c.line)
-    content(((xa + xb) / 2, y - 4), txt(body, size: 7pt), anchor: "north")
-  }
-  brace(0, 8, [3,000 tokens: 2 + 6 blocks])
-  brace(8, 21, [10,000 tokens: 7 + 6 blocks])
-  brace(21, 30, [free])
-
-  let ly = y0 - h - 40
-  legend(0, ly, [A: the 16 full-attention layers, one block per 1568 tokens], box-swatch(0, ly, c.orange1, stroke: .7pt + c.orange))
-  legend(0, ly - 16, [G1–G3: three groups of 16 GDN layers, a fixed number of blocks per sequence], box-swatch(0, ly - 16, c.teal1, stroke: .7pt + c.teal))
 })
 
 // ============================================================================
@@ -677,6 +630,63 @@
     circle((px(v), 0), radius: 2.6, fill: c.blue, stroke: 1pt + white)
     content((px(v), y), txt(lab, size: 7pt, fill: c.ink), anchor: "north")
   }
+})
+
+// ============================================================================
+// Tensor parallelism: why the GPUs talk
+// ============================================================================
+
+// The MLP of one layer at TP=2. W1 is split by columns and W2 by rows, so each
+// GPU ends with a full-size partial sum, and an all-reduce adds the two.
+#let fig-tp-split() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (gap, m) = (66, 15)  // lane spacing, half a matrix side
+  // Column centres: x, W1, h, W2, partial sum, all-reduce (from, to), output.
+  let (cx, cw1, ch, cw2, cy, ar0, ar1, cout) = (70, 140, 210, 280, 350, 384, 456, 500)
+  let mat(x, y, part) = {
+    rect((x - m, y + m), (x + m, y - m), fill: white, stroke: .7pt + c.line)
+    // The half this GPU stores.
+    let (a, b) = if part == "left" { ((x - m, y + m), (x, y - m)) }
+      else if part == "right" { ((x, y + m), (x + m, y - m)) }
+      else if part == "top" { ((x - m, y + m), (x + m, y)) }
+      else { ((x - m, y), (x + m, y - m)) }
+    rect(a, b, fill: c.orange1, stroke: .7pt + c.orange)
+  }
+  // Room for the column labels above the first lane.
+  rect((0, m + 34), (cout + 16, m + 34), stroke: none)
+  let heads = (
+    (cx, [input]),
+    (cw1, [_W_#sub[1] by columns]),
+    (ch, [half of _h_]),
+    (cw2, [_W_#sub[2] by rows]),
+    (cy, [partial sum]),
+    (cout, [full output]),
+  )
+  for (x, body) in heads {
+    content((x, m + 12), txt(body, size: 7pt), anchor: "south")
+  }
+  for (i, (name, w1, w2)) in (("GPU0", "left", "top"), ("GPU1", "right", "bottom")).enumerate() {
+    let y = -i * gap
+    content((0, y), txt(name, size: 8pt, fill: c.ink, weight: 700), anchor: "west")
+    pill((cx, y), [_x_], tone: "pale")
+    arrow((cx + 12, y), (cw1 - m - 4, y))
+    mat(cw1, y, w1)
+    arrow((cw1 + m + 4, y), (ch - 14, y))
+    pill((ch, y), [_h_#sub[#str(i)]], tone: "pale")
+    arrow((ch + 14, y), (cw2 - m - 4, y))
+    mat(cw2, y, w2)
+    arrow((cw2 + m + 4, y), (cy - 14, y))
+    pill((cy, y), [_y_#sub[#str(i)]], tone: "blue")
+    arrow((cy + 14, y), (ar0, y))
+    arrow((ar1, y), (cout - 12, y))
+    pill((cout, y), [_y_], tone: "blue")
+  }
+  // One all-reduce spanning both GPUs.
+  rect((ar0, m + 2), (ar1, -gap - m - 2), fill: c.orange1, stroke: .8pt + c.orange, radius: 3)
+  content(((ar0 + ar1) / 2, -gap / 2 + 7), txt([all-reduce], size: 8pt, fill: c.ink, weight: 700))
+  content(((ar0 + ar1) / 2, -gap / 2 - 7), txt([_y_ = _y_#sub[0] + _y_#sub[1]], size: 7.5pt, fill: c.ink))
+  let ly = -gap - m - 20
+  legend(0, ly, [The half of each matrix a GPU stores. Everything before the all-reduce runs without communication.], box-swatch(0, ly, c.orange1, stroke: .7pt + c.orange))
 })
 
 /// One layer at TP=1 and TP=2: compute halves, two all-reduces are added.

@@ -19,7 +19,7 @@ Mamba 的核心目标非常明确：#strong[既要拥有 Transformer 级别的�
 以下从数学和工程的视角详细拆解 Mamba 架构。
 
 #html.hr()
-= 数学基础：从连续到离散的状态空间模型 (SSM)
+= 状态空间模型
 Mamba 的前身是 S4 等状态空间模型。SSM 的思想源于控制论，它假设系统的状态演化可以用一组连续的微分方程来描述：
 
 $ h'\(t\)= A h\(t\)+ B x\(t\) $
@@ -40,7 +40,7 @@ $ y_t = C h_t $
 其中 $macron(A) = exp\(Delta A\)$。
 你可以看到，离散化后的公式与 Vanilla RNN 非常相似：当前状态 $h_t$ 是前一个状态 $h_(t - 1)$ 的线性变换加上当前输入 $x_t$ 的线性变换。因为它是#strong[纯线性]的（没有 LSTM 那样的 $tanh$ 或 Sigmoid 阻断），这为后续的数学化简和并行计算奠定了基础。
 
-== 为什么需要离散化
+== 离散化
 状态空间模型 (SSM) 最初用于控制论，描述的是#strong[连续时间]内的动态系统（例如电路的电压变化、流体的速度）。连续系统的数学表达是常微分方程 (ODE)：
 
 $ h'\(t\)= A h\(t\)+ B x\(t\) $
@@ -76,7 +76,7 @@ $ h_t = macron(A) h_(t - 1) + macron(B) x_t $
 在 Mamba 中，$Delta$ 是随输入动态生成的。如果当前 Token 是无用信息（比如标点），网络会输出极小的 $Delta$，使得 $macron(A) = exp\(approx 0\)approx I$（单位矩阵），此时 $h_t approx h_(t - 1)$，系统直接略过当前输入，维持原有记忆。
 
 ]
-== 为什么“纯线性”能实现并行计算？
+== 线性与并行
 Vanilla RNN 和离散化后的 SSM 在公式上非常像：
 
 - #strong[RNN]: $h_t = tanh\(W_(h h) h_(t - 1) + W_(x h) x_t\)$
@@ -99,7 +99,7 @@ RNN 无法并行的罪魁祸首就是那个非线性激活函数 $tanh$。因为
 
 在实际的硬件底层（CUDA 层面），这种利用结合律将串行累加转化为树状并行计算的算法被称为 #strong[并行前缀和 (Parallel Prefix Sum)] 或 #strong[并行扫描 (Parallel Scan)]。
 
-= Mamba 的核心创新：选择性机制 (Selective SSM)
+= 选择性机制
 传统的 SSM（如 S4）有一个致命缺陷：它的矩阵 $A\,B\,C$ 是#strong[静态的（Linear Time-Invariant, LTI）]。这意味着系统对待所有的输入 token（不管它是关键的动词还是无用的标点符号）都在使用一套固定的规则进行特征提取。它缺乏 LSTM 中“门（Gate）”那种根据当前输入动态决定“记住什么、遗忘什么”的能力。
 
 Mamba 通过引入选择性机制（Selective Mechanism）打破了 LTI 假设
@@ -121,7 +121,7 @@ $ C_t = upright("Linear")\(x_t\) $
 
 通过这种方式，Mamba 具备了基于内容进行推理（Content-based Reasoning）的能力，能够像 LSTM 一样过滤信息，解决了传统 SSM 难以处理离散语言信息（如精准复制、忽略填充词）的问题。
 
-= 工程魔法：硬件感知与并行扫描 (Parallel Scan)
+= 并行扫描
 既然 Mamba 让 $B$ 和 $C$ 随时间变化，它就退化成了一个普通的时变 RNN。由于 $h_t$ 依赖于 $h_(t - 1)$，这看似又回到了必须用 `for` 循环按顺序计算的死胡同。
 
 Mamba 的工程神来之笔在于：#strong[利用并行前缀和（Parallel Associative Scan）结合 GPU 内存层级优化，强行把线性的 RNN 依赖并行化。]
@@ -163,7 +163,7 @@ $Y =\[x_0\,x_0 + x_1\,x_0 + x_1 + x_2\,dots.h\,x_0 + dots.h + x_7\]$
 
 通过这种树状的合并，长度为 $N$ 的序列，原本需要 $N$ 步，现在只需要 $log_2\(N\)$ 步。这就是并行化的本质：#strong[用多余的计算单元（GPU 核心）换取时间复杂度的指数级下降]。
 
-== Mamba 的公式如何套用并行前缀和
+== 套用到 Mamba
 前缀和算的是“加法”，但 Mamba 的公式 $h_t = macron(A)_t h_(t - 1) + macron(B)_t x_t$ 既有乘法又有加法，它怎么算前缀和？
 
 这就需要进行#strong[代数抽象]。前缀和算法不仅适用于加法，它适用于#strong[任何满足结合律的二元运算符]。
@@ -193,7 +193,7 @@ $ \(S_1 times.o S_2\)times.o S_3 = S_1 times.o\(S_2 times.o S_3\) $
 
 既然算子 $times.o$ 满足结合律，我们就可以完全抛弃 $O\(N\)$ 的串行 `for` 循环，直接把包含矩阵乘法和加法的算子 $times.o$ 扔进刚才的二叉树并行前缀和算法中。GPU 的各个线程块会并发地计算不同时间段的等效转移矩阵 $\(A_(i arrow.r j)\,B_(i arrow.r j)\)$，最终在 $O\(log N\)$ 的时间步内解算出所有 $t$ 时刻的隐藏状态 $h_t$。
 
-= 代码与工作流解析
+= 代码实现
 以下是 Mamba 核心处理模块的伪代码，展示了参数动态生成和离散化的过程（省略了底层的定制化 CUDA Scan 实现，用概念上的接口代替）。先看整体数据流：
 
 #figure(fig.fig-mamba-block(), caption: [Mamba block 的数据流：非线性和数据依赖都在循环外并行算完，循环内只有逐元素乘加。]) <fig-mamba-block>
@@ -312,7 +312,7 @@ class MambaBlock(nn.Module):
 
 但如果看它的网络拓扑结构和数学表达，Mamba 和传统的 RNN/LSTM 在架构上有#strong[三个根本性的差异]。正是这三个差异，不仅让 Mamba 可以使用并行前缀和，也彻底改变了它的特征提取能力。
 
-== 核心差异一：非线性激活函数的位置（纯线性 vs 非线性递推）
+== 非线性的位置
 这是两者在架构上最底层的分歧。
 
 #figure(fig.fig-mamba-nonlinear(), caption: [RNN / LSTM 的非线性在循环里；Mamba 的循环只有 × 和 +，满足结合律，因此可以并行 scan。]) <fig-mamba-nonlinear>
@@ -336,7 +336,7 @@ Mamba 使用非线性的全连接层（Linear + Softplus/SiLU）根据输入 $x_
 简而言之：RNN 是一边循环一边做非线性变换；Mamba 是先用非线性网络算好当前步的转移矩阵，然后在循环时只做最简单的线性乘加。
 
 ]
-== 核心差异二：隐藏状态的维度映射（单通道压缩 vs 多通道展开）
+== 隐藏状态的维度
 这决定了模型的“记忆容量”和信息瓶颈。
 
 #figure(fig.fig-mamba-state(), caption: [RNN 的 $h_t in RR^D$ 由 $W_(h h)$ 混合所有通道；Mamba 的 $h_t in RR^(D times N)$ 中 $macron(A)$ 是对角的，每个通道独立展开 $N$ 维状态。]) <fig-mamba-state>
@@ -354,7 +354,7 @@ Mamba 引入了状态维度（`d_state`，通常设为 16）。
 
 并且，Mamba 的状态转移矩阵 $macron(A)$ 是对角矩阵（Diagonal Matrix）。这意味着在递推时，特征的各个通道之间是#strong[独立演化的，互不干扰]。通道间的交互交由循环外部的其它线性层来完成。这种极高的隐藏维度赋予了 Mamba 远超传统 RNN 的记忆容量。
 
-== 核心差异三：转移矩阵的动态性（静态权重 vs 数据依赖）
+== 转移矩阵
 这是 Mamba 被称为 Selective SSM（选择性状态空间模型）的原因，也是它区别于早期纯线性 RNN 的关键。
 
 - #strong[RNN：静态转移矩阵（Static Transition）]
@@ -384,7 +384,7 @@ h_t = A_bar_t * h_prev + (delta_t * B_t) * x_t
 
 正是这种动态生成 $macron(A)_t$ 的能力，让 Mamba 拥有了类似于 LSTM 中“遗忘门”的功能：如果 $x_t$ 是无关信息，网络会让生成的 $Delta_t$ 趋近于 0，使得 $macron(A)_t = exp\(0\)= 1$，从而 $h_t approx 1 times h_(t - 1)$，完美保留了历史记忆，忽略了当前垃圾信息。
 
-== 总结对比表
+== 对比
 #figure(
   table(
     columns: 3,
@@ -408,7 +408,7 @@ h_t = A_bar_t * h_prev + (delta_t * B_t) * x_t
 我们可以按照数据流的执行顺序，逐块拆解如下:
 
 #html.hr()
-= Block 1: 初始化参数 (`__init__`) ------ 搭建架构骨架
+= Block 1: `__init__`
 这一部分定义了 Mamba Block 内部需要的权重。
 
 ```python
@@ -443,7 +443,7 @@ self.A_log = nn.Parameter(torch.log(A))
 + #strong[特定的初始化与对数存储：] $A$ 被初始化为 $\[1\,2\,dots.h\,N\]$。根据 HiPPO（High-order Polynomial Projection Operators）理论，这种特定的初始化能让系统最优地记忆历史信息。存储 `log(A)` 是为了在后续计算中强制 $A$ 取负值（$- exp\(log A\)$），在控制论中，#strong[负的特征值保证了系统的稳定性]（历史记忆会平滑衰减，而不是指数爆炸）。
 
 #html.hr()
-= Block 2: 局部卷积与参数生成 (`forward` Step 1 & 2)
+= Block 2: 卷积与参数生成
 ```python
 # Step 1: 局部卷积
 x_conv = self.conv1d(x_conv)[:, :, :seq_len] 
@@ -463,7 +463,7 @@ delta = F.softplus(self.dt_proj(delta_raw)) # (batch, seq_len, d_model)
 - #strong[为什么用 `softplus`？] $Delta$ 代表连续系统离散化时的“时间步长”。时间步长在物理意义上#strong[必须是正数]。`softplus` ($f\(x\)= ln\(1 + e^x\)$) 是 ReLU 的平滑版本，确保 $Delta > 0$。
 
 #html.hr()
-= Block 3: 离散化 (`forward` Step 3) ------ 从连续到离散的映射
+= Block 3: 离散化
 这一步将连续的参数 $A\,B$ 结合动态步长 $Delta$，转换为离散环境下的 $macron(A)\,macron(B)$。
 
 ```python
@@ -490,7 +490,7 @@ bar_B = torch.einsum('b l d, b l n -> b l d n', delta, B)
 - #strong[工程化简：] 严格的 ZOH 离散化中，$macron(B) =\(exp\(Delta A\)- I\)A^(- 1) B$。但在 Mamba（以及很多现代 SSM）的工程实现中，通常采用#strong[欧拉一阶近似（Euler Approximation）]，直接化简为 $macron(B) = Delta B$。这不仅省去了矩阵求逆的巨大开销，在实际训练效果上也基本没有损失。
 
 #html.hr()
-= Block 4: 核心 SSM 状态递推 (`_conceptual_selective_scan`)
+= Block 4: 状态递推
 进入真正的 RNN 形态运行阶段。在 GPU 实际执行时，这里会被替换为 CUDA 的并行前缀和算法。但这个伪代码清晰地展示了底层的代数逻辑。
 
 ```python

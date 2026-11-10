@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
 #import "/utils/mitex.typ": mi, mitex
-#import "/utils/ui.typ": callout, hint, two-cols, xref
+#import "/utils/ui.typ": callout, hint, cols, xref
 #import "/figures/ggml-vec-dot.typ" as fig
 
 #tola-meta((
@@ -8,6 +8,8 @@
   date: "2026-10-29",
   summary: "How ggml's CPU backend computes a Q4_0 matrix-vector product during decode, split across threads, with and without repacking.",
   tags: ("LLM-Inference", "ggml"),
+  series: "AI Infra",
+  part: 5,
   weight: 10,
 ))
 
@@ -17,14 +19,14 @@
 dst[12288] = W_gate[12288 × 4096] · x[4096]      W_gate: Q4_0, x: F32
 ```
 
-This is the FFN gate projection of Qwen3-8B for one token: decode handles one token per step, so every weight matrix is multiplied by a vector. Each row of `W` holds `K` = 4096 weights, and there are `N` = 12288 rows, one per output.
+This is the FFN gate projection of Qwen3-8B for one token: decode handles one token per step, so *every weight matrix is multiplied by a vector*. Each row of `W` holds `K` = 4096 weights, and there are `N` = 12288 rows, one per output.
 
 Setup:
 - Apple M4 Pro: 10 performance and 4 efficiency cores; NEON with `dotprod` and `i8mm`.
 - ggml `83835ff` (Aug 2025), Release build, CPU backend only.
 - The thread figures use the same ggml plus a trace in `mul_mat` that logs which rows each thread took, and when.
 
-= Quantization Types in GGUF
+= Quantization Types
 
 A GGUF file stores each tensor with a `ggml_type`. Quantized types are _block formats_: a row is cut into fixed-size blocks, and each block stores one or more scales and a low-bit integer code per weight.
 
@@ -52,11 +54,12 @@ typedef struct {
 - *`d`*: one `fp16` scale per block, called `delta` in the comment because it is the step between two neighboring codes.
 - *`qs`*: one integer code #mi(`q`) per value, which decodes as #mi(`d \cdot q`).
 
-Neither format stores an offset, so code #mi(`0`) always decodes to #mi(`0.0`). That is what `_0` means, while `Q4_1` and `Q5_1` add a per-block offset #mi(`m`) and decode as #mi(`d \cdot q + m`).
+Neither format stores an offset, so *code #mi(`0`) always decodes to #mi(`0.0`)*. That is what `_0` means, while `Q4_1` and `Q5_1` add a per-block offset #mi(`m`) and decode as #mi(`d \cdot q + m`).
 
-`Q8_0` is quantized by `quantize_row_q8_0_ref`, which sets #mi(`d = \mathrm{amax} / 127`), where #mi(`\mathrm{amax}`) is the largest absolute value in the block, and stores #mi(`q = \mathrm{round}(x / d)`), which falls in #mi(`[-127, 127]`).
+The two differ in how they pick #mi(`d`) and store #mi(`q`):
 
-`Q4_0` stores each code as a 4-bit nibble, two per byte, and subtracts 8 when decoding: #mi(`q = \mathrm{nib} - 8`), so #mi(`q \in [-8, 7]`). `quantize_row_q4_0_ref` takes the value with the largest magnitude, keeps its sign as #mi(`\mathrm{max}`), and sets #mi(`d = \mathrm{max} / (-8)`), so that value decodes exactly, as code #mi(`-8`).
+- *`Q8_0`* is quantized by `quantize_row_q8_0_ref`, which sets #mi(`d = \mathrm{amax} / 127`), where #mi(`\mathrm{amax}`) is the largest absolute value in the block, and stores #mi(`q = \mathrm{round}(x / d)`), which falls in #mi(`[-127, 127]`).
+- *`Q4_0`* stores each code as a 4-bit nibble, two per byte, and subtracts 8 when decoding: #mi(`q = \mathrm{nib} - 8`), so #mi(`q \in [-8, 7]`). `quantize_row_q4_0_ref` takes the value with the largest magnitude, keeps its sign as #mi(`\mathrm{max}`), and sets #mi(`d = \mathrm{max} / (-8)`), so that value decodes exactly, as code #mi(`-8`).
 
 #callout(kind: "info", title: [EXAMPLE / Quantizing one `Q4_0` block])[
   A real block has 32 values, but 4 keep the numbers short: #mi(`x = (0.32, -0.80, 0.13, 0.47)`).
@@ -74,7 +77,7 @@ Neither format stores an offset, so code #mi(`0`) always decodes to #mi(`0.0`). 
   Every value decodes to within #mi(`d / 2 = 0.05`) of the original, and #mi(`-0.80`) exactly. If the largest-magnitude value were positive, #mi(`d`) would be negative, and that value would still be code #mi(`-8`).
 ]
 
-== `Q2_K`: two levels of scales
+== `Q2_K`
 
 The `_K` types ("k-quants") split a row into _super-blocks_ of 256 weights, and each super-block into 16 groups of 16. `Q2_K` gives each weight a 2-bit code, so a group has only 4 levels.
 
@@ -123,13 +126,19 @@ typedef struct {
 } block_q2_K;                // 16 + 64 + 4 = 84 bytes per 256 weights -> 2.625 bit/weight
 ```
 
-The offsets have no array of their own: `scales[j]` holds #mi(`s_j`) in its low 4 bits and #mi(`m_j`) in its high 4 bits, and the decoder splits them with `sc & 0xF` and `sc >> 4`. Per weight, that is 2 bits of code, 0.5 bits for #mi(`s_j`) and #mi(`m_j`) (8 bits per 16 weights), and 0.125 bits for `d` and `dmin` (32 bits per 256): 2.625 bits.
+*The offsets have no array of their own*: `scales[j]` holds #mi(`s_j`) in its low 4 bits and #mi(`m_j`) in its high 4 bits, and the decoder splits them with `sc & 0xF` and `sc >> 4`. Per weight, that is:
 
-== Types vs presets: `Q4_K_M`, `Q2_K`, `Q2_K_S`
+- 2 bits of code;
+- 0.5 bits for #mi(`s_j`) and #mi(`m_j`), 8 bits per 16 weights;
+- 0.125 bits for `d` and `dmin`, 32 bits per 256;
 
-`Q4_K` is a tensor type, a block format like the ones above, while `Q4_K_M` is a _preset_ for `llama-quantize` (a `llama_ftype` in llama.cpp). The preset stores most tensors in its base type, `q4_K`, and a few sensitive ones, such as `attn_v` and `ffn_down`, in a type with more bits.
+2.625 bits in all.
 
-The suffix sets how many tensors get the extra bits: fewest for `_S`, more for `_M`, most for `_L`; more bits mean a larger file and a more accurate model. `llama-quantize --help` lists the numbers for Llama-3-8B, where perplexity measures how well a model predicts text (lower is better) and the last column is how much it rises over the `fp16` model:
+== Types and Presets
+
+*`Q4_K` is a tensor type*, a block format like the ones above, while *`Q4_K_M` is a _preset_* for `llama-quantize` (a `llama_ftype` in llama.cpp). The preset stores most tensors in its base type, `q4_K`, and a few sensitive ones, such as `attn_v` and `ffn_down`, in a type with more bits.
+
+*The suffix sets how many tensors get the extra bits*: fewest for `_S`, more for `_M`, most for `_L`; more bits mean a larger file and a more accurate model. `llama-quantize --help` lists the numbers for Llama-3-8B, where perplexity measures how well a model predicts text (lower is better) and the last column is how much it rises over the `fp16` model:
 
 #table(
   columns: 4,
@@ -143,7 +152,14 @@ The suffix sets how many tensors get the extra bits: fewest for `_S`, more for `
   [`Q5_K_M`], [`q5_K`], [5.33 GB], [+0.06],
 )
 
-Not every base type has all three: `Q3_K` has `_S`, `_M` and `_L`; `Q4_K` and `Q5_K` have `_S` and `_M`; `Q2_K` has `Q2_K` and `Q2_K_S`; `Q6_K` has none. A preset with no suffix, such as `Q4_K`, means its `_M`.
+Not every base type has all three:
+
+- `Q3_K` has `_S`, `_M` and `_L`;
+- `Q4_K` and `Q5_K` have `_S` and `_M`;
+- `Q2_K` has `Q2_K` and `Q2_K_S`;
+- `Q6_K` has none.
+
+*A preset with no suffix, such as `Q4_K`, means its `_M`.*
 
 Qwen3-8B-Q4_K_M.gguf, read with ggml's `gguf_init_from_file`:
 
@@ -153,7 +169,7 @@ Qwen3-8B-Q4_K_M.gguf, read with ggml's `gguf_init_from_file`:
 - `attn_v` and `ffn_down` are `q6_K` on 18 of the 36 layers: the first 4, the last 5, and every third one in between (`use_more_bits()` in `llama-quant.cpp`).
 - `output` is also `q6_K`; the norm vectors stay `f32`.
 
-There is no `Q2_K_M`, only `Q2_K` and `Q2_K_S`. For Qwen3-8B (32 query heads and 8 KV heads, so `n_gqa = 4`), their rules give:
+*There is no `Q2_K_M`*, only `Q2_K` and `Q2_K_S`. For Qwen3-8B (32 query heads and 8 KV heads, so `n_gqa = 4`), their rules give:
 
 #table(
   columns: 3,
@@ -165,9 +181,14 @@ There is no `Q2_K_M`, only `Q2_K` and `Q2_K_S`. For Qwen3-8B (32 query heads and
   [`output`], [`q6_K`], [`q6_K`],
 )
 
-On the CPU, each type has its own dot-product kernel and its own format for the activation: `Q4_0` and `Q8_0` pair with `Q8_0`, and the `_K` types with `Q8_K` (8-bit codes in blocks of 256). The rest of the post uses `Q4_0`, whose kernel is the shortest, but how `mul_mat` splits the work across threads doesn't depend on the type.
+On the CPU, each type has its own dot-product kernel and its own format for the activation:
 
-= One Row: vec_dot
+- `Q4_0` and `Q8_0` pair with `Q8_0`;
+- the `_K` types pair with `Q8_K` (8-bit codes in blocks of 256).
+
+The rest of the post uses `Q4_0`, whose kernel is the shortest, but *how `mul_mat` splits the work across threads doesn't depend on the type*.
+
+= `vec_dot`
 
 The CPU backend's entry for `Q4_0` (`src/ggml-cpu/ggml-cpu.c`):
 
@@ -180,18 +201,18 @@ The CPU backend's entry for `Q4_0` (`src/ggml-cpu/ggml-cpu.c`):
 },
 ```
 
-- *`vec_dot_type`*: the format `x` is converted to first, here `Q8_0`, so the inner loop multiplies int8 by int8. The conversion runs once per `mul_mat` and covers 4096 values, against 50 million weights.
+- *`vec_dot_type`*: the format `x` is converted to first, here `Q8_0`, so the inner loop multiplies int8 by int8. *The conversion runs once per `mul_mat`* and covers 4096 values, against 50 million weights.
 - *`from_float`*: the function that converts `x`.
 - *`vec_dot`*: computes one output, the dot product of one row of `W` and `x`.
 - *`nrows`*: rows per `vec_dot` call; see the note at the end of this section.
 
-Both operands are now in blocks of 32 with one scale each, and the blocks line up along `K`. For one output, row `r` of `W` against `x`:
+Both operands are now in blocks of 32 with one scale each, and the blocks line up along `K`. @fig-dot-order shows the order for one output, row `r` of `W` against `x`. In block `b`, `wd[b]` is the row's scale and `wq[b][j]` its `j`-th code, as an int8 (for `Q4_0`, the nibble minus 8); `xd[b]` and `xq[b][j]` are the same for `x`.
 
-- `wq[b][j]` is the code of value `j` in block `b` of the row, as an int8 (for `Q4_0`, the nibble minus 8), and `wd[b]` is that block's scale.
-- `xq[b][j]` and `xd[b]` are the same for `x`, after its conversion to `Q8_0`.
+#figure(fig.fig-dot-order(), caption: [One output: row `r` of `W` and `x` are walked together, block by block; in block `b`, codes are multiplied in pairs and the two scales once.]) <fig-dot-order>
 
-#two-cols(
-  ([Decode every value],
+Written as loops, with and without that grouping by block:
+
+#cols(labels: ([Decode every value], [ggml: scales once per block]))[
   ```c
   float sum = 0;
   for (int i = 0; i < 4096; i++) {
@@ -200,8 +221,8 @@ Both operands are now in blocks of 32 with one scale each, and the blocks line u
     float a = xd[b] * xq[b][j];
     sum += w * a;
   }
-  ```),
-  ([ggml: scales once per block],
+  ```
+][
   ```c
   float sum = 0;
   for (int b = 0; b < 128; b++) {
@@ -210,16 +231,19 @@ Both operands are now in blocks of 32 with one scale each, and the blocks line u
       isum += wq[b][j] * xq[b][j];
     sum += wd[b] * xd[b] * isum;
   }
-  ```),
-)
+  ```
+]
 
-The left version turns each weight and each activation into a float before multiplying: 3 float multiplies per value, 12288 per row. But `w * a` is the scale product `wd[b] * xd[b]` times the code product `wq[b][j] * xq[b][j]`, and the scale product is the same for all 32 values of a block. So the right version multiplies the codes as integers, which is exact, and applies the two scales once per block: 128 times per row instead of 4096.
+The left version turns each weight and each activation into a float before multiplying: 3 float multiplies per value, 12288 per row. But `w * a` is the scale product `wd[b] * xd[b]` times the code product `wq[b][j] * xq[b][j]`, and *the scale product is the same for all 32 values of a block*. So the right version:
+
+- multiplies the codes as integers, which is exact;
+- applies the two scales once per block: 128 times per row instead of 4096.
 
 One `Q4_0` block and one `Q8_0` block, from a small probe (`K = 64`):
 
 #figure(fig.fig-block-layout(), caption: [One `Q4_0` block and one `Q8_0` block from the probe.]) <fig-block-layout>
 
-Byte `qs[j]` holds element `j` in its low nibble and element `j + 16` in its high nibble. One AND gives elements 0–15 in order and one shift gives 16–31, with no shuffle, and each half lines up with one half of the `Q8_0` block. The portable C version, where `x` is the weight row and `y` the quantized activation:
+Byte `qs[j]` holds element `j` in its low nibble and element `j + 16` in its high nibble. *One AND gives elements 0–15 in order and one shift gives 16–31, with no shuffle*, and each half lines up with one half of the `Q8_0` block. The portable C version, where `x` is the weight row and `y` the quantized activation:
 
 ```c
 for (int ib = 0; ib < nb; ++ib) {
@@ -239,7 +263,7 @@ for (int ib = 0; ib < nb; ++ib) {
 }
 ```
 
-== The NEON kernel
+== NEON Kernel
 
 A NEON register is 128 bits, split into _lanes_: 16 int8 values, or 4 int32 or `fp32` values. The ARM version (`src/ggml-cpu/arch/arm/quants.c`) reads the codes of a whole `Q4_0` block with one 16-byte load:
 
@@ -259,9 +283,13 @@ sumv0 = vmlaq_n_f32(sumv0, vcvtq_f32_s32(p_0), GGML_CPU_FP16_TO_FP32(x0->d)*GGML
 
 #figure(fig.fig-neon-block(), caption: [One block of `vec_dot` on NEON: unpack, two `SDOT`s, scale.]) <fig-neon-block>
 
-`ggml_vdotq_s32` is `SDOT` from the `dotprod` extension, which multiplies 16 pairs of int8 values and adds each run of 4 consecutive products into one of 4 int32 lanes. Two `SDOT`s cover the block's 32 products. The 4 lanes are converted to `fp32`, multiplied by the two scales and added lane by lane into the accumulator `sumv0`, without being summed together yet.
+`ggml_vdotq_s32` is `SDOT` from the `dotprod` extension, which multiplies 16 pairs of int8 values and adds each run of 4 consecutive products into one of 4 int32 lanes. Per block:
 
-Each iteration takes two blocks, each into its own accumulator, so one block's multiply-add doesn't wait for the previous one. A row of 4096 values is 128 blocks, so 64 iterations:
++ Two `SDOT`s cover the block's 32 products.
++ The 4 lanes are converted to `fp32`.
++ They are multiplied by the two scales and added lane by lane into the accumulator `sumv0`, *without being summed together yet*.
+
+Each iteration takes two blocks, each into its own accumulator, so *one block's multiply-add doesn't wait for the previous one*. A row of 4096 values is 128 blocks, so 64 iterations:
 
 #figure(fig.fig-neon-loop(), caption: [The NEON loop takes two blocks per iteration into two accumulators.]) <fig-neon-loop>
 
@@ -269,9 +297,15 @@ At the end of the row, the two accumulators are added and `vaddvq_f32` sums thei
 
 #hint[With `i8mm`, `vec_dot` can also be called with `nrc = 2` and use `SMMLA` to compute a 2 × 2 tile: 2 rows × 2 columns of `x`. That needs two columns, so it only helps prefill; in decode `x` has one column and `nrc` is 1. On x86, AVX2 unpacks a block into one 256-bit register and uses `maddubs` / `madd` (or `dpbusd` with VNNI) instead of `SDOT`.]
 
-= Who Computes What
+= Threading
 
-`vec_dot` runs on one thread and produces one output, so the parallelism comes from a thread pool: ggml starts `nth` threads once, and for each op every thread calls the same function, here `ggml_compute_forward_mul_mat`, with its own index `ith`, and the function decides which part of the work is thread `ith`'s. For the gate projection:
+`vec_dot` runs on one thread and produces one output, so *the parallelism comes from a thread pool*:
+
+- ggml starts `nth` threads once;
+- for each op, every thread calls the same function, here `ggml_compute_forward_mul_mat`, with its own index `ith`;
+- the function decides which part of the work is thread `ith`'s.
+
+For the gate projection:
 
 #figure(fig.fig-call-tree(), caption: [How the gate projection's `mul_mat` is split into chunks, tiles and `vec_dot` calls.]) <fig-call-tree>
 
@@ -279,9 +313,17 @@ At the end of the row, the two accumulators are added and `vaddvq_f32` sums thei
 - *Tile*: 16 rows; a chunk is 4 tiles. `vec_dot` writes a tile's 16 results into a small buffer, which is then copied into `dst`. In prefill a tile is 16 rows × 16 columns of `x`, so each column stays in cache while 16 rows use it. In decode there is one column, and a tile is just 16 `vec_dot` calls.
 - *`vec_dot`*: one row, 64 NEON iterations.
 
-Only chunks are shared between threads: once a thread takes a chunk, it computes all of it.
+*Only chunks are shared between threads*: once a thread takes a chunk, it computes all of it.
 
-== The two phases
+== Two Phases
+
+#callout(kind: "info", title: [OVERVIEW / Two phases of one `mul_mat`])[
+  Every thread runs `ggml_compute_forward_mul_mat` with its own `ith`, in two phases:
+  + *Phase 1: quantize `x`.* `vec_dot` needs `x` in `Q8_0`, so the threads first convert it together, each its own fixed slice, and wait until all are done.
+  + *Phase 2: compute the outputs.* The 12288 outputs are cut into 192 chunks of 64 rows, and each thread takes one chunk after another until none are left.
+]
+
+The code, without the loops over the batch dimensions:
 
 ```c
 // phase 1: every thread quantizes its own slice of x (along K) into wdata
@@ -309,13 +351,19 @@ while (current_chunk < nchunk0 * nchunk1) {
 }
 ```
 
-The loops over the batch dimensions are left out.
+=== Phase 1: Quantize `x`
 
-Phase 1 splits `x` along `K`, the same way every time. `x` has 4096 / 32 = 128 blocks, and thread `ith` quantizes blocks `[ith · 128 / nth, (ith + 1) · 128 / nth)` into `wdata`, a scratch buffer shared by all threads. Every thread then waits at `ggml_barrier` until all `nth` have arrived, since in phase 2 any thread may read any block of `x`.
+`vec_dot` multiplies a `Q4_0` row by `x` in `Q8_0`, its `vec_dot_type`, but `x` arrives as 4096 floats, so it has to be converted first. The split is static: `x` has 4096 / 32 = 128 blocks, and thread `ith` quantizes blocks `[ith · 128 / nth, (ith + 1) · 128 / nth)` into `wdata`, a scratch buffer shared by all threads. With 4 threads, `t0` takes blocks 0–31, `t1` blocks 32–63, and so on.
 
-Phase 2 splits the output into chunks of up to `chunk_size` rows by `chunk_size` columns of `dst`. Decode has one column (`nr1 = 1`), where 16 × 16 would mean only 16 outputs per chunk, so ggml raises `chunk_size` to 64: 192 chunks of 64 rows. Threads take chunks as they go:
+Every thread then waits at `ggml_barrier` until all `nth` have arrived, because each output in phase 2 needs all of `x`.
 
-- Thread `i` starts on chunk `i`, so chunks 0 to `nth − 1` are already taken, and thread 0 sets the shared counter `current_chunk` to `nth` before the barrier.
+=== Phase 2: Compute
+
+Each output is one `vec_dot`, and the outputs are grouped into chunks of up to `chunk_size` rows by `chunk_size` columns of `dst`. Decode has one column (`nr1 = 1`), where 16 × 16 would leave only 16 outputs per chunk, so ggml raises `chunk_size` to 64: 192 chunks of 64 rows.
+
+The chunks are not assigned in advance. *Threads take chunks as they go*:
+
+- Thread `i` starts on chunk `i`, so chunks 0 to `nth − 1` are already taken. That is why thread 0 sets the shared counter `current_chunk` to `nth` in phase 1, before the barrier.
 - When a thread finishes a chunk, it calls `atomic_fetch_add` on the counter, which returns the old value and adds 1 in one atomic step. The old value is the thread's next chunk, so no two threads get the same one.
 - Once the counter reaches 192, threads leave the loop.
 
@@ -327,20 +375,21 @@ One traced `mul_mat` with 1, 2 and 4 threads, where each square is a chunk, 16 p
 
 - 1 thread: thread 0 does all 192 chunks in order.
 - 2 threads: they run at the same speed and alternate: `t0` takes chunk 0, `t1` chunk 1, then each takes the next free one.
-- 4 threads: no regular pattern, since small timing differences decide who reaches the counter first. Each thread still gets 46–49 chunks, but which rows it computes is only decided at run time.
-- Phase 1 takes under 1 µs, and phase 2, which takes the rest, halves with each doubling of threads: 1112, 587, 310 µs.
+- 4 threads: no regular pattern, since small timing differences decide who reaches the counter first. Each thread still gets 46–49 chunks, but *which rows it computes is only decided at run time*.
+- Phase 1 takes under 1 µs, and phase 2, which takes the rest, *halves with each doubling of threads*: 1112, 587, 310 µs.
 
 The same 4-thread run on a timeline, one lane per thread, together with the repack path from the next section:
 
 #figure(fig.fig-gantt-4(), caption: [A 4-thread `mul_mat` on a timeline: `vec_dot` path vs repack path.]) <fig-gantt-4>
 
-All 4 lanes of the `vec_dot` path end within a few µs of each other, because the last chunks go to whichever thread is free. The repack path does the same work in 189 µs; each thread runs once, over a fixed quarter of the rows.
+- *`vec_dot` path*: all 4 lanes end within a few µs of each other, because the last chunks go to whichever thread is free.
+- *Repack path*: the same work in 189 µs; each thread runs once, over a fixed quarter of the rows.
 
-= The Repack Path
+= Repack
 
 In ggml, a tensor's memory comes from a _buffer_, and the buffer's type decides how the data is laid out and which kernels run on it. With `GGML_CPU_REPACK` (on by default), the CPU backend has an extra buffer type, `CPU_REPACK`, and llama.cpp places `Q4_0` weights used by `MUL_MAT` in it unless `--no-repack` is given.
 
-Copying a weight into a `CPU_REPACK` buffer rearranges it once, at load time, and a different kernel runs on the result. On this machine (`NEON` and `i8mm`, and 12288 rows, a multiple of 4) that kernel is `q4_0_4x8_q8_0`:
+Copying a weight into a `CPU_REPACK` buffer *rearranges it once, at load time, and a different kernel runs on the result*. On this machine (`NEON` and `i8mm`, and 12288 rows, a multiple of 4) that kernel is `q4_0_4x8_q8_0`:
 
 #figure(fig.fig-repack(), caption: [The repacked `block_q4_0x4` layout and the 4-row gemv kernel.]) <fig-repack>
 
@@ -348,15 +397,19 @@ Copying a weight into a `CPU_REPACK` buffer rearranges it once, at load time, an
 
 For every 4 rows, the 4 blocks at the same position along `K` become one `block_q4_0x4`: the 4 scales first, then the codes of the 4 rows, interleaved 8 bytes at a time.
 
-== Dropping the − 8
+== XOR with `0x88`
 
 The copy also XORs every byte with `0x88`, which flips the top bit of both nibbles: a nibble #mi(`u`) becomes #mi(`u \oplus 8`), which, read as a signed 4-bit number, is #mi(`u - 8`).
 
-The kernel doesn't sign-extend it to int8; instead it moves each nibble into the top half of a byte (`<< 4` for the low nibble, `& 0xF0` for the high one), where the byte reads as #mi(`16 \cdot (u - 8)`). `SDOT` then returns 16 times the true sum, and the conversion to `fp32`, `vcvtq_n_f32_s32(ret, 4)`, treats the low 4 bits as a fraction, which divides by 16 in the same instruction.
+The kernel doesn't sign-extend it to int8. Instead:
 
-== The gemv kernel
++ It moves each nibble into the top half of a byte (`<< 4` for the low nibble, `& 0xF0` for the high one), where the byte reads as #mi(`16 \cdot (u - 8)`).
++ `SDOT` then returns 16 times the true sum.
++ The conversion to `fp32`, `vcvtq_n_f32_s32(ret, 4)`, treats the low 4 bits as a fraction, which *divides by 16 in the same instruction*.
 
-`ggml_gemv_q4_0_4x8_q8_0` works on 4 rows at once and issues as many `SDOT`s as 4 calls of `vec_dot`; what it saves is the work around them:
+== gemv Kernel
+
+`ggml_gemv_q4_0_4x8_q8_0` works on 4 rows at once and issues as many `SDOT`s as 4 calls of `vec_dot`; *what it saves is the work around them*:
 
 #table(
   columns: 3,
@@ -369,9 +422,9 @@ The kernel doesn't sign-extend it to int8; instead it moves each nibble into the
 
 `vec_dot` sums its 4 lanes once, at the end of a row, while the `gemv` does one pairwise add per block, which leaves row #mi(`i`) in lane #mi(`i`), so its final `float32x4` holds the 4 outputs.
 
-== Thread split
+== Thread Split
 
-There are no chunks: thread `ith` takes rows `[ith · N / nth, (ith + 1) · N / nth)`, rounded up to a multiple of 4, and runs one `gemv` over them. In decode, phase 1 runs on thread 0 alone, since `x` has one column; it is tiny either way.
+*There are no chunks*: thread `ith` takes rows `[ith · N / nth, (ith + 1) · N / nth)`, rounded up to a multiple of 4, and runs one `gemv` over them. In decode, phase 1 runs on thread 0 alone, since `x` has one column; it is tiny either way.
 
 ```c
 int64_t src0_start = (ith * ne01) / nth;
@@ -386,9 +439,12 @@ gemv<BLOC_TYPE, INTER_SIZE, NB_COLS, PARAM_TYPE>(ne00,
         src0_end - src0_start);
 ```
 
-The two paths therefore differ in the kernel (4 rows at a time vs 1) and in scheduling (fixed ranges vs chunks taken at run time), and the benchmark below shows the effect of each.
+The two paths therefore differ in two ways, and the benchmark below shows the effect of each:
 
-= Performance: Decode, gate + up
+- *Kernel*: 4 rows at a time vs 1.
+- *Scheduling*: fixed ranges vs chunks taken at run time.
+
+= Performance
 
 The benchmark computes the gate and up projections of Qwen3-8B for one `F32` `x`. Each is a `Q4_0` `[12288 × 4096]` weight: 12288 × 4096 × 4.5 bits = 28.3 MB, 56.6 MB for both.
 
@@ -416,9 +472,9 @@ The benchmark computes the gate and up projections of Qwen3-8B for one `F32` `x`
 
 #figure(fig.fig-gantt-14(), caption: [One 14-thread `mul_mat`: the efficiency cores hold up the repack path.]) <fig-gantt-14>
 
-In the `vec_dot` path, four of the 14 threads take about 18 µs per chunk instead of 7.5 µs, 2.4× slower. They probably ran on the 4 efficiency cores, though that is a guess from their speed, since macOS doesn't let a program pin threads to cores.
+In the `vec_dot` path, *four of the 14 threads take about 18 µs per chunk instead of 7.5 µs*, 2.4× slower. They probably ran on the 4 efficiency cores, though that is a guess from their speed, since macOS doesn't let a program pin threads to cores.
 
-- In the `vec_dot` path, those 4 threads take fewer chunks (6–7 instead of 16–17), and the op ends when the chunks run out.
-- In the repack path, each thread owns a fixed 1/14 of the rows, so the threads on slow cores (4, 5, 6 and 10 here, and 9 for part of its run) hold up the whole op: it takes 220 µs, while the fast threads were done at about 95 µs.
+- In the `vec_dot` path, those 4 threads *take fewer chunks* (6–7 instead of 16–17), and the op ends when the chunks run out.
+- In the repack path, each thread owns a fixed 1/14 of the rows, so the threads on slow cores (4, 5, 6 and 10 here, and 9 for part of its run) *hold up the whole op*: it takes 220 µs, while the fast threads were done at about 95 µs.
 
-For CPU-only decode on this machine, use repack with 10 threads, one per performance core: gate + up take about 244 µs instead of 282. With more threads than performance cores, repack is the slower path.
+For CPU-only decode on this machine, *use repack with 10 threads, one per performance core*: gate + up take about 244 µs instead of 282. *With more threads than performance cores, repack is the slower path.*

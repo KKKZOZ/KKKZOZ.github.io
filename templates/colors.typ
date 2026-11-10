@@ -73,6 +73,10 @@
   teal2: (rgb("#95bfb6"), rgb("#3d6b62")),
   accent-line: (rgb("#debba6"), rgb("#6e4a38")),
   accent-sub: (rgb("#6b4a3c"), rgb("#d4a58f")),
+
+  // Blog figures only (figures/ktransformers.typ, figures/ml-compiler.typ).
+  blue-mid: (rgb("#d2e2e7"), rgb("#24363d")),
+  sand: (rgb("#f5e6cb"), rgb("#3d3220")),
 )
 
 /// Other day values drawings carry, by the name they map to: Typst's default

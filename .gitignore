@@ -9,3 +9,6 @@
 /.vendor-vendor/
 /.tola-build.lock
 /tola-ssg/
+/zhihu/
+/materials/
+/.claude/

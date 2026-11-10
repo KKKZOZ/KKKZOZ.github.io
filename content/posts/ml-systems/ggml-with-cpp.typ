@@ -1,277 +1,145 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout
+#import "/utils/ui.typ": callout, fold, cols
 #import "/figures/ggml-with-cpp.typ" as fig
 
 #tola-meta((
-  title: "ggml with C++",
+  title: "ggml Memory Layout and Allocation",
   date: "2026-03-18",
-  summary: "用 GGML 实现一个简单 LLM 推理引擎时遇到的问题：C++ 初始化与引用、GGML 的内存布局与四种内存分配方式，以及 llama.cpp 的整体流程和 mmap 加载权重。",
-  tags: ("Dev", "LLM-Inference"),
+  summary: "How a ggml tensor describes memory with ne and nb, why attention code is full of view, permute and cont, how the four gpt-2 examples allocate weights and intermediates, and how llama.cpp maps weights from a GGUF file.",
+  tags: ("LLM-Inference", "ggml"),
   weight: 10,
+  toc-depth: 3,
 ))
 
-#quote(block: true)[
-在和 GGML 打交道时不知道已经写了几篇文档了，这篇一定是最后一个
-]
-
-这篇文档主要记录我用 GGML 实现一个简单的 LLM Inference Engine 时遇到的问题
-
-= C++
-== Initialization
-在 C++ 中， class 中的成员在构造函数体开始#strong[之前]就被默认构造了，要控制其行为，需要使用初始化列表
+This is one layer's self-attention in ggml's GPT-2 example, `examples/gpt-2/main-backend.cpp`, trimmed:
 
 ```cpp
-class Member {
-public:
-    Member() { 
-        std::cout << "Member 默认构造\n"; 
-    }
-    Member(int x) { 
-        std::cout << "Member 带参构造: " << x << "\n"; 
-    }
+// cur: [3*n_embd, N], the output of the QKV projection for N new tokens
+// off: byte offset of layer il in the KV cache (il*n_ctx*n_embd*sizeof(float))
+struct ggml_tensor * Qcur = ggml_view_2d(ctx, cur, n_embd, N, cur->nb[1], 0);
+
+struct ggml_tensor * Q = ggml_permute(ctx,
+        ggml_cont_3d(ctx, Qcur, n_embd/n_head, n_head, N),
+        0, 2, 1, 3);
+
+struct ggml_tensor * K = ggml_permute(ctx,
+        ggml_reshape_3d(ctx,
+            ggml_view_1d(ctx, model.memory_k, (n_past + N)*n_embd, off),
+            n_embd/n_head, n_head, n_past + N),
+        0, 2, 1, 3);
+
+struct ggml_tensor * KQ = ggml_mul_mat(ctx, K, Q);
+// ... scale, causal mask, softmax -> KQ_soft_max
+
+struct ggml_tensor * V_trans = ggml_cont_3d(ctx,
+        ggml_permute(ctx,
+            ggml_reshape_3d(ctx,
+                ggml_view_1d(ctx, model.memory_v, (n_past + N)*n_embd, off),
+                n_embd/n_head, n_head, n_past + N),
+            1, 2, 0, 3),
+        n_past + N, n_embd/n_head, n_head);
+
+struct ggml_tensor * KQV = ggml_mul_mat(ctx, V_trans, KQ_soft_max);
+cur = ggml_cont_2d(ctx, ggml_permute(ctx, KQV, 0, 2, 1, 3), n_embd, N);
+```
+
+Only the two `ggml_mul_mat` calls do arithmetic. `view`, `reshape` and `permute` change how bytes already in memory are read, and `cont` copies them into a new layout. And no call here computes anything yet: each one adds a node to a graph, which runs later, in memory that something else allocates.
+
+So two questions:
+
++ Why does `K` go into `ggml_mul_mat` as it is, while `V` has to go through `ggml_cont` first?
++ Where does the memory for `KQ` come from?
+
+The first is answered by how a tensor describes its memory, the second by ggml's allocators, which the four GPT-2 examples introduce one at a time. llama.cpp, at the end, puts the same pieces together.
+
+Versions: ggml `83835ff` (Aug 2025). The llama.cpp part follows the code as I read it in late 2025, with a few points checked against `1e6f04a` (Oct 2026), as noted.
+
+= Memory Layout
+
+From `include/ggml.h`, trimmed:
+
+```c
+struct ggml_tensor {
+    enum ggml_type type;
+    struct ggml_backend_buffer * buffer;   // where data lives
+
+    int64_t ne[GGML_MAX_DIMS];  // number of elements
+    size_t  nb[GGML_MAX_DIMS];  // stride in bytes:
+                                // nb[0] = ggml_type_size(type)
+                                // nb[1] = nb[0]   * (ne[0] / ggml_blck_size(type)) + padding
+                                // nb[i] = nb[i-1] * ne[i-1]
+
+    enum ggml_op op;                        // the op that produces this tensor
+    struct ggml_tensor * src[GGML_MAX_SRC]; // its inputs
+
+    struct ggml_tensor * view_src;          // for views: the tensor viewed
+    size_t               view_offs;
+
+    void * data;
+    char name[GGML_MAX_NAME];
+    // ...
 };
-
-class MyClass {
-    Member m1;  // 成员对象
-    Member m2;
-    int value;
-    
-public:
-    // 情况1: 不使用初始化列表
-    MyClass() {
-        std::cout << "构造函数体开始\n";
-        value = 10;  // 这是赋值，不是初始化！
-    }
-    
-    // 情况2: 使用初始化列表
-    MyClass(int v) : m1(1), m2(2), value(v) {
-        std::cout << "构造函数体开始\n";
-    }
-};
-
-情况 1 输出
-Member 默认构造    // m1 在构造函数体前被默认构造
-Member 默认构造    // m2 在构造函数体前被默认构造
-构造函数体开始
-
-情况 2 输出
-Member 带参构造: 1  // m1 在构造函数体前初始化
-Member 带参构造: 2  // m2 在构造函数体前初始化
-构造函数体开始
 ```
 
-对于指针来说，初始化就是将其设置为 nullptr, 对于 STL 容器，就是初始化空容器
+`GGML_MAX_DIMS` is 4. For each dimension `i`:
 
-所以我们可以在 constructor 中使用 `new` #strong[在堆上创建对象，返回一个指针]
+- `ne[i]` is how many elements it has;
+- `nb[i]` is how many bytes to move to reach the next element along it.
 
-```cpp
-// 方式1：栈上分配
-MyClass obj;           // 直接得到实例（对象本身）
-MyClass obj2(10);      // 带参数构造
+*Dimension 0 is the innermost*: in a matrix, `ne[0]` is the number of columns, and a row is `ne[0]` elements next to each other. That is the reverse of PyTorch's order: a ggml tensor with `ne = {K, M}` is a PyTorch tensor of shape `(M, K)`.
 
-// 方式2：堆上分配  
-MyClass* ptr = new MyClass();     // 得到指针
-MyClass* ptr2 = new MyClass(10);  // 带参数构造
+The address of an element is a dot product of its index with the strides:
+
+```c
+(char *) t->data + i0*t->nb[0] + i1*t->nb[1] + i2*t->nb[2] + i3*t->nb[3]
 ```
 
-- 在 class 中，默认一切都是 private
-- 在 struct 中，默认一切都是 public
+#figure(fig.fig-strides(), caption: [An F32 tensor with `ne = {3, 2}`: the logical view and the bytes in memory. `nb[i]` is the bytes one step along dimension `i` crosses.]) <fig-strides>
 
-== Reference
-引用绑定的是变量本身（变量在内存中的那个存储实体）
+A tensor is *contiguous* when the strides are the ones the formula in the struct comment gives: `nb[0]` is the element size and each `nb[i]` is `nb[i-1] * ne[i-1]`, so the elements sit one after another in row-major order with no gaps. `ggml_is_contiguous` checks exactly this.
 
-如果引用一个指针：
+== `ggml_mul_mat`
 
-- 可以修改指针指向
-- 修改后引用会跟着变
-
-#callout(kind: "info", title: "SUMMARY")[
-引用相当于是#strong[变量别名]
-
-]
-比如在 ggml 的 example 中有这么一段：
-
-```cpp
-auto &ctx = this->ctx_w;
-// 此时 this->ctx_w 还没有被初始化，可以认为是 NULL
-{
- ggml_init_params params = {
-            /*.mem_size   =*/ctx_size,
-            /*.mem_buffer =*/NULL,
-            /*.no_alloc   =*/false,
-        };
-
-        this->ctx_w = ggml_init(params);
-}
-
-{
- // 此时 this->ctx_w 已经被初始化了，所以引用它的 ctx 也有效
- this->ln_f_g = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, n_embd);
- this->ln_f_b = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, n_embd);
-}
+```c
+// a: ne = {K, M},  b: ne = {K, N}  ->  c: ne = {M, N}
+struct ggml_tensor * c = ggml_mul_mat(ctx, a, b);
 ```
 
-== Pointer
-区别指针的值和指针本身的地址
+Element `(m, n)` of `c` is the dot product of row `m` of `a` and row `n` of `b`. In matrix notation that is #box[`c = b · aᵀ`], not `a · b`.
 
-```cpp
-struct ggml_context * ctx = NULL;  // ctx 是一个指针，它的值是 NULL
+#figure(fig.fig-mul-mat(), caption: [`ggml_mul_mat(a, b)`: each element of `c` is the dot product of a row of `a` and a row of `b`, so #box[`c = b · aᵀ`].]) <fig-mul-mat>
 
-struct gguf_init_params params = {
-    /*.no_alloc = */ true,
-    /*.ctx      = */ &ctx,  // ⭐ 这里传递的是 ctx 的地址，不是 ctx 的值！
-};
+*Both operands are read along dimension 0*, so every dot product walks two runs of adjacent memory. For a linear layer this matches how weights are stored: `W` has `ne = {n_in, n_out}`, the activations `x` have `ne = {n_in, N}`, and `ggml_mul_mat(ctx, W, x)` gives `ne = {n_out, N}`, which is #box[`x · Wᵀ`].
 
-------
+Dimensions 2 and 3 are batch dimensions: the product is taken for each index in them, and `a` is broadcast if it has fewer.
 
-// 1. ctx 是一个指针变量
-struct ggml_context * ctx = NULL;
+= View, Reshape, Permute and Cont
 
-// 内存布局：
-// 地址: 0x7fff1234  (假设 ctx 变量存储在这个地址)
-// 值:   NULL (0x0)
+#table(
+  columns: 4,
+  table.header([Op], [Input must be contiguous], [Result contiguous], [Data]),
+  [`ggml_view_*`], [no], [often not], [shared: `src->data` + offset],
+  [`ggml_reshape_*`], [yes], [yes], [shared],
+  [`ggml_permute`], [no], [often not], [shared],
+  [`ggml_cont`], [no], [yes], [new tensor, filled when the graph runs],
+)
 
-// 2. &ctx 是"指向指针的指针"
-struct ggml_context ** ptr_to_ctx = &ctx;
+The first three only build a new `ggml_tensor` header with different `ne`, `nb` or `data`, pointing at the same bytes. `ggml_cont` is the only one that copies.
 
-// &ctx 的值是 0x7fff1234 (ctx 变量的地址)
-// 这个地址本身不是 NULL！
-```
+== `ggml_view`
 
-#figure(fig.fig-pointer(), caption: [`ctx` 与 `&ctx`：`gguf_init_from_file` 通过 `params.ctx` 改写的是 `ctx` 这个变量本身。]) <fig-pointer>
-
-== 头文件
-头文件(.h)应该包含：
-
-- 类/结构体的声明
-- 函数声明
-- inline函数的完整定义
-- 模板的完整定义
-- 常量声明
-- 类型别名(typedef/using)
-
-实现文件(.cpp)应该包含：
-
-- 函数的具体实现
-- 类成员函数的实现
-- 静态变量的定义
-
-cpp文件不会随着include头文件而被引入
-
-```cpp
-// main.cpp
-#include "person.h"  // Only includes declarations from person.h
-                     // Does NOT automatically include person.cpp
-
-int main() {
-    Person p("Alice", 25);  // Linker will find implementation in person.cpp
-    p.introduce();
-    return 0;
-}
-```
-
-对于 CMake 的影响
-
-#figure(
-  table(
-    columns: 2,
-    align: (auto,auto,),
-    table.header([文件类型], [需要在 CMakeLists.txt 中添加？],),
-    table.hline(),
-    [纯头文件 (.h only)], [❌ #strong[不需要]],
-    [头文件 + 实现文件 (.h + \.cpp)], [✅ 只需添加 #strong[\.cpp]],
-    [只有实现文件 (.cpp)], [✅ 需要添加],
-  )
-  , kind: table
-  )
-
-= GGML
-== Cheatsheet
-```cpp
-model.a = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, cols_A, rows_A);
-model.b = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, cols_B, rows_B);
-
-struct ggml_tensor * ggml_new_tensor_2d(
-        struct ggml_context * ctx,
-        enum   ggml_type      type,
-        int64_t ne0,
-        int64_t ne1) {
-    const int64_t ne[2] = { ne0, ne1 };
-    return ggml_new_tensor(ctx, type, 2, ne);
-}
-
-
-// ne0 -> col
-// ne1 -> row
-// nb0 -> 在 ne0 维度中，移动到相邻的元素（a[row][0] -> a[row][1]），需要在内存中前进多少字节
-// nb1 -> 在 ne1 维度中，移动到相邻的元素(a[0][col] -> a[1][col])，需要在内存中前进多少字节
-
-
-ggml_tensor * c = ggml_mul_mat(ctx, a, b)
-
-=> c = b @ a^T
-```
-
-#figure(fig.fig-mul-mat(), caption: [`ggml_mul_mat(a, b)`：`c` 的每个元素是 `a` 的一行和 `b` 的一行的点积，即 #box[`c = b @ a^T`]。]) <fig-mul-mat>
-
-关键代码位置：
-
-- `ggml_backend_cpu_buffer_type` - `ggml-backend.cpp:2172`
-
-== 内存布局
-\"内存连续\"的核心含义：
-
-- 数据在内存中按行优先顺序紧密排列，没有间隙
-- `nb[i]` (stride) 必须等于前面所有维度的乘积，即：`nb[i] = nb[i-1] * ne[i-1]`
-
-举个例子：
-
-```shell
-// 张量：[3, 2] 矩阵
-// ne = {3, 2}
-// nb = {4, 12}  // 4 = sizeof(float), 12 = 4*3
-// 
-// 内存布局：
-// [a0, a1, a2, b0, b1, b2]
-//  ↑________↑   ↑________↑
-//   row 0        row 1
-//
-// nb[0] = 4  (每个元素 4 字节)
-// nb[1] = 12 (跳过 3 个元素 = 12 字节才到下一行)
-```
-
-#figure(fig.fig-strides(), caption: [`ne = {3, 2}` 的 F32 张量：逻辑视图与内存中的字节，`nb` 是每个维度前进一步跨过的字节数。]) <fig-strides>
-
-=== ggml\_reshape
-- 要求输入连续
-- 输出也是连续的
-- 共享相同的数据指针
-- 只改变 shape 和 stride，不改变内存布局，#strong[不改变内存中元素的顺序]
-
-#quote(block: true)[
-比如一个 `[2, 2]` 的矩阵 reshape 为 `[1, 4]`, 内存连续性没有改变，可以直接放入矩阵乘法中，内部的缓存一致性也没有破坏，矩阵乘法时一直都是线性访问底层的内存
-
-- `[2, 2]` 的布局： `[a0(R0C0), a1(R0C1), a2(R1C0), a3(R1C1)]`
-- `[1, 4]` 的布局： `[a0(R0C0), a1(R0C1), a2(R0C2), a3(R0C3)]`
-]
-
-#figure(fig.fig-reshape(), caption: [`ggml_reshape`：两个视图共享同一个 `data` 指针，只有 `ne` / `nb` 不同。]) <fig-reshape>
-
-=== ggml\_view
-```cpp
+```c
 struct ggml_tensor * ggml_view_2d(
         struct ggml_context * ctx,
         struct ggml_tensor  * a,
         int64_t               ne0,
         int64_t               ne1,
-        size_t                nb1,    // ← 第二维的 stride
-        size_t                offset) { // ← 起始偏移
-    
+        size_t                nb1,      // stride of dim 1, from the caller
+        size_t                offset) { // byte offset into a
     const int64_t ne[2] = { ne0, ne1 };
 
     struct ggml_tensor * result = ggml_view_impl(ctx, a, 2, ne, offset);
 
-    // 手动设置 stride
     result->nb[1] = nb1;
     result->nb[2] = result->nb[1]*ne1;
     result->nb[3] = result->nb[2];
@@ -280,248 +148,146 @@ struct ggml_tensor * ggml_view_2d(
 }
 ```
 
-- 不要求输入内存连续
-- 输出通常是不连续的（ggml\_view 的主要目的就是为了创建非连续的张量视图而无需复制数据）
-- 共享数据指针
-- 不修改内存
-  - view 只是改变如何\"解释\"和\"访问\"现有内存
-  - 原始数据保持不变
-  - 只创建新的元数据（shape, stride, offset）
+The view starts `offset` bytes into `a` and takes `nb1` from the caller, so *a view can skip bytes between rows*. `Qcur` above is one: `cur` holds Q, K and V side by side in each row, 2304 floats in all, and `Qcur` takes the first 768 floats of every row, with `nb[1]` still 9216 bytes.
 
-#callout(kind: "info", title: "QUESTION / 什么情况下会需要 ggml_view?")[
-]
-当你想对一个大张量的#strong[一部分]进行操作，而#strong[不想]支付昂贵的内存复制成本时。`ggml_view` 本质上是创建了一个“指针”或“引用”。
-
-最经典的例子就是 LLM (大语言模型) 中的 #strong[KV Cache]。
-
-假设你有一个 KV Cache 张量，形状为 `(batch_size, num_heads, seq_len, head_dim)`。
-
-+ #strong[写入新 Token (写操作)：]
-
-  - 你刚计算出当前第 `t` 个 token 的 Key 和 Value (K/V)。
-  - 你需要把这个 K/V #emph[写入] 到 KV Cache 的第 `t` 个位置。
-  - 你#strong[不需要]复制整个 cache。你只需要一个指向 `cache[:, :, t, :]` 这个“切片”的视图。
-  - `ggml_view` 就会创建这个视图 (view)。这个视图在 `seq_len` 维度上是#strong[非连续的]。
-  - 然后你使用 `ggml_cpy` (copy) 操作，将新计算的 K/V #strong[复制]到这个 `view` 指向的内存位置。
-
-+ #strong[执行注意力 (读操作)：]
-
-  - 在计算注意力时，Query (Q) 需要和#strong[所有]历史的 K (`0` 到 `t`) 进行计算。
-  - 你需要一个 `cache[:, :, 0:t+1, :]` 的视图。
-  - `ggml_view` 再次创建这个视图。这个视图在 `seq_len` 维度上是#strong[连续的]（从 0 开始的一个块），但它仍然是一个子集。
-
-#figure(fig.fig-view-kv(), caption: [同一个 KV cache 上的三个 view：写入一行、读取前缀，以及单个 head 的不连续 view。]) <fig-view-kv>
-
-#strong[其他常见例子：]
-
-- #strong[获取词向量 (Embedding)：] 从一个 `(vocab_size, hidden_dim)` 的巨大词表中，通过 `ggml_view_1d` 取出第 `token_id` 行。这一行本身是连续的，但它是一个 `view`。
-- #strong[多头注意力 (MHA) 拆分：] 将一个 `(seq_len, hidden_dim)` 的张量，`view` 成 `(seq_len, num_heads, head_dim)`，以便分离出不同的头。
-
-#callout(kind: "info", title: "QUESTION / 非连续张量如何参与运算?")[
-]
-- 对于 element-wise 这类轻量级运算，直接在非连续内存上执行
-- 对于 matrix multiplication 这类计算，需要先将其转换为连续的
-  - 调用 `ggml_mul_mat(ctx, a, b)` 时，ggml 内部会调用 `ggml_is_contiguous(a)`，如果 a 不是连续的，ggml 会自动在计算图中插入一个 `ggml_cont(ctx, a)`
-
-=== ggml\_cont
-- 不要求输入是否连续
-- 输出一定连续
-- 会创建新内存
-- 会修改内存布局
-
-ggml\_cont 会检查输入张量：
-
-- 如果输入张量已经是连续的，ggml\_cont 在图构建时什么也不做，直接返回原张量。
-- 如果输入张量不是连续的（例如它是一个 view），ggml\_cont 就会创建一个新张量，并分配新的内存，然后将非连续的数据复制到这块新内存中，使其变得连续。
-  - 根据 `ne0, ne1, nb0, nb1` 等元数据访问这个 view, 复制最内层维度的连续块到新张量中
-
-伪代码如下：
+The KV cache is the main use. In the GPT-2 examples, `memory_k` is one flat F32 tensor of `n_layer * n_ctx * n_embd` elements, and each step writes the new tokens' K into a view of it:
 
 ```cpp
-// 目标(dst)张量的数据指针，它指向一块连续内存
-char * d_data = (char *) dst->data;
+// K of the N new tokens goes to positions n_past .. n_past+N-1 of layer il
+struct ggml_tensor * k = ggml_view_1d(ctx, model.memory_k, N*n_embd,
+        (ggml_element_size(model.memory_k)*n_embd)*(il*n_ctx + n_past));
+ggml_build_forward_expand(gf, ggml_cpy(ctx, Kcur, k));
+```
 
-// 源(src)张量的数据指针
-const char * s_data = (const char *) src->data;
+`ggml_cpy` copies `Kcur` into the bytes the view points at. Attention then reads positions `0 .. n_past+N-1` of the layer through a second view, the `ggml_view_1d` inside `K` above. Nothing is copied to read the cache.
 
-// 遍历所有维度 (以4D为例)
-for (int i3 = 0; i3 < src->ne[3]; i3++) {
- for (int i2 = 0; i2 < src->ne[2]; i2++) {
-  for (int i1 = 0; i1 < src->ne[1]; i1++) {
-   
-   // 1. 计算非连续的源(src)地址
-   //    它使用 'nb' (步长) 来跳跃
-   const char * s_ptr = s_data + i3*src->nb[3] + i2*src->nb[2] + i1*src->nb[1];
+#figure(fig.fig-view-kv(), caption: [Three views into one layer's KV cache, with `n_ctx` = 6 and `n_embd` = 8 (2 heads × 4): writing a row, reading a prefix, and one head, which is not contiguous.]) <fig-view-kv>
 
-   // 2. 计算连续的目标(dst)地址
-   //    它只是简单地在 d_data 基础上累加
-   
-   // 3. 复制最内层维度的连续块
-   //    (src->ne[0] 个元素, 每个元素 src->nb[0] 字节)
-   memcpy(d_data, s_ptr, src->ne[0] * src->nb[0]);
+== `ggml_reshape`
 
-   // 4. 推进连续的目标(dst)指针
-   d_data += src->ne[0] * src->nb[0];
-  }
- }
+`ggml_reshape_*` starts with `GGML_ASSERT(ggml_is_contiguous(a))`, then sets a new `ne` and computes `nb` from it as for a contiguous tensor. The bytes keep their order, so the new strides are only right if the old ones were the contiguous ones.
+
+#figure(fig.fig-reshape(), caption: [`ggml_reshape`: both tensors share one `data` pointer and differ only in `ne` and `nb`.]) <fig-reshape>
+
+That is why the code builds `Q` with `ggml_cont_3d` rather than `ggml_reshape_3d`: `Qcur` is the strided view from above, so it has to be copied before it can take the shape `{64, 12, N}`. `K` comes from `ggml_view_1d`, which is a plain contiguous slice of the cache, so `ggml_reshape_3d` is enough.
+
+== `ggml_permute`
+
+`ggml_permute(ctx, a, ax0, ax1, ax2, ax3)` sends dimension `i` of `a` to position `ax_i`, and moves `ne[i]` and `nb[i]` there together. From `src/ggml.c`, trimmed:
+
+```c
+struct ggml_tensor * result = ggml_view_tensor(ctx, a);  // same data
+
+ne[axis0] = a->ne[0];   nb[axis0] = a->nb[0];
+ne[axis1] = a->ne[1];   nb[axis1] = a->nb[1];
+ne[axis2] = a->ne[2];   nb[axis2] = a->nb[2];
+ne[axis3] = a->ne[3];   nb[axis3] = a->nb[3];
+
+// copy ne and nb into result
+result->op     = GGML_OP_PERMUTE;
+result->src[0] = a;
+```
+
+For a 2 × 2 F32 matrix `A`, `ggml_permute(ctx, A, 1, 0, 2, 3)` swaps the two strides:
+
+#cols(labels: ([`A`], [`P = ggml_permute(A, 1, 0, 2, 3)`]))[
+```text
+ne = {2, 2}   nb = {4, 8}
+
+A[0][1] = data[0*8 + 1*4] = data[4] -> b
+A[1][0] = data[1*8 + 0*4] = data[8] -> c
+```
+][
+```text
+ne = {2, 2}   nb = {8, 4}
+
+P[0][1] = data[0*4 + 1*8] = data[8] -> c
+P[1][0] = data[1*4 + 0*8] = data[4] -> b
+```
+]
+
+(`P[i1][i0]` is at `i1*nb1 + i0*nb0`.) `P` is the transpose of `A`, and `ggml_transpose` is this call.
+
+#figure(fig.fig-permute(), caption: [`ggml_permute` only swaps `nb`: the same four elements, read with `P`'s strides, are the transpose of `A`.]) <fig-permute>
+
+== `ggml_cont`
+
+`ggml_cont` always creates a new tensor with the same shape, `op = GGML_OP_CONT` and `src[0]` the input, even when the input is already contiguous. Its bytes are filled when the graph runs. On the CPU, `ggml_compute_forward_dup_f32` (`src/ggml-cpu/ops.cpp`) copies in one of two ways:
+
+- If each row of the source is contiguous (`nb[0]` is the element size), it copies row by row with `memcpy`.
+- Otherwise it copies element by element, with the full address formula for each.
+
+The row path, simplified:
+
+```c
+char       * d = (char *) dst->data;
+const char * s = (const char *) src->data;
+
+for (int64_t i3 = 0; i3 < src->ne[3]; i3++)
+for (int64_t i2 = 0; i2 < src->ne[2]; i2++)
+for (int64_t i1 = 0; i1 < src->ne[1]; i1++) {
+    // source row: jump with the strides; destination: just append
+    const char * row = s + i1*src->nb[1] + i2*src->nb[2] + i3*src->nb[3];
+    memcpy(d, row, src->ne[0]*src->nb[0]);
+    d += src->ne[0]*src->nb[0];
 }
 ```
 
+#figure(fig.fig-cont(), caption: [`ggml_cont` copies the strided view of @fig-view-kv (c) row by row into new, contiguous memory.]) <fig-cont>
 
-#figure(fig.fig-cont(), caption: [`ggml_cont` 把 @fig-view-kv (c) 中不连续的 view 逐行 `memcpy` 到一块新的连续内存。]) <fig-cont>
+`ggml_cont_2d`, `ggml_cont_3d` and `ggml_cont_4d` do the copy and give the result a new shape in the same step, as a copy followed by a reshape would.
 
-=== ggml\_permute
-- 不要求输入连续
-- 输出不连续
-- 共享数据指针
-- 不修改内存布局
+== Attention
 
-```cpp
-struct ggml_tensor * ggml_permute(
-        struct ggml_context * ctx,
-        struct ggml_tensor  * a,
-        int                   axis0,
-        int                   axis1,
-        int                   axis2,
-        int                   axis3) {
-    // ...参数检查...
-    
-    struct ggml_tensor * result = ggml_view_tensor(ctx, a);  // ← 创建视图
-    ggml_format_name(result, "%s (permuted)", a->name);
+For GPT-2 small (`n_embd` = 768, 12 heads of 64, F32), with `L = n_past + N`:
 
-    int ne[GGML_MAX_DIMS];
-    int nb[GGML_MAX_DIMS];
+#table(
+  columns: 4,
+  table.header([Tensor], [From], [`ne`], [`nb` (bytes)]),
+  [`Qcur`], [view of `cur`], [`{768, N}`], [`{4, 9216}`],
+  [`Q`], [copy of `Qcur`, permuted], [`{64, N, 12}`], [`{4, 3072, 256}`],
+  [`K`], [view of the cache, permuted], [`{64, L, 12}`], [`{4, 3072, 256}`],
+  [`V`, permuted], [view of the cache, permuted], [`{L, 64, 12}`], [`{3072, 4, 256}`],
+  [`V_trans`], [copy of the row above], [`{L, 64, 12}`], [`{4, 4L, 256L}`],
+)
 
-    // 重新排列 ne（形状）
-    ne[axis0] = a->ne[0];
-    ne[axis1] = a->ne[1];
-    ne[axis2] = a->ne[2];
-    ne[axis3] = a->ne[3];
+Neither `Q` nor `K` is contiguous: the heads are interleaved in memory, 256 bytes apart. But dimension 0 of each is a contiguous run of 64 floats, one head of one token, and that is all `ggml_mul_mat` needs. It asserts `!ggml_is_transposed(a)`, that is `nb[0] <= nb[1]`, and the CPU kernel asserts that `nb[0]` of both inputs is the element size; the other strides can be anything. So `KQ = ggml_mul_mat(K, Q)` has `ne = {L, N, 12}`, and for each head, element `(l, n)` is `k_l · q_n`, as attention needs.
 
-    // 重新排列 nb（stride）
-    nb[axis0] = a->nb[0];
-    nb[axis1] = a->nb[1];
-    nb[axis2] = a->nb[2];
-    nb[axis3] = a->nb[3];
+The second product needs, for each head, output dimension `d` and query `n`:
 
-    // 更新 result 的形状和 stride
-    result->ne[0] = ne[0];
-    result->ne[1] = ne[1];
-    result->ne[2] = ne[2];
-    result->ne[3] = ne[3];
+#box[`KQV[d][n] = Σ_l  w[n][l] · V[l][d]`]
 
-    result->nb[0] = nb[0];
-    result->nb[1] = nb[1];
-    result->nb[2] = nb[2];
-    result->nb[3] = nb[3];
+`ggml_mul_mat` takes dot products along dimension 0 of both operands, so `l` has to be dimension 0 of both. For the weights `KQ_soft_max` it already is. For `V` it means the transpose, `ne = {L, 64, 12}`, which `permute(1, 2, 0, 3)` gives in shape but not in memory: `nb = {3072, 4, 256}`. Now `nb[0] > nb[1]`, `ggml_mul_mat` stops at its assert while the graph is still being built, and so the code copies `V` with `ggml_cont_3d` into a layout where each row is one `d` across all `L` positions.
 
-    result->op     = GGML_OP_PERMUTE;
-    result->src[0] = a;
+The last line does the same for the output: `KQV` has `ne = {64, N, 12}`, `permute(0, 2, 1, 3)` makes it `{64, 12, N}`, and `ggml_cont_2d` copies it into `{768, N}`, the 12 heads of each token side by side, ready for the output projection.
 
-    return result;
-}
-```
+= Memory Allocation
 
-例子：
+== Overview
 
-```cpp
-内存地址:  [0]  [4]  [8]  [12]
-数据:       a    b    c    d
+- `ggml_tensor`: the header above. It is also a node of the compute graph, through `op` and `src`.
+- `ggml_context`: a memory pool of fixed size, set in `ggml_init`, that holds tensor headers, and with `no_alloc = false` their data too.
+- `ggml_cgraph`: arrays of pointers to the tensors of one graph.
+- `ggml_backend`: one device, such as CPU, CUDA or Metal. It allocates buffers and runs the ops.
+- `ggml_backend_buffer`: memory a backend allocated, in RAM or in VRAM. With `no_alloc = true`, `tensor->data` points into one of these.
 
-原tensor (2, 2):
+#figure(fig.fig-components(), caption: [The graph holds tensor pointers, the context holds tensor headers, and `tensor->data` points into a backend buffer.]) <fig-components>
 
-ne0 = 2 ne1 = 2
-nb0 = 4 nb1 = 8
+So a tensor has two parts with different needs:
 
-访问 a[i][j] = data[i*nb1 + j*nb0]
-a[0][1] = data[4] -> b
+- *The header* has a fixed size, `ggml_tensor_overhead()`, and always lives in a context.
+- *The data* has a size that depends on `ne` and `type`. It may live in the context or in a backend buffer, and several tensors may share it, as views do.
 
-ggml_permute(ctx, A, 1, 0, 2, 3)
+== Compute Graph
 
-ne0 = 2 ne1 = 2
-nb0 = 8 nb1 = 4
+A graph has two kinds of tensors:
 
-访问 p[i][j] = data[i*nb1 + j*nb0]
-p[0][0] = data[0] -> a
-p[0][1] = data[8] -> c
-p[1][0] = data[4] -> b
-p[1][1] = data[12] -> d
-```
+- *Leaves*: weights and inputs. Their data has to be there before the graph runs.
+- *Nodes*: intermediates, produced while the graph runs.
 
+#figure(fig.fig-mlp-graph(), caption: [A two-layer MLP and how it lands in the `leafs` and `nodes` arrays of `ggml_cgraph`.]) <fig-mlp-graph>
 
-#figure(fig.fig-permute(), caption: [`ggml_permute` 只交换 `nb`：同样的 4 个元素，按 `P` 的步长读出来就是 `A` 的转置。]) <fig-permute>
-
-== overview
-GGML 中关键组件：
-
-- ggml\_tensor: 一个多维矩阵，也是计算图中的一个节点
-- ggml\_cgraph：表示整个计算图
-- ggml\_context：维护 tensor 的元数据
-- ggml\_backend：代表不同的后端，负责具体的算子计算逻辑
-- ggml\_backend\_buffer：后端分配的内存，比如 CPU 对应的就是内存，GPU 对应的就是显存
-
-
-#figure(fig.fig-components(), caption: [GGML 的几个核心组件：graph 存 tensor 指针，context 存 tensor 元数据，`tensor->data` 指向 backend buffer 中的数据。]) <fig-components>
-
-== GGML 内存分配机制
-在 `ggml/example/gpt-2` 中，给出了非常清晰的内存分配机制，从简单到复杂，依次是：
-
-- main-ctx
-- main-alloc
-- main-backend
-- main-shed
-
-我们可以按照这个顺序来了解 GGML 的内存分配机制
-
-在了解之前，需要知道一些背景知识
-
-+ GGML 的内存分配是以 tensor 为单位的
-
-tensor 代表着一个多维矩阵：
-
-```cpp
-struct ggml_tensor {
- enum ggml_type type;
- struct ggml_backend_buffer * buffer;
- int64_t ne[GGML_MAX_DIMS]; // number of elements
- size_t  nb[GGML_MAX_DIMS]; // stride in bytes:
-          // nb[0] = ggml_type_size(type)
-          // nb[1] = nb[0]   * (ne[0] / ggml_blck_size(type)) + padding
-          // nb[i] = nb[i-1] * ne[i-1]
- // compute data
- enum ggml_op op;
- // op params - allocated as int32_t for alignment
- int32_t op_params[GGML_MAX_OP_PARAMS / sizeof(int32_t)];
- int32_t flags;
- struct ggml_tensor * src[GGML_MAX_SRC];
- // source tensor and offset for views
- struct ggml_tensor * view_src;
- size_t               view_offs;
- void * data;
- char name[GGML_MAX_NAME];
- void * extra; // extra things e.g. for ggml-cuda.cu
- char padding[8];
-};
-```
-
-对于单个 tensor 来说，需要区分两种数据：
-
-- #strong[元数据]：即整个 tensor 这个结构体，大小是确定的，因为这个结构体中只包含基本数据类型和指针
-- #strong[底层数据]：存放 tensor 数据内容，这部分大小不确定，而且很可能会被多个不同 tensor 共享
-
-#block[
-#set enum(numbering: "1.", start: 2)
-+ GGML 需要在计算开始之前构建完整的计算图，并在计算开始之前#strong[分配所有需要的内存]，实现推理时零分配
-+ 对于一张计算图，有两种节点：中间节点和叶子节点；叶子节点是权重，中间节点是计算产生的中间值
-]
-
-#figure(fig.fig-mlp-graph(), caption: [一个两层 MLP 的计算图，以及它在 `ggml_cgraph` 中的 `leafs` 和 `nodes` 数组。]) <fig-mlp-graph>
-
-比如 @fig-mlp-graph 展示了一个 MLP 的计算图，绿色节点是叶子节点，叶子节点的数据需要我们在计算开始之前加载；蓝色节点是中间节点，中间节点的数据在计算过程中才会产生
-
-在 GGML 中，计算图的表示是 `ggml_cgraph`:
-
-```cpp
+```c
 struct ggml_cgraph {
     int size;    // maximum number of nodes/leafs/grads/grad_accs
     int n_nodes; // number of nodes currently in use
@@ -536,427 +302,221 @@ struct ggml_cgraph {
 };
 ```
 
-#html.hr()
-tensor 的元数据始终存放在 ggml\_context 中，但是其真正底层的数据 `void * data` 位置不确定，可能是在某个 `ggml_backend_buffer` 中
+*ggml builds the whole graph before it computes anything*, so all memory can be assigned up front and the computation itself never allocates.
 
-ggml\_context 维护了一个 memory\_pool，这个 memory\_pool 的大小需要在初始化 ggml\_context 时就确定
+The two kinds also live for different lengths of time. During generation the same graph runs once per token:
 
-在下文中，我们统一称之为权重和中间值两种
+- Weights are needed from load to exit. They are allocated and filled once.
+- Intermediates are needed only during one run of the graph, and their sizes depend on how many tokens the run takes.
 
-在大模型推理过程中，由于是一个自回归的过程，所以相同的一张计算图会被运行很多次，其中：
+The KV cache sits in between: it lives across runs like a weight but is written every step. The GPT-2 examples allocate it with the weights.
 
-- #strong[权重]：在整个模型推理过程中持续存在，只在模型加载时分配一次，在程序结束时释放
-- 中间值：每次推理都会创建和销毁，用完即可释放 （有点误导，但让我们先这么理解？）
+== gpt-2 Examples
 
-所以对于这两种 tensor 的内存管理，应该采用两种不同的机制
+`ggml/examples/gpt-2` has four versions of the same model, and each one hands one more part of memory management to ggml:
 
-从机制的直观到复杂，我们可以
+#figure(fig.fig-examples(), caption: [How the four `ggml/examples/gpt-2` programs allocate weights and intermediates.]) <fig-examples>
 
-- 手动管理所有 tensor 的分配
-- 手动管理权重 tensor，自动分配并复用中间值
-- 在单后端上自动管理权重 tensor，自动分配并复用中间值
-- 在多后端上自动管理权重 tensor，自动分配并复用中间值
+=== `main-ctx`
 
-这分别对应着：
-
-- main-ctx
-- main-alloc
-- main-backend
-- main-sched
-
-#figure(fig.fig-examples(), caption: [`ggml/examples/gpt-2` 中四个示例的内存管理方式。]) <fig-examples>
-
-=== main-ctx
-- 手动分配权重
-- 手动分配中间值
-
-==== 权重分配
-- 手动计算所有 tensor 所需要的总空间，初始化一个对应大小的 `ggml_context`
-- 声明 tensor
-- 在 `ggml_context` 中直接分配对应的内存空间给 tensor
-
-在 ggml 中，最简单的分配内存的方式就是通过 ggml\_context 直接分配
-
-在初始化 ggml\_context 时, 我们可以将 `no_alloc` 参数设置为 `false`：
-
-```cpp
-ggml_init_params params = {
-            /*.mem_size   =*/ctx_size,
-            /*.mem_buffer =*/NULL,
-            /*.no_alloc   =*/false,
-        };
-ctx_w = ggml_init(params);
-```
-
-这样在运行类似于 `ggml_new_tensor_2d` 时，会直接在 context 的 memory\_pool 中为 tensor 的底层数据分配空间：
-
-```cpp
-// ggml.c: 1640
-static struct ggml_tensor * ggml_new_tensor_impl(...){
-
-size_t obj_alloc_size = 0;
-
-if (view_src == NULL && !ctx->no_alloc) {
- // allocate tensor data in the context's memory pool
- obj_alloc_size = data_size;
-}
-
-struct ggml_object * const obj_new = ggml_new_object(ctx, GGML_OBJECT_TYPE_TENSOR, GGML_TENSOR_SIZE + obj_alloc_size);
-
- *result = (struct ggml_tensor) {
-  // ...
-  /*.data         =*/ obj_alloc_size > 0 ? (void *)(result + 1) : data,
-  /*.name         =*/ { 0 },
-  /*.extra        =*/ NULL,
-  /*.padding      =*/ { 0 },
- };
-
-}
-```
-
-#figure(fig.fig-ctx-pool(), caption: [`no_alloc` 决定 tensor 的数据是否放在 context 的内存池里。]) <fig-ctx-pool>
-
-main-ctx 正是采用了这种方式，在加载模型时，需要手动计算模型权重需要的内存空间，然后根据大小初始化 ggml\_context:
+*Weights.* The loader adds up the size of every weight tensor itself:
 
 ```cpp
 size_t ctx_size = 0;
-
-//...
-
+// ...
 ctx_size += ggml_row_size(GGML_TYPE_F32, n_embd); // ln_f_g
 ctx_size += ggml_row_size(GGML_TYPE_F32, n_embd); // ln_f_b
 
 ctx_size += ggml_row_size(wtype, n_vocab * n_embd);       // wte
 ctx_size += ggml_row_size(GGML_TYPE_F32, n_ctx * n_embd); // wpe
 ctx_size += ggml_row_size(wtype, n_vocab * n_embd);       // lm_head
-
 // ...
- 
 ```
 
-==== 中间值分配
-在#strong[每次]开始计算之前(`eval` 函数内部)，#strong[预估]模型中间值有多大，然后也通过 ggml\_context 的 memory pool 来分配空间
+and creates a context of that size with `no_alloc = false`:
 
 ```cpp
-static size_t buf_size = 256u * 1024 * 1024;
-static void *buf = malloc(buf_size);
+struct ggml_init_params params = {
+    /*.mem_size   =*/ ctx_size,
+    /*.mem_buffer =*/ NULL,
+    /*.no_alloc   =*/ false,
+};
+model.ctx_w = ggml_init(params);
+```
+
+In such a context, every `ggml_new_tensor_*` takes room for the data from the pool, right after the header (`ggml_new_tensor_impl` in `src/ggml.c`):
+
+```c
+size_t obj_alloc_size = 0;
+
+if (view_src == NULL && !ctx->no_alloc) {
+    // allocate tensor data in the context's memory pool
+    obj_alloc_size = data_size;
+}
+
+struct ggml_object * const obj_new = ggml_new_object(ctx, GGML_OBJECT_TYPE_TENSOR, GGML_TENSOR_SIZE + obj_alloc_size);
+// ...
+    /*.data =*/ obj_alloc_size > 0 ? (void *)(result + 1) : data,
+```
+
+#figure(fig.fig-ctx-pool(), caption: [`no_alloc` decides whether a tensor's data goes into the context's pool, right after its header.]) <fig-ctx-pool>
+
+*Intermediates.* Every call to `gpt2_eval` creates a new context on a static buffer, builds the graph in it, computes, and frees the context with `ggml_free(ctx0)`:
+
+```cpp
+static size_t buf_size = 256u*1024*1024;
+static void * buf = malloc(buf_size);
+
+if (mem_per_token > 0 && mem_per_token*N > buf_size) {
+    const size_t buf_size_new = 1.1*(mem_per_token*N); // add 10% to account for ggml object overhead
+    buf_size = buf_size_new;
+    buf = realloc(buf, buf_size);
+}
 
 struct ggml_init_params params = {
- /*.mem_size   =*/buf_size,
- /*.mem_buffer =*/buf,
- /*.no_alloc   =*/false,
+    /*.mem_size   =*/ buf_size,
+    /*.mem_buffer =*/ buf,
+    /*.no_alloc   =*/ false,
 };
-
-struct ggml_context *ctx0 = ggml_init(params);
+struct ggml_context * ctx0 = ggml_init(params);
 ```
 
-在每次计算完成之后，释放本次计算的中间值的内存空间 `ggml_free(ctx0)`
+256 MB is a guess. After the first run the program measures `mem_per_token = ggml_used_mem(ctx0)/N` and grows the buffer when a later run needs more. *Every intermediate gets its own memory*, even after the last op that reads it has run.
 
-=== main-alloc
-- 手动分配权重
-- 自动分配中间值
+=== `main-alloc`
 
-==== 权重分配
-这部分保持不变，如果我们只是考虑在 CPU 上进行推理，这部分优化的空间很少了（因为权重的生命周期非常长，从模型加载直到程序结束），再进一步优化的话，我们可以考虑有没有一种方法可以自动计算需要的空间，不用每次都让程序员在代码中执行计算？
+`main-alloc` keeps the weights as they were and replaces the per-run context with a graph allocator, `ggml_gallocr`. The graph context now has `no_alloc = true`, so building a graph creates headers only, and the allocator assigns the data:
 
-#quote(block: true)[
-这也非常符合直觉，既然我们需要提前声明每个 tensor 的形状和数据类型，那么这个 tensor 的大小其实已经确定了
+```cpp
+ggml_gallocr_t allocr = ggml_gallocr_new(ggml_backend_cpu_buffer_type());
+
+// create the worst case graph for memory usage estimation
+int n_tokens = std::min(model.hparams.n_ctx, params.n_batch);
+int n_past = model.hparams.n_ctx - n_tokens;
+struct ggml_cgraph * gf = gpt2_graph(model, n_past, n_tokens);
+
+// pre-allocate the compute buffer for the worst case (optional)
+ggml_gallocr_reserve(allocr, gf);
+```
+
+Then, in every `gpt2_eval`:
+
+```cpp
+struct ggml_cgraph * gf = gpt2_graph(model, n_past, embd_inp.size());
+// set tensor->data for every tensor in the graph
+ggml_gallocr_alloc_graph(allocr, gf);
+// copy the token ids and positions into the input tensors
+ggml_graph_compute(gf, &plan);
+```
+
+#figure(fig.fig-reserve-alloc(), caption: [`ggml_gallocr`: reserve once at startup, then reuse the same compute buffer on every run.]) <fig-reserve-alloc>
+
+*Why the worst case uses `n_batch`.* The size of the intermediates grows with the number of tokens in a run, `N`: activations are `{n_embd, N}`, and `KQ` is `{n_past + N, N, 12}`. A 1000-token prompt in one run would need a buffer sized for 1000 tokens, and that buffer would then sit mostly unused while generating one token at a time. So the program caps a run at `n_batch` tokens. A longer prompt goes in over several runs, and since each run leaves its K and V in the cache, nothing is computed twice. The worst case is then a full batch at the end of the context: `n_tokens = n_batch` and `n_past = n_ctx - n_batch`.
+
+#figure(fig.fig-nbatch(), caption: [A 70-token prompt goes through the graph in three runs with `n_batch = 32`; reserve sizes the buffer for the last row.]) <fig-nbatch>
+
+A larger `n_batch` makes the buffer larger; a smaller one makes a long prompt take more runs.
+
+#callout(kind: "warning", title: "NOTE / n_batch")[
+  `n_batch` is the most tokens one run of the graph takes, not the number of sequences processed together.
 ]
 
-在 `main-backend` 中会对这部分做进一步的优化
+*What reserve does.* `ggml_gallocr_reserve` walks the graph in execution order and assigns each tensor an offset in a buffer, without touching memory. It frees a node's block once every node that reads it has been assigned, and lets an op write in place of its input when it can. It records each offset and the peak, then allocates buffers of the peak size.
 
-==== 中间值分配
-思考一下 `main-ctx` 中的分配方式：在每次计算开始之前分配空间，每次计算完成之后销毁
+#figure(fig.fig-galloc-reuse(), caption: [gallocr on the MLP of @fig-mlp-graph: with in-place ops and early frees, the five intermediates need two blocks.]) <fig-galloc-reuse>
 
-假设模型要生成 100 个 token，那么这种创建销毁的操作就会进行 100 次！
+*What alloc_graph does.* It checks that the new graph fits the recorded plan, then sets each tensor's `data` from it:
 
-并且一开始中间值大小的估计也非常难，如果我们不去构建整个模型推理时的计算图的话，我们怎么知道到底需要多少内存，所以也只能往大了估，造成内存浪费
-
-所以在 `main-alloc` 中引出了 `ggml_galloc`
-
-在计算开始之前(`eval` 函数外部)，我们先构建一次计算图，提前分配计算图中间值需要的内存空间，然后在每次 `eval` 是都复用这块内存
-
-```cpp
- ggml_gallocr_t allocr = NULL;
-    // allocate the compute buffer
-{
- allocr = ggml_gallocr_new(ggml_backend_cpu_buffer_type());
-
- // create the worst case graph for memory usage estimation
- int n_tokens = std::min(model.hparams.n_ctx, params.n_batch);
- int n_past = model.hparams.n_ctx - n_tokens;
- struct ggml_cgraph * gf = gpt2_graph(model, n_past, n_tokens);
-
- // pre-allocate the compute buffer for the worst case (optional)
- ggml_gallocr_reserve(allocr, gf);
- size_t mem_size =  ggml_gallocr_get_buffer_size(allocr, 0);
- fprintf(stderr, "%s: compute buffer size: %.2f MB\n", __func__, mem_size/1024.0/1024.0);
-}
-```
-
-由于存在 KV Cache，所以每轮计算中，需要的内存空间是不一样的（参与注意力计算的 K 和 V tensor 会越来越大），所以我们应该估算最坏的情况：
-
-- 序列长度等于 `n_ctx`
-- KV Cache 长度等于 `n_ctx-1`
-
-然后如上面的代码块所示，这两个值并不是这么计算的，为什么？
-
-因为 GGML 的计算图是静态的，我们希望在确定整个计算图大小后，在程序的整个生命周期内都不会变化，避免内存的再分配；如果把序列长度设置为 `n-ctx`，那么如果我的输入序列只有几个 token，则需要 left padding 非常多位，造成了内存的严重浪费；如果每次都根据序列长度分配，那不又回到了 `main-ctx` 中低效的内存分配方式了吗？
-
-由于有 KV Cache 的存在，对于一个序列中的所有的 token 的 QKV tensor, 我们都只需要计算一次
-
-所以我们可以人为确定一个批次(比如 32)，构建计算图时以这个批次为标准，每次只允许最多 `n_batch` 个 token 参与运算，如果一个序列长度大于 `n_batch`，那么拆分这个序列，多次喂给这个计算图即可
-
-所以这个 `n_batch` 既不能太大（造成内存浪费），也不能太小（虽然不会重复计算，但其中算子 kernel 启动会有开销）
-
-#figure(fig.fig-nbatch(), caption: [一个 70 token 的 prompt 按 `n_batch = 32` 分三次送进同一张计算图；reserve 时按最坏情况估计内存。]) <fig-nbatch>
-
-#callout(kind: "warning", title: "ATTENTION")[
-所以 `n_batch` 指的是单次计算图能够处理的最大 token 数量，不是单次同时能够处理的输入序列
-
-]
-回到 `main-alloc` 的设计理念：#strong[在计算开始之前预分配内存，然后在每轮计算时都复用这块内存]
-
-这正好对应了两个关键函数：
-
-- 预分配内存：`ggml_gallocr_reserve(\*ggml_gallocr_t*\ allocr, \*ggml_cgraph*\ gf)`
-- 内存复用：`ggml_gallocr_alloc_graph(\*ggml_gallocr_t*\ allocr, \*ggml_cgraph*\ gf)`
-
-```cpp
-reserve() {
-    1. 分析图结构，确定节点分配给哪个后端
-    2. 计算每个后端需要的最大内存
-    3. 为每个后端创建 buffer（但不分配给 tensor）
-    
-    Example:
-    GPU buffer: 2GB (预留但未使用)
-    CPU buffer: 512MB (预留但未使用)
-}
-
-alloc_graph(graph) {
-    1. 遍历当前图的所有节点
-    2. 从预留的 buffer 中切分内存
-    3. 设置每个 tensor->data 指向对应位置
-    
-    Example:
-    tensor_Q->data = gpu_buffer + offset_0
-    tensor_K->data = gpu_buffer + offset_1024
-    ...
-}
-```
-
-
-#figure(fig.fig-reserve-alloc(), caption: [`ggml_gallocr`：启动时 reserve 一次，之后每次 eval 都复用同一块 compute buffer。]) <fig-reserve-alloc>
-
-两个函数都需要传入 gallocr 这个对象，是不是复用的内存也存放在 gallocr 内部呢？
-
-```cpp
-struct ggml_gallocr {
-    ggml_backend_buffer_type_t * bufts; // [n_buffers]
-    struct vbuffer ** buffers; // [n_buffers]
-    struct ggml_dyn_tallocr ** buf_tallocs; // [n_buffers]
-    int n_buffers;
-
-    struct ggml_hash_set hash_set;
-    struct hash_node * hash_values; // [hash_set.size]
-
-    struct node_alloc * node_allocs; // [n_nodes]
-    int n_nodes;
-
-    struct leaf_alloc * leaf_allocs; // [n_leafs]
-    int n_leafs;
-};
-
-// virtual buffer with contiguous memory range, split into multiple backend buffers (chunks)
-
-struct vbuffer {
-    ggml_backend_buffer_t chunks[GGML_VBUFFER_MAX_CHUNKS];
-};
-```
-
-可以看到，确实在 ggml\_gallocr 内部管理着 `vbuffer`
-
-#callout(kind: "info", title: "QUESTION / 为什么会有多个 ggml_backend_buffer_type_t?")[
-因为一张计算图中可能会涉及到多个 ggml\_backend，比如一个 GPU 和一个 CPU
-
-]
-后续是关于这两个函数的详细解析，可以跳过
-
-#html.hr()
-所以对于 `ggml_gallocr_reserve(\*ggml_gallocr_t*\ allocr, \*ggml_cgraph*\ gf)` 来说，就是遍历整个计算图，计算中间值内存的大小，并预留内存空间的过程：
-
-```cpp
-bool ggml_gallocr_reserve_n(...){
-
-
- // initialize ggml hash set
- 
- // allocate in hash table
- // 这个函数并不会实际分配内存，相当于是 Dry Run
- ggml_gallocr_alloc_graph_impl(galloc, graph, node_buffer_ids, leaf_buffer_ids){
-  for (int i = 0; i < graph->n_leafs; i++) {
-         struct ggml_tensor * leaf = graph->leafs[i];
-         ggml_gallocr_allocate_node(galloc, leaf, get_node_buffer_id(leaf_buffer_ids, i));
-     }
-  for (int i = 0; i < graph->n_nodes; i++) {
-         struct ggml_tensor * node = graph->nodes[i];
-      // allocate nodes
-     }
- };
- 
- // 从 Dry Run 中提取 hash table 的信息
- for (int i = 0; i < graph->n_nodes; i++) {...}
- for (int i = 0; i < graph->n_leafs; i++) {...}
- 
- // 分配空间
-  if (realloc) {
-  ggml_vbuffer_free(galloc->buffers[i]);
-  galloc->buffers[i] = ggml_vbuffer_alloc(galloc->bufts[i], galloc->buf_tallocs[i], GGML_BACKEND_BUFFER_USAGE_COMPUTE){
-   for (int n = 0; n < talloc->n_chunks; n++) {
-          size_t chunk_size = talloc->chunks[n]->max_size;
-          buf->chunks[n] = ggml_backend_buft_alloc_buffer(buft, chunk_size);
-          if (buf->chunks[n] == NULL) {
-              ggml_vbuffer_free(buf);
-              return NULL;
-          }
-          ggml_backend_buffer_set_usage(buf->chunks[n], usage);
-      }
-      return buf;
-  };
-    } 
-}
-```
-
-整个函数逻辑比较复杂的原因是，GGML 会尝试内存复用
-
-举一个例子：
-
-```ascii
-权重 W (leaf) ──┐
-                 ├─> matmul (node) ──> add (node) ──> output
-输入 X (leaf) ──┘                    ↑
-                                     bias (leaf)
-```
-
-+ 首先分配所有 leafs: W, X, bias
-+ 按拓扑顺序处理 nodes:
-
-- 分配 matmul 结果
-- W 和 X 的 n\_children 递减
-- 分配 add 结果
-- matmul 的 n\_children 变为 0，立即释放其内存
-- bias 的 n\_children 递减
-
-内存复用效果：
-
-- W, X, bias 保持存活（leafs）
-- matmul 的内存在 add 分配时可以被复用
-- 峰值内存 = leafs + max(matmul, add)
-
-把同样的规则放到 @fig-mlp-graph 那张更长的图上，5 个中间值只需要 2 块内存：
-
-#figure(fig.fig-galloc-reuse(), caption: [gallocr 在 @fig-mlp-graph 上的分配过程：原地复用加及时释放，峰值只有 2 块。]) <fig-galloc-reuse>
-
-对于 `ggml_gallocr_alloc_graph`：
-
-```cpp
+```c
 bool ggml_gallocr_alloc_graph(ggml_gallocr_t galloc, struct ggml_cgraph * graph) {
-    // reset buffers
-    for (int i = 0; i < galloc->n_buffers; i++) {
-        if (galloc->buffers[i] != NULL) {
-            ggml_vbuffer_reset(galloc->buffers[i]);
-        }
-    }
-    // allocate the graph tensors from the previous assignments
-    // leafs
-    for (int i = 0; i < graph->n_leafs; i++) {
-        struct ggml_tensor * leaf = graph->leafs[i];
-        struct leaf_alloc * leaf_alloc = &galloc->leaf_allocs[i];
-        ggml_gallocr_init_tensor(galloc, leaf, &leaf_alloc->leaf);
-    }
-    // nodes
-    for (int i = 0; i < graph->n_nodes; i++) {
-        struct ggml_tensor * node = graph->nodes[i];
-        struct node_alloc * node_alloc = &galloc->node_allocs[i];
-        for (int j = 0; j < GGML_MAX_SRC; j++) {
-            struct ggml_tensor * src = node->src[j];
-            if (src == NULL) {
-                continue;
+    if (ggml_gallocr_needs_realloc(galloc, graph)) {
+        if (galloc->n_buffers == 1) {
+            if (!ggml_gallocr_reserve(galloc, graph)) {
+                return false;
             }
-            ggml_gallocr_init_tensor(galloc, src, &node_alloc->src[j]);
+        } else {
+            return false; // several buffers: the caller must reserve again
         }
-        ggml_gallocr_init_tensor(galloc, node, &node_alloc->dst);
     }
-    return true;
+    // reset buffers, then for each leaf and node:
+    //     ggml_gallocr_init_tensor(...)
+    //     -> tensor->data = base + recorded offset
+    // ...
 }
 ```
 
-=== main-backend
-- #strong[单后端]
-- 自动分配权重
-- 自动分配中间值
+The plan fits when the graph has the same number of nodes and leaves and no tensor is larger than the one in the same slot of the reserved graph. A graph with `N ≤ n_batch` and `n_past + N ≤ n_ctx` has the same structure as the worst case and only smaller tensors, so it always fits, and no run allocates.
 
-在程序开始时，需要指定#strong[单个]后端，比如 CUDA，METAL 或者 CPU
+#fold(title: [`ggml_gallocr_reserve_n`])[
+  ```c
+  bool ggml_gallocr_reserve_n(ggml_gallocr_t galloc, struct ggml_cgraph * graph,
+                              const int * node_buffer_ids, const int * leaf_buffer_ids) {
+      // reset the hash set that tracks each tensor's allocation
 
-==== 权重分配
-因为后端不确定，所以我们不能在 ggml\_context 中分配权重 tensor 的空间了（这样默认在 CPU 上），所以在初始化 ggml\_context 时，用的参数是
+      // dry run: assign an offset to every leaf and node, without allocating
+      ggml_gallocr_alloc_graph_impl(galloc, graph, node_buffer_ids, leaf_buffer_ids);
+
+      // record the assignment per node and per leaf (node_allocs, leaf_allocs)
+      for (int i = 0; i < graph->n_nodes; i++) { /* ... */ }
+      for (int i = 0; i < graph->n_leafs; i++) { /* ... */ }
+
+      // allocate each buffer at its peak size, if it grew
+      for (int i = 0; i < galloc->n_buffers; i++) {
+          if (realloc) {
+              ggml_vbuffer_free(galloc->buffers[i]);
+              galloc->buffers[i] = ggml_vbuffer_alloc(galloc->bufts[i], galloc->buf_tallocs[i],
+                                                      GGML_BACKEND_BUFFER_USAGE_COMPUTE);
+          }
+      }
+      return true;
+  }
+  ```
+
+  `galloc->bufts` holds one buffer type per buffer, since a graph can run on more than one backend; `main-sched` below uses that.
+]
+
+=== `main-backend`
+
+`main-backend` picks one backend at startup, CPU, CUDA or Metal. The weights can no longer sit in the context's pool, which is ordinary host memory, so the context holds headers only:
 
 ```cpp
 size_t n_tensors = 2 + 6 + 12*model.hparams.n_layer;
 struct ggml_init_params params = {
- /*.mem_size   =*/ ggml_tensor_overhead() * n_tensors,
- /*.mem_buffer =*/ NULL,
- /*.no_alloc   =*/ true,
+    /*.mem_size   =*/ ggml_tensor_overhead() * n_tensors,
+    /*.mem_buffer =*/ NULL,
+    /*.no_alloc   =*/ true,
 };
-
 ctx = ggml_init(params);
 ```
 
-在声明完所有 tensor 后，由下面的代码分配空间：
+After declaring every weight, one call sizes and allocates the buffer:
 
 ```cpp
-// allocate the model tensors in a backend buffer
 model.buffer_w = ggml_backend_alloc_ctx_tensors(ctx, model.backend);
 ```
 
-其中 ggml\_backend -\- ggml\_backend\_buffer\_type -\- ggml\_backend\_buffer 由对应关系
+Three types take part:
 
-- `ggml_backend_buffer_type` 类似于工厂函数
-  - 给定一个 `tensor`，负责确定这个 tensor 的实际所占大小（比如需要考虑内存对齐）
-  - 给定 `size`，负责创建一块大小为 `size` 的 `ggml_backend_buffer`
-- `ggml_backend_buffer` 是实际分配的内存空间
+- `ggml_backend`: the device.
+- `ggml_backend_buffer_type`: knows the device's allocation rules. It says how many bytes a tensor takes, alignment included, and allocates a buffer of a given size.
+- `ggml_backend_buffer`: the allocated memory.
 
-一般的流程是：
+`ggml_backend_alloc_ctx_tensors` adds up the aligned sizes of the context's tensors, allocates one buffer of that size, and then lets a `ggml_tallocr` (tensor allocator) hand out pieces of it in order.
 
-- 统计所有 tensor 需要的空间，得到 `cur_buf_size`
-- 通过 `ggml_backend_buffer_type` 创建一个大小为 `cur_buf_size` 的 `ggml_backend_buffer`
-- 新建一个 `ggml_tallocr`\(tensor allocr)，在这个 `ggml_backend_buffer` 中为每个 tensor 分配空间
+#figure(fig.fig-backend-buffer(), caption: [`ggml_backend_alloc_ctx_tensors`: the buffer type allocates one block, and `ggml_tallocr` cuts it into tensors in order.]) <fig-backend-buffer>
 
-#figure(fig.fig-backend-buffer(), caption: [`ggml_backend_alloc_ctx_tensors`：由 buffer type 申请一整块 buffer，再由 `ggml_tallocr` 顺序切给每个 tensor。]) <fig-backend-buffer>
+The KV cache gets its own context and buffer, `ctx_kv` and `buffer_kv`. With one backend this isn't needed, but it is the split `main-sched` builds on. The intermediates work as in `main-alloc`.
 
-在 `main-backend` 中，虽然只支持单后端，但是在模型加载时，还是把 weights 和 KV Cache 分开初始化，分别使用 `ctx_w` 和 `ctx_kv` 维护其元数据
+=== `main-sched`
 
-#quote(block: true)[
-其实是不需要的，但是这样更清晰，为方便过渡到 `main-sched`
-]
+`main-sched` takes `n_gpu_layers` and puts the last `n_gpu_layers` layers on the GPU and the rest on the CPU. Loading the weights:
 
-==== 中间值分配
-和 `main-alloc` 相同，都是采用 `ggml_galloc` #strong[在计算开始之前预分配内存，然后在每轮计算时都复用这块内存]
-
-=== main-sched
-- #strong[多后端]
-- 自动分配权重
-- 自动分配中间值
-
-在程序开始后，可以指定把模型后几层放到 GPU 上
-
-==== 权重分配
-- 声明 tensor
-- 初始化不同后端
-- 确定 tensor 的分配（在哪个 backend 上）
-- 对于每个 backend，统计 tensor 信息，创建 buffer 和对应的 ggml\_tallocr
-- 对于 KV，判断一下是 GPU 的层数多还是 CPU 的层数多，统一放在层数多的 backend 中
-- 从文件中读取权重，根据权重名字，先#strong[创建对应 tensor 内存]，再将数据从文件复制到对应的内存中
++ Declare all weight tensors in a `no_alloc` context.
++ Start the backends: the GPU, if any, and the CPU.
++ Pick a backend for each tensor by its name. Layer tensors go by layer index. The embeddings `wte` and `wpe` stay on the CPU unless `n_gpu_layers` exceeds the layer count, and the final norm and `lm_head` go to the GPU if any layer does.
++ For each backend, add up its tensors' sizes, allocate one buffer, and make a `ggml_tallocr` for it.
++ Put the whole KV cache on whichever backend has more layers.
++ Read the file. For each weight, take its piece of its backend's buffer, then copy the data in:
 
 ```cpp
 // allocate the tensor
@@ -965,548 +525,191 @@ ggml_tallocr * alloc = &backend_buffers.find(backend)->second;
 ggml_tallocr_alloc(alloc, tensor);
 ```
 
-#figure(fig.fig-sched-layers(), caption: [`main-sched` 中 12 层的 GPT-2 在 `n_gpu_layers = 4` 时的权重放置。]) <fig-sched-layers>
+#figure(fig.fig-sched-layers(), caption: [Weight placement in `main-sched` for the 12-layer GPT-2 with `n_gpu_layers = 4`.]) <fig-sched-layers>
 
-#callout(kind: "info", title: "QUESTION / 为什么不在第 4 步之后统一创建呢？")[
-TODO: 测试一下效果
+Keeping the KV cache in one buffer keeps the example short: every attention block on the side without it has to read K and V across devices. llama.cpp places it per layer instead. In `1e6f04a`, `llama-kv-cache.cpp` allocates each layer's K and V on `model.dev_layer(il)`, the device that runs that layer.
 
-]
-#callout(kind: "info", title: "QUESTION / 为什么不把 KV Cache 分层，GPU 对应的 KV Cache 放到 GPU 中")[
-TODO：待测试
+*Intermediates* now span backends, so a single `ggml_gallocr` buffer is not enough. `ggml_backend_sched` assigns each node to a backend, splits the graph into pieces that each run on one backend, and allocates with one gallocr buffer per backend. It has the same two calls: `ggml_backend_sched_reserve` and `ggml_backend_sched_alloc_graph`.
 
-]
-==== 中间值分配
-因为此时涉及到多个 backend，所以只使用 `ggml_gallocr` 已经不够了，需要引入 `ggml_backend_sched`, `ggml_backend_sched` 的作用就是在多个后端之间只能分配和执行计算图
-
-重要的函数就是 `ggml_backend_sched_reserve` 和 `ggml_backend_sched_alloc_graph`
-
-不管是用什么来 reserve 和 alloc\_graph，其实都遵循下面这个范式：
-
-```cpp
-reserve() {
-    1. 分析图结构，确定节点分配给哪个后端
-    2. 计算每个后端需要的最大内存
-    3. 为每个后端创建 buffer（但不分配给 tensor）
-    
-    Example:
-    GPU buffer: 2GB (预留但未使用)
-    CPU buffer: 512MB (预留但未使用)
-}
-
-alloc_graph(graph) {
-    1. 遍历当前图的所有节点
-    2. 从预留的 buffer 中切分内存
-    3. 设置每个 tensor->data 指向对应位置
-    
-    Example:
-    tensor_Q->data = gpu_buffer + offset_0
-    tensor_K->data = gpu_buffer + offset_1024
-    ...
-}
-```
-
-#html.hr()
-下面是比较详细的分析，可以跳过
-
-```cpp
+```c
 bool ggml_backend_sched_reserve(ggml_backend_sched_t sched, struct ggml_cgraph * measure_graph) {
-    GGML_ASSERT(sched);
-    GGML_ASSERT((int)sched->hash_set.size >= measure_graph->n_nodes + measure_graph->n_leafs);
-
     ggml_backend_sched_synchronize(sched);
 
-    ggml_backend_sched_split_graph(sched, measure_graph);
+    ggml_backend_sched_split_graph(sched, measure_graph);   // assign backends, split
 
     if (!ggml_gallocr_reserve_n(sched->galloc, &sched->graph, sched->node_backend_ids, sched->leaf_backend_ids)) {
         return false;
     }
 
     ggml_backend_sched_reset(sched);
-
     return true;
 }
 ```
 
-其中 `ggml_backend_sched_split_graph()` 可以详细分析一下：
+`ggml_backend_sched_split_graph` assigns backends in five passes:
 
-```cpp
-// assigns backends to ops and splits the graph into subgraphs that can be computed on the same backend
-void ggml_backend_sched_split_graph(ggml_backend_sched_t sched, struct ggml_cgraph * graph) {}
-```
++ *Follow the weights.* A node that reads a weight runs where the weight is; a user input (`GGML_TENSOR_FLAG_INPUT`) goes to the CPU.
++ *Spread the GPU.* Starting from the GPU nodes, assign unassigned neighbors downward, then upward, to the same backend; the remaining nodes take the backend of a neighbor, so the CPU spreads the same way.
++ *Upgrade.* Move a node to a higher-priority backend if it supports the op and no extra copy is needed.
++ *Assign the remaining sources*, such as views, to a backend.
++ *Split.* Cut the graph wherever the backend changes, and mark the tensors that have to be copied to the next split's backend.
 
-其中主要有 5 个 pass:
-
-- #strong[Pass 1: 基于预分配张量的后端分配]
-
-核心逻辑：
-
-- 如果节点的输入是权重，优先使用权重所在的后端
-
-- 如果是用户输入（GGML\_TENSOR\_FLAG\_INPUT），分配到 CPU
-
-- #strong[Pass 2: 扩展 GPU Backend]
-
-逻辑：
-
-- 从已分配的 GPU 节点开始，向下/向上扩展
-
-- 遇到 CPU 节点就重置（停止扩展）
-
-- #strong[Pass 3: 升级到兼容的高优先级后端]
-
-- 如果节点可以在更高优先级的后端上运行，且不需要额外数据传输，就升级
-
-- #strong[Pass 4]: 分配剩余源张量
-
-- #strong[Pass 5]: 图分割和标记需要复制的张量
-
-- 将图分割成多个子图，每个子图在一个后端上运行
-
-
-#figure(fig.fig-sched-passes(), caption: [`ggml_backend_sched_split_graph` 在 12 个节点上的分配过程（Pass 3、4 在这个例子里没有改变分配）。]) <fig-sched-passes>
-
-= llama.cpp Cheatsheet
-关键变量定义：
-
-- `llama_model` -\- llama-model.h:379
-- `llama_model::imp` -\- llama-model.cpp:397
-
-关键模型定义：
-
-- `build_graph` -\- llama-model.cpp:18146
+#figure(fig.fig-sched-passes(), caption: [`ggml_backend_sched_split_graph` on 12 nodes. Passes 3 and 4 change nothing in this example.]) <fig-sched-passes>
 
 = llama.cpp
-== Overview
-- `llama_model`
-  - 模型架构信息 `arch`, `type`, `hparams`
-  - 权重 tensor
-    - 基础层
-    - `std::vector<llama_layer> layers`
-- `llama_layer`
-  - 单个 Transformer 的权重
-- `llama_graph_context`
-  - 调度器
-  - 计算图
-  - 计算图中间值的 ggml\_context
 
-所有模型都采用同一个 llama\_model, 但不同的模型有不同的 `llama_graph_context` 子类
+llama.cpp uses the same pieces as `main-sched`: weights in per-device backend buffers, intermediates through `ggml_backend_sched`.
+
+== Model Structure
+
+- `llama_model` holds the architecture (`arch`, `type`, `hparams`) and the weight tensors: the embeddings and output layers, plus `std::vector<llama_layer> layers`.
+- `llama_layer` holds the weights of one transformer block.
+- `llm_graph_context` builds one compute graph. It has the context for the graph's headers and the `ggml_cgraph`, plus shared building blocks such as `build_norm`, `build_ffn` and `build_attn`.
+
+When I read it, *loading was the same for every architecture and graph building was not*. Every model was one `llama_model`, with the same fields filled from the GGUF file:
 
 ```cpp
-struct llm_graph_context {  // ← 基类
-    virtual ~llm_graph_context() = default;
-    
-    // 通用的构建方法
-    ggml_tensor * build_norm(...);
-    ggml_tensor * build_ffn(...);
-    ggml_tensor * build_attn(...);
-    
-    ggml_context * ctx0;
-    ggml_cgraph * gf;
-};
-
-// 每个模型架构有自己的图构建器
-struct llm_build_qwen3 : public llm_graph_context {  // ← 子类
-    llm_build_qwen3(const llama_model & model, const llm_graph_params & params);
-    // 构造函数中构建 Qwen3 特定的计算图
-};
-
-struct llm_build_llama : public llm_graph_context {  // ← 子类
-    llm_build_llama(const llama_model & model, const llm_graph_params & params);
-    // 构造函数中构建 Llama 特定的计算图
-};
-```
-
-加载模型时没有多态
-
-```cpp
-// 1. 创建统一的 llama_model 对象
 llama_model * model = new llama_model(params);
-
-// 2. 从 GGUF 读取架构类型
-model->arch = LLM_ARCH_QWEN3;  // 或 LLM_ARCH_LLAMA 等
-
-// 3. 所有模型共享相同的权重存储结构
-model->layers.resize(32);
-model->layers[0].wq = ml.create_tensor(...);  // Qwen3 用这个
-model->layers[0].wk = ml.create_tensor(...);  // Llama 也用这个
+model->arch = LLM_ARCH_QWEN3;                  // read from the GGUF file
+model->layers.resize(n_layer);
+model->layers[0].wq = ml.create_tensor(...);   // the same field for Qwen3 and Llama
 ```
 
-构建计算图时使用了多态
+Each architecture had its own subclass of `llm_graph_context`, which builds that architecture's graph in its constructor, and `build_graph` picked one by `arch`:
 
 ```cpp
 ggml_cgraph * llama_model::build_graph(const llm_graph_params & params) const {
-    std::unique_ptr<llm_graph_context> llm;  // ← 多态指针
-    
-    // 根据架构类型创建不同的图构建器
+    std::unique_ptr<llm_graph_context> llm;
     switch (arch) {
-        case LLM_ARCH_QWEN3:
-            llm = std::make_unique<llm_build_qwen3>(*this, params);
-            //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            //    构造函数中会构建 Qwen3 特定的计算图
-            break;
-            
-        case LLM_ARCH_LLAMA:
-            llm = std::make_unique<llm_build_llama>(*this, params);
-            //    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-            //    构造函数中会构建 Llama 特定的计算图
-            break;
-            
-        // ... 其他架构
+        case LLM_ARCH_QWEN3: llm = std::make_unique<llm_build_qwen3>(*this, params); break;
+        case LLM_ARCH_LLAMA: llm = std::make_unique<llm_build_llama>(*this, params); break;
+        // ... other architectures
     }
-    
-    return llm->gf;  // 返回构建好的计算图
+    return llm->gf;
 }
 ```
 
-llama\_model 还有一个 pimpl 用于隐藏设计细节:
+In `1e6f04a`, `llama_model` itself has a subclass per architecture, such as `llama_model_qwen3`, and the switch has become a virtual method, `build_arch_graph`, which returns the `llm_graph_context`.
 
-#quote(block: true)[
-比如权重加载时的一些数据，在模型真正推理时，你不会使用到这部分数据的
+#fold(title: [`llama_model::impl`])[
+  `llama_model` keeps the load-time state behind a pointer to an `impl` struct, so its header doesn't expose it:
+
+  ```cpp
+  struct llama_model::impl {
+      uint64_t n_elements = 0;
+      size_t n_bytes = 0;
+      std::string desc_str;
+
+      // model memory mapped files
+      llama_mmaps mappings;
+
+      // objects representing data potentially being locked in memory
+      llama_mlocks mlock_bufs;
+      llama_mlocks mlock_mmaps;
+
+      // contexts where the model tensors metadata is stored
+      std::vector<ggml_context_ptr> ctxs;
+
+      // the model memory buffers for the tensor data
+      std::vector<ggml_backend_buffer_ptr> bufs;
+
+      buft_list_t cpu_buft_list;
+      std::map<ggml_backend_dev_t, buft_list_t> gpu_buft_list;
+
+      struct layer_dev {
+          ggml_backend_dev_t dev;
+          buft_list_t * buft_list;
+      };
+
+      layer_dev dev_input = {};
+      layer_dev dev_output = {};
+      std::vector<layer_dev> dev_layer;
+
+      bool has_tensor_overrides;
+  };
+  ```
 ]
 
+== `llama_decode`
+
+`examples/simple/simple.cpp` loads a model, creates a `llama_context`, and calls `llama_decode` in a loop.
+
+#figure(fig.fig-decode-flow(), caption: [What one `llama_decode` call in `simple.cpp` goes through.]) <fig-decode-flow>
+
+Each ubatch is the same three steps as in the GPT-2 examples: build the graph, allocate it with `ggml_backend_sched_alloc_graph`, compute. The buffers were reserved when the context was created, with three calls to `graph_reserve`. The comments in `llama-context.cpp` (`1e6f04a`) give the reasons:
+
++ `graph_reserve(n_tokens, n_seqs, n_tokens, ...)`: "reserve pp (prompt processing) graph first so that buffers are only allocated once". The prompt graph is the largest.
++ `graph_reserve(n_seqs, n_seqs, n_seqs, ...)`: "reserve with tg (token generation) graph to get the number of splits and nodes", one token per sequence. This one is for statistics.
++ The prompt graph again: "reserve again with pp graph to avoid ggml-alloc reallocations during inference".
+
+The third call follows from how gallocr checks a graph against its plan. A reserve replaces the recorded plan with the plan for the graph just reserved, so after step 2 the plan is the token-generation graph's. The first prompt would then fail the check in `ggml_gallocr_alloc_graph` and trigger a new reserve. Reserving the prompt graph last leaves its plan in place, and a decode graph, which is smaller, still fits it.
+
+== Weight Loading
+
+In both modes the weights are declared in `no_alloc` contexts. The difference is where `tensor->data` ends up pointing:
+
+#cols(labels: ([Without mmap], [With mmap]))[
 ```cpp
-struct llama_model::impl {
-    impl() {}
-    ~impl() {}
+// allocate one buffer for all tensors
+ggml_backend_buffer_t buf =
+  ggml_backend_alloc_ctx_tensors_from_buft(
+    ctx, buft);
+// sizes, allocates, and sets
+// tensor->data for each tensor in order
 
-    uint64_t n_elements = 0;
-
-    size_t n_bytes = 0;
-
-    std::string desc_str;
-
-    // model memory mapped files
-    llama_mmaps mappings;
-
-    // objects representing data potentially being locked in memory
-    llama_mlocks mlock_bufs;
-    llama_mlocks mlock_mmaps;
-
-    // contexts where the model tensors metadata is stored
-    std::vector<ggml_context_ptr> ctxs;
-
-    // the model memory buffers for the tensor data
-    std::vector<ggml_backend_buffer_ptr> bufs;
-
-    buft_list_t cpu_buft_list;
-    std::map<ggml_backend_dev_t, buft_list_t> gpu_buft_list;
-
-    struct layer_dev {
-        ggml_backend_dev_t dev;
-        buft_list_t * buft_list;
-    };
-
-    layer_dev dev_input = {};
-    layer_dev dev_output = {};
-    std::vector<layer_dev> dev_layer;
-
-    bool has_tensor_overrides;
-};
-```
-
-== Overall Workflow
-How to analyze?
-
-借鉴一下 `main-sched` 是如何构造的
-
-- 模型权重定义
-- 模型权重加载
-  - 读 Hyper Parameters
-  - 读 Tokenizer
-  - 读模型权重
-- 计算图构建
-- 预留计算图需要的内存
-- 对输入进行 Tokenization
-- 调用计算图
-
-从内存管理入手：
-
-- 模型权重
-  - 在哪里定义
-  - 在哪里加载
-- 中间值
-  - 计算图在哪里定义
-  - 在哪里进行计算图的预留和分配
-
-== simple.cpp 流程分析
-#figure(fig.fig-decode-flow(), caption: [`simple.cpp` 中一次 `llama_decode` 的调用链。]) <fig-decode-flow>
-
-TODO: 下面是一些零散的分析
-
-为什么在 `new llama_context` 中，需要调用三次 graph reserve, 而且三次参数都不同？
-
-而且为什么后一次 graph\_reserve 的
-
-目的是找出最坏情况下需要的内存大小，而不是真的要用这些图
-
-```cpp
-No.1 Prompt Procesing Graph
-
-auto * gf = graph_reserve(n_tokens, n_seqs, n_tokens, mctx.get());
-//                        ^^^^^^^^  ^^^^^^  ^^^^^^^^
-//                        批次大小   序列数  输出数
-
-No.2 Token Generation Graph
-
-auto * gf = graph_reserve(n_seqs, n_seqs, n_seqs, mctx.get());
-//                        ^^^^^^  ^^^^^^  ^^^^^^
-//                        每序列1个token
-
-No.3 Worst Case?
-
-auto * gf = graph_reserve(n_tokens, n_seqs, n_tokens, mctx.get());
-```
-
-ggml\_bakcend\_sched\_reserve 中调用了 ggml\_gallocr\_reserve\_n
-
-ggml\_gallocr\_reserve\_n 本身就允许多次调用，如果后一次需要的内存空间更大，就重新分配空间
-
-== 内存分配
-按照上面的内存分配机制来分析一下 llama.cpp
-
-模型推理全流程（代码流）：
-
-+ 声明模型权重
-+ 为模型权重分配空间
-+ 把文件中的数据复制到权重中
-+ 定义计算图
-+ 根据计算图预留空间
-+ 执行计算
-
-内存分配也应该分为两类：
-
-- 模型权重分配
-- 模型计算图中间值分配
-
-== 模型权重分配
-TODO: 分析一下，如果所有信息都需要从 gguf 文件中读取，这个文件应该是什么样子，以及整个读取逻辑是什么，这部分不用看代码我们都知道
-
-- 不使用 mmap
-
-```cpp
-// 1. 声明模型权重（在持久 context 中）
-ggml_context * ctx = ggml_init({.mem_size = size, .no_alloc = true});
-ggml_tensor * wq = ml.create_tensor(ctx, "blk.0.attn_q.weight", {n_embd, n_embd});
-
-// 2. 为权重分配 backend buffer
-ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors_from_buft(ctx, buft);
-// 这会：
-//   a. 计算所有 tensor 的总大小
-//   b. 分配一个大的 backend buffer
-//   c. 为每个 tensor 设置 tensor->buffer 和 tensor->data
-
-// 3. 从文件复制数据到 buffer
+// copy each tensor from the file
 for (tensor : ctx) {
-    file.read(tensor->data, tensor_size);  // 直接写入 GPU/CPU 内存
+    file.read(tensor->data, nbytes(tensor));
 }
 ```
-
-使用 mmap
-
+][
 ```cpp
-// 1. 声明模型权重（同样在持久 context 中）
-ggml_context * ctx = ggml_init({.mem_size = size, .no_alloc = true});
-ggml_tensor * wq = ml.create_tensor(ctx, "blk.0.attn_q.weight", {n_embd, n_embd});
-
-// 2a. mmap 文件到内存
+// map the whole file
 llama_mmap mapping(file, prefetch);
-void * mmap_addr = mapping.addr();  // 文件内容映射到这里
+void * addr = mapping.addr();
 
-// 2b. 创建 buffer_from_host_ptr（关键！）
-ggml_backend_buffer_t buf = ggml_backend_dev_buffer_from_host_ptr(
-    dev, 
-    (char*)mmap_addr + first_offset, 
-    last_offset - first_offset,
-    max_tensor_size
-);
-// 这会：
-//   a. 创建一个 backend buffer，但它只是**包装** mmap 地址
-//   b. 不分配新内存！
-//   c. Metal/CUDA 可能会 pin 住这块内存用于 DMA
+// wrap part of the mapping as a buffer
+ggml_backend_buffer_t buf =
+    ggml_backend_dev_buffer_from_host_ptr(
+        dev, (char *) addr + first,
+        last - first, max_tensor_size);
 
-// 2c. 为每个 tensor 关联 mmap 内存
+// point each tensor into the mapping
 for (tensor : ctx) {
-    tensor->data = mmap_addr + tensor_offset;  // 直接指向 mmap 内存
-    tensor->buffer = buf;
+    ggml_backend_tensor_alloc(buf, tensor,
+        (char *) addr + offs(tensor));
 }
-
-// 3. 不需要复制数据！（跳过）
-// 数据已经通过 mmap 在内存中了
 ```
+]
 
-思考一个问题：
+Without mmap, a `ggml_tallocr` packs the tensors one after another, like in `main-backend`. With mmap, *each tensor's place is already fixed by the file*, so nothing is packed: the loader passes the address in, using `ggml_backend_tensor_alloc`:
 
-在不使用 mmap 时,我们可以分配一整块 buffer 空间, 然后通过在 ggml\_context 中存储的顺序, 通过 ggml\_tallocr 顺序分配, 但是使用 mmap 时,每个 tensor 的位置在文件中是确定的, 那么这是通过什么分配的呢?
-
-- 非 mmap 模式：
-  - 分配一整块连续 buffer
-  - tensor 按顺序紧密排列
-  - 由 ggml\_tallocr 顺序分配偏移量
-- mmap 模式：
-  - tensor 位置由 GGUF 文件格式决定
-  - 每个 tensor 的偏移量（offset）已经固定在文件中
-  - 不需要重新计算偏移，直接使用文件中的布局
-
-所以在 mmap 模式下，使用的关键函数是 `ggml_backend_tensor_alloc`
-
-```cpp
-enum ggml_status ggml_backend_tensor_alloc(
-    ggml_backend_buffer_t buffer, 
-    struct ggml_tensor * tensor, 
-    void * addr  // ← 关键：手动指定地址！
-) {
+```c
+enum ggml_status ggml_backend_tensor_alloc(ggml_backend_buffer_t buffer,
+                                           struct ggml_tensor * tensor, void * addr) {
     GGML_ASSERT(tensor->buffer == NULL);
     GGML_ASSERT(tensor->data == NULL);
     GGML_ASSERT(tensor->view_src == NULL);
-    
-    // 验证地址在 buffer 范围内
-    GGML_ASSERT(addr >= ggml_backend_buffer_get_base(buffer));
-    GGML_ASSERT((char *)addr + ggml_backend_buffer_get_alloc_size(buffer, tensor) <=
-                (char *)ggml_backend_buffer_get_base(buffer) + ggml_backend_buffer_get_size(buffer));
+    // ... and assert that [addr, addr + alloc size) lies inside the buffer
 
-    // 直接设置 tensor 的数据指针
     tensor->buffer = buffer;
-    tensor->data = addr;  // ← 使用传入的地址，不重新分配！
-    
+    tensor->data   = addr;   // no allocation: the caller chose the address
+
     return ggml_backend_buffer_init_tensor(buffer, tensor);
 }
 ```
 
-下面是一个完整的分配流程（比较细节，可以跳过）
+The address comes from the GGUF file. Its header lists every tensor's name, shape, type and offset, and the offsets are relative to the start of the data section, `data_offset`.
 
-== 完整的 mmap 分配流程
-=== Step 1: 从 GGUF 文件读取 tensor 偏移量
-```cpp
-struct llama_tensor_weight {
-    uint16_t idx;       // 文件索引
-    size_t   offs;      // ← tensor 在文件中的偏移量（字节）
-    ggml_tensor * tensor;
+#figure(fig.fig-gguf-layout(), caption: [A GGUF file: the offsets in the tensor infos are relative to `data_offset`.]) <fig-gguf-layout>
 
-    llama_tensor_weight(const llama_file * file, uint16_t idx, 
-                       const struct gguf_context * gguf_ctx, 
-                       ggml_tensor * tensor) : idx(idx), tensor(tensor) {
-        
-        const int tensor_idx = gguf_find_tensor(gguf_ctx, ggml_get_name(tensor));
-        
-        // 从 GGUF 文件头读取偏移量
-        offs = gguf_get_data_offset(gguf_ctx) +           // 数据区起始位置
-               gguf_get_tensor_offset(gguf_ctx, tensor_idx); // + tensor 相对偏移
-        //     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-        //     这个偏移量是在转换模型为 GGUF 时就确定的！
-    }
-};
-```
+#figure(fig.fig-mmap-range(), caption: [With mmap, the file is the buffer: each tensor's `data` points into the mapping.]) <fig-mmap-range>
 
-#strong[GGUF 文件结构]：
+The loader goes through four steps:
 
-#figure(fig.fig-gguf-layout(), caption: [GGUF 文件结构：tensor info 中的 offset 相对于 `data_offset`。]) <fig-gguf-layout>
++ *Offsets.* For each weight, `llama_tensor_weight` stores `offs = gguf_get_data_offset(gguf_ctx) + gguf_get_tensor_offset(gguf_ctx, tensor_idx)`, the tensor's absolute position in the file.
++ *Mapping.* `llama_model_loader::init_mappings` maps each file of the model with `llama_mmap`. Pages are read from disk when first touched.
++ *Buffer.* `get_mapping_range` finds the lowest `offs` and the highest `offs + ggml_nbytes(tensor)` among the context's tensors, and `ggml_backend_dev_buffer_from_host_ptr` wraps just that range as a backend buffer, without allocating.
++ *Tensors.* In `load_all_data`, each tensor gets `data = mapping->addr() + weight->offs` through `ggml_backend_tensor_alloc`. The loader also records the range actually used, so it can unmap the rest of the file later.
 
-=== Step 2: mmap 映射整个文件到内存
-```cpp
-void llama_model_loader::init_mappings(bool prefetch, llama_mlocks * mlock_mmaps) {
-    if (use_mmap) {
-        mappings.reserve(files.size());
-        mmaps_used.reserve(files.size());
-        
-        for (size_t idx = 0; idx < files.size(); idx++) {
-            const auto & file = files.at(idx);
-            
-            // 创建 mmap 对象，映射整个文件
-            std::unique_ptr<llama_mmap> mapping = 
-                std::make_unique<llama_mmap>(file.get(), prefetch ? -1 : 0, is_numa);
-            //                               ^^^^^^^^^^
-            //                               整个文件被映射到虚拟地址空间
-            
-            mmaps_used.emplace_back(mapping->size(), 0);
-            
-            mappings.emplace_back(std::move(mapping));
-        }
-    }
-}
-```
-
-#strong[mmap 后的内存布局]：
-
-#figure(fig.fig-mmap-range(), caption: [mmap 模式：文件就是 buffer，每个 tensor 的 `data` 直接指向映射后的地址。]) <fig-mmap-range>
-
-=== Step 3: 创建 buffer\_from\_host\_ptr
-```cpp
-if (ml.use_mmap && use_mmap_buffer && buffer_from_host_ptr_supported) {
-    for (uint32_t idx = 0; idx < ml.files.size(); idx++) {
-        void * addr = nullptr;
-        size_t first, last;
-        
-        // 获取这个文件中实际使用的 tensor 范围
-        ml.get_mapping_range(&first, &last, &addr, idx, ctx);
-        //                    ^^^^^  ^^^^   ^^^^
-        //                    最小   最大   mmap基址
-        
-        if (first >= last) continue;
-        
-        // 创建包装 mmap 内存的 buffer
-        const size_t max_size = ggml_get_max_tensor_size(ctx);
-        ggml_backend_buffer_t buf = ggml_backend_dev_buffer_from_host_ptr(
-            dev, 
-            (char *)addr + first,  // ← buffer 起始地址
-            last - first,          // ← buffer 大小（不是整个文件）
-            max_size
-        );
-        
-        buf_map.emplace(idx, buf);
-    }
-}
-```
-
-#strong[`get_mapping_range` 的实现]：
-
-```cpp
-void llama_model_loader::get_mapping_range(
-    size_t * first, size_t * last, void ** addr, int idx, ggml_context * ctx
-) const {
-    const auto & mapping = mappings.at(idx);
-    
-    *first = mapping->size();  // 初始化为最大值
-    *last  = 0;                 // 初始化为最小值
-    *addr  = mapping->addr();   // mmap 基址
-    
-    // 遍历所有 tensor，找到实际使用的范围
-    for (ggml_tensor * tensor = ggml_get_first_tensor(ctx); 
-         tensor; 
-         tensor = ggml_get_next_tensor(ctx, tensor)) {
-        
-        const auto * weight = get_weight(ggml_get_name(tensor));
-        if (!weight || weight->idx != idx) continue;
-        
-        // 更新使用范围
-        *first = std::min(*first, weight->offs);
-        //                        ^^^^^^^^^^^^
-        //                        从 GGUF 读取的偏移量
-        *last  = std::max(*last,  weight->offs + ggml_nbytes(tensor));
-    }
-}
-```
-
-=== Step 4: 为每个 tensor 分配内存（使用预定地址）
-```cpp
-if (use_mmap) {
-    const auto & mapping = mappings.at(weight->idx);
-    ggml_backend_buffer_t buf_mmap = bufs.at(weight->idx);
-    
-    // 计算 tensor 在 mmap 内存中的实际地址
-    uint8_t * data = (uint8_t *)mapping->addr() + weight->offs;
-    //                ^^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^
-    //                mmap 基址                     文件中的偏移量
-    
-    if (buf_mmap && cur->data == nullptr) {
-        // 使用预先计算好的地址分配 tensor
-        ggml_backend_tensor_alloc(buf_mmap, cur, data);
-        //                                       ^^^^
-        //                                       直接传入地址！
-        
-        // 记录实际使用的内存范围（用于后续 unmap 未使用部分）
-        auto & mmap_used = mmaps_used[weight->idx];
-        mmap_used.first  = std::min(mmap_used.first,  weight->offs);
-        mmap_used.second = std::max(mmap_used.second, weight->offs + n_size);
-    }
-}
-```
+This needs a device that can use host memory directly. When there is no such buffer, for example because the device doesn't support `buffer_from_host_ptr`, the loader allocates a normal buffer instead and copies each tensor out of the mapping with `ggml_backend_tensor_set` (`llama-model-loader.cpp`, `1e6f04a`).

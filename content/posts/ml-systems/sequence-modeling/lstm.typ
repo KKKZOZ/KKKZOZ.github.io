@@ -9,7 +9,7 @@
   series: "Sequence Modeling",
 ))
 
-= Vanilla RNN 的缺陷：为什么我们需要 LSTM？
+= Vanilla RNN 的缺陷
 在上一篇中我们提到，RNN 的核心公式是 $h_t = tanh\(W_(x h) x_t + W_(h h) h_(t - 1) + b_h\)$。这种设计在处理长序列时会遇到两个工程上的致命问题：
 
 - 梯度消失与梯度爆炸（Vanishing/Exploding Gradients）
@@ -19,7 +19,7 @@
 
 #figure(fig.fig-lstm-gradient(), caption: [反向传播时 vanilla RNN 的梯度逐步衰减，LSTM 的细胞状态让梯度基本无损地流回去。]) <fig-lstm-gradient>
 
-= LSTM 的核心思想：分离状态与引入门控机制
+= 细胞状态与门控
 #figure(fig.fig-lstm-cell(), caption: [LSTM cell：遗忘门、输入门、输出门控制细胞状态，细胞状态上只有 × 和 +。]) <fig-lstm-cell>
 
 为了解决上述问题，LSTM 将内部状态拆分为两条相互配合的通路，并通过门控信号控制信息如何在通路之间流动。
@@ -30,7 +30,7 @@
 
 一个时间步内部的数据流可以按图中的顺序理解：遗忘门决定保留多少 $c_(t - 1)$，输入门决定写入多少候选记忆，二者相加得到新的细胞状态 $c_t$；随后，$c_t$ 经过 $tanh$ 压缩，并由输出门决定其中多少信息暴露为隐藏状态 $h_t$。
 
-= 数学工作流：LSTM 的四个核心步骤
+= 计算步骤
 对于第 $t$ 个 token，LSTM 内部执行以下运算。为了方便，我们通常将前一个隐藏状态 $h_(t - 1)$ 和当前输入 $x_t$ 拼接在一起计算。
 
 这里的拼接写法与代码中的两层线性变换是等价的。若将拼接后的向量记为 $\[h_(t - 1)\,x_t\]$，可以写成一个大的线性变换；代码则把这个矩阵按输入来源拆成两块，分别计算 $W_(h h) h_(t - 1)$ 和 $W_(i h) x_t$，再将结果相加。因此 $W_(i h)$ 与 $W_(h h)$ 不是同一个矩阵，但共同完成对拼接向量的投影。
@@ -69,7 +69,7 @@ $ h_t = o_t * tanh\(c_t\) $
 根据当前输入和历史决定输出开关 $o_t$，然后将长期记忆 $c_t$ 通过 $tanh$ 压缩到 $\[- 1\,1\]$ 之间，乘以输出开关，得到当前时刻的隐藏状态 $h_t$。
 
 #html.hr()
-= 代码与工作流解析
+= 代码实现
 以下是标准 LSTM 单元的伪代码实现，展示了参数是如何定义以及前向传播是如何完成的。代码没有为四个门各建一个线性层，而是用两次 matmul 一次算出全部 pre-activation，再切成四块：
 
 #figure(fig.fig-lstm-gates(), caption: [两次 matmul 一次算出 4 组 pre-activation，再 `chunk(4)` 切成四个门。]) <fig-lstm-gates>

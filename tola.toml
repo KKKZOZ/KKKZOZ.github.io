@@ -65,7 +65,7 @@ files = []
 
 # tola help "[server]"
 [server]
-interface = "127.0.0.1"
+interface = "0.0.0.0"  # Accept LAN connections; "127.0.0.1" for this machine only
 port = 5277
 
 # tola help "[dev]"

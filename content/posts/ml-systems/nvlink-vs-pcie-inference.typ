@@ -7,6 +7,8 @@
   date: "2026-11-02",
   summary: "Peer-to-peer and NCCL bandwidth measured on an RTX A6000 and an A100 server, and what NVLink and PCIe change when vLLM serves Qwen3.8-27B with tensor parallelism.",
   tags: ("GPU", "Hardware", "LLM-Inference"),
+  series: "AI Infra",
+  part: 3,
   weight: 10,
   toc-depth: 3,
 ))
@@ -38,9 +40,36 @@ nccl-tests prints two bandwidths:
 - `busbw`: `algbw` × 2(_n_ − 1)/_n_. In a ring all-reduce over _n_ GPUs, each link carries 2(_n_ − 1)/_n_ times the buffer, so `busbw` compares with the link's speed for any _n_. The factor is 1 for 2 GPUs and 1.5 for 4.
 */
 
-== P2P or SHM
+== Tensor Parallelism
 
-#term("NCCL")[
+A model can be split across two GPUs in more than one way. Tensor parallelism (TP), which vLLM uses here, splits every weight matrix in half, so each GPU stores half the weights and does half the work of every layer. *The halves are not independent*: each GPU ends a layer with only part of the answer, and the two have to combine their parts before either can go on.
+
+Take the MLP of one layer, $y = "act"(x W_1) W_2$, at TP=2:
+
+#figure(
+  fig.fig-tp-split(),
+  caption: [The MLP of one layer at TP=2. Each GPU stores the shaded half of $W_1$ and $W_2$; the only communication is the all-reduce at the end.],
+) <fig-tp-split>
+
++ *$W_1$ is split by columns.* Each column of $W_1$ gives one entry of the intermediate vector $h = "act"(x W_1)$, so with half the columns, each GPU computes half of $h$ on its own, without communication.
++ *$W_2$ is split by rows*, to match: each GPU holds the rows that multiply its half of $h$. Each GPU computes a full-size vector, but only part of the sum:
+  $ y = h W_2 = underbrace(h_0 W_2^((0)), "on GPU0") + underbrace(h_1 W_2^((1)), "on GPU1") $
++ *An all-reduce adds the two parts and leaves the sum on both GPUs*, so both start the next layer with the same $y$.
+
+Attention is split the same way, by heads: each GPU computes half the heads, and the output projection, split by rows, again leaves two partial sums. Qwen3.8-27B mixes two kinds of attention layer, full attention and Gated DeltaNet (GDN), a linear attention that keeps a fixed-size state per sequence instead of per-token KV; both split by heads. So *every layer ends in two all-reduces*, one after attention and one after the MLP, and the next layer waits for each.
+
+== All-Reduce Size
+
+Each all-reduce carries the layer's output for every token in the step: tokens × hidden size × 2 bytes in BF16. Qwen3.8-27B has a hidden size of 5120, so:
+
+- one decode step of one sequence all-reduces 10 KiB, twice per layer;
+- one prefill chunk of 8192 tokens (vLLM's `max_num_batched_tokens` here) all-reduces 80 MiB, twice per layer.
+
+*Decode sends many tiny messages; prefill sends a few large ones.* How long they take depends on how the bytes get from one GPU to the other.
+
+== NCCL
+
+In every run here, the all-reduces go through #term("NCCL")[
   The NVIDIA Collective Communications Library, pronounced "nickel". It is a library, not a network protocol.
 
   It implements collectives such as all-reduce, all-gather and broadcast, in which a group of GPUs exchange and combine data, plus point-to-point send and receive.
@@ -48,7 +77,7 @@ nccl-tests prints two bandwidths:
   For each pair of GPUs, NCCL picks a transport: NVLink or PCIe P2P, host shared memory, or the network through InfiniBand, RoCE or TCP sockets. It also picks an algorithm such as ring or tree, then runs the transfer as CUDA kernels on the GPUs.
 
   PyTorch's `nccl` backend for `torch.distributed`, and through it vLLM, call NCCL for multi-GPU communication. It is open source.
-] moves data between two GPUs in one of two ways:
+], which moves data between two GPUs in one of two ways:
 
 - *P2P*: a GPU reads or writes the other GPU's memory directly, over NVLink or PCIe.
 - *SHM*: the sender copies into a buffer in host memory, and the receiver copies it out.
@@ -84,7 +113,7 @@ NCCL's debug log names the transport:
 
 `PIX` and `PXB` behaved like the default on every cross-socket pair.
 
-=== Bandwidth Along the Path
+=== Link Bandwidth
 
 A P2P transfer is only as fast as the narrowest link on its path. Each GPU hangs off a PCIe x16 link, rated per direction as:
 
@@ -127,20 +156,11 @@ The two machines fail in different places:
 - Machine 1: every copy falls well short, host copies included, at 51–55% of PCIe 3.0. Even a GPU and its own socket's memory, with no UPI on the path, reach only half the link. *The limit lies between the GPU and its CPU*, not between the sockets; the A6000 section looks further.
 - Machine 2: host copies reach 78–83% of PCIe 4.0, which is normal, and the other socket's memory is as fast as the GPU's own. A host copy across sockets crosses UPI at about 25 GB/s, so neither the PCIe link nor UPI holds the peer copy to 18.5 GB/s. What is left is *the step only P2P takes*: the CPU0 host bridge forwarding the GPU's writes over UPI to a device under CPU1.
 
-== What Tensor Parallelism Sends
-
-With TP, each layer ends in two all-reduces, one after attention (GDN or full) and one after the MLP. Each carries the layer's output for every token in the step: tokens × hidden size × 2 bytes. Qwen3.8-27B has a hidden size of 5120, so:
-
-- one decode step of one sequence all-reduces 10 KiB, twice per layer;
-- one prefill chunk of 8192 tokens (vLLM's `max_num_batched_tokens` here) all-reduces 80 MiB, twice per layer.
-
-*Decode sends many tiny messages; prefill sends a few large ones.*
-
 == Roofline
 
 A roofline compares two speeds of the GPU, peak compute and memory bandwidth. Their ratio is the ridge point, in FLOPs per byte. A kernel that does fewer FLOPs per byte it reads than the ridge waits on memory; one that does more waits on compute.
 
-=== Where a Step Sits
+=== Arithmetic Intensity
 
 Two facts place every part of a step:
 
@@ -154,7 +174,7 @@ Two facts place every part of a step:
 
 *Decode sits left of both ridges, prefill far right.* Only the A100's concurrency-128 runs cross over.
 
-=== What TP Changes
+=== With TP
 
 TP=2 gives each GPU half of every weight matrix and half the KV heads. Each GPU reads half the bytes and does half the FLOPs, so the FLOPs per byte, and the ridge, stay where they were. What TP adds is the all-reduces:
 
@@ -182,105 +202,7 @@ The two run one after the other, so *over PCIe a prefill chunk takes about twice
 
 The roofline figure of each machine below covers both cases. It times the 128 all-reduces of a _B_-token step with nccl-tests and adds that time to the GPU's.
 
-== GDN State in Qwen3.8-27B
-
-Qwen3.8-27B has the Qwen3.5 architecture (#xref("qwen3-5")): of its 64 layers, every fourth is full attention, and the other 48 are Gated DeltaNet (GDN), a linear attention. The two kinds keep different state per sequence.
-
-A full-attention layer keeps K and V for every past token: 4 KV heads × 256 × 2 = 2048 values. With an FP8 KV cache, the 16 such layers hold 32 KiB per token, so the total grows with the sequence.
-
-A GDN layer keeps a state of fixed size instead:
-
-- a recurrent state of 48 heads × 128 × 128 in FP32 (the config's `mamba_ssm_dtype`): 3 MiB;
-- a convolution state, the last 3 inputs of its short convolution over 10,240 channels in BF16: 60 KiB.
-
-Over the 48 GDN layers that is *147 MiB per sequence*, as much as 4,700 tokens of full-attention KV, *whether the sequence has 100 tokens or 128K*. TP splits the heads of both kinds, so at TP=2 each GPU holds 73 MiB of GDN state per sequence and 16 KiB of KV per token.
-
-== One Pool for Both
-
-vLLM keeps both in one pool of pages, so that memory freed by one kind can go to the other. That needs one page size for both, and vLLM gets it by sizing attention blocks to the GDN state. At TP=2 with FP8 KV, per layer and per GPU:
-
-#table(
-  columns: 2,
-  table.header([], [Bytes]),
-  [GDN state: 24 × 128 × 128 × 4 B + 30 KiB], [1,603,584],
-  [Attention KV for one token: 2 × 256 × 2 × 1 B], [1,024],
-  [Attention KV for one block of 1568 tokens], [1,605,632],
-)
-
-1568 is the smallest multiple of 16 tokens whose KV fills a GDN page, and vLLM pads the GDN page by the difference:
-
-```text
-Setting attention block size to 1568 tokens to ensure that attention page size is >= mamba page size.
-Padding mamba page size by 0.13% to ensure that mamba page size and attention page size are exactly equal.
-```
-
-The same arithmetic gives every block size in the logs:
-
-- BF16 KV takes 2 bytes per value, so the block is 784 tokens.
-- With MTP on, the convolution state keeps 3 more rows for the draft tokens, and the blocks become 1600 (FP8) and 800 (BF16).
-- At TP=4 the state and the KV both halve, and the block stays at 1568.
-
-vLLM then sorts the layers into groups of equal size: one group of the 16 full-attention layers, and the 48 GDN layers in three groups of 16. The log shows `kv cache group sizes (1568, 1568, 1568, 1568)`. A block is one page in each of the 16 layers of a group, 25.7 MB at TP=2, and any group can take any free block:
-
-#figure(
-  fig.fig-kv-pool(),
-  caption: [One pool for both kinds of state, TP=2 with FP8 KV. Attention takes a block per 1568 tokens; GDN takes the same number of blocks for any sequence, two per group with prefix caching.],
-) <fig-kv-pool>
-
-A sequence takes *one attention block per 1568 tokens, plus a fixed number of GDN blocks*:
-
-- With prefix caching off, one block per GDN group, three in all.
-- With prefix caching on (`mamba_cache_mode=align`), two blocks per group, six in all. vLLM also keeps GDN states at block boundaries, so that a cached prefix can resume the recurrence.
-
-=== What "GPU KV Cache Size" Counts
-
-At startup vLLM prints:
-
-```text
-Available KV cache memory: 52.89 GiB
-GPU KV cache size: 3,208,045 tokens, Maximum concurrency for 132,096 tokens per request: 24.29x
-```
-
-*The 3,208,045 is not a count of token slots.* vLLM divides the pool by what one request of `max_model_len` needs, then multiplies back:
-
-+ 52.89 GiB / 25.7 MB = 2,210 blocks.
-+ A request of 132,096 tokens takes 85 attention blocks and 6 GDN blocks: 91.
-+ 2,210 / 91 = 24.29 such requests, and 24.29 × 132,096 = 3,208,045 tokens.
-
-This matches the logged number exactly on every run, including those with prefix caching off, where the GDN part is 3 blocks.
-
-== Why `max_model_len` Changes It
-
-vLLM computes the number in `get_kv_cache_capacity` and `get_max_concurrency_for_kv_cache_config` (`vllm/v1/core/kv_cache_utils.py`). For this model they reduce to:
-
-```python
-attn_blocks = cdiv(max_model_len, block_size)   # 1 attention group, 1 block per 1568 tokens
-gdn_blocks = 3 * 2                              # 3 GDN groups, 2 blocks each with prefix caching
-blocks_per_request = attn_blocks + gdn_blocks
-max_concurrency = num_blocks / blocks_per_request
-kv_cache_size = int(max_concurrency * max_model_len)
-```
-
-With $N$ blocks in the pool, block size $B$, `max_model_len` $L$ and $G$ GDN blocks per request, and ignoring the rounding up:
-
-$ "kv_cache_size" approx N / (L \/ B + G) dot L = N B dot L / (L + G B) $
-
-For a model with only full attention, $G = 0$, the two $L$ terms cancel, and the result is $N B$, the token slots in the pool, whatever the setting.
-
-Here $G = 6$, so *each request is charged as if it were $G B$ = 9,408 tokens longer*. The attention blocks grow with $L$ but the GDN blocks do not, so a shorter `max_model_len` gives GDN a larger share of each request, and the number drops. The same 2,210 blocks at different settings:
-
-#table(
-  columns: 4,
-  table.header([`max_model_len`], [Blocks per request], [Max concurrency], [KV cache size]),
-  [8,192], [6 + 6 = 12], [184.17], [1,508,693],
-  [32,768], [21 + 6 = 27], [81.85], [2,682,121],
-  [132,096], [85 + 6 = 91], [24.29], [3,208,045],
-  [262,144], [168 + 6 = 174], [12.70], [3,329,530],
-)
-
-Only the 132,096 row is from a log; the others follow from the formula. The pool is the same in every row, and the number approaches 2,210 × 1568 = 3,465,280 as `max_model_len` grows.
-
-= A100: NVLink Pairs and Cross-Socket PCIe
+= A100
 
 This is Machine 2 of #xref("gpu-server-topology"). Each A100 has a PCIe 4.0 x16 link, 31.5 GB/s per direction on paper, and each bridge pair has 12 NVLinks, 300 GB/s per direction.
 
@@ -308,6 +230,8 @@ All serving runs on this machine:
 
 TP=4 holds 2.3 times as many tokens as TP=2: it has more free memory per GPU and stores half the bytes per token.
 
+"KV cache size" is the number vLLM prints at startup. For this model it is not a count of token slots, and it changes with `max_model_len`; #xref("vllm-hybrid-kv-cache") works out what it counts.
+
 With identical settings, *the NVLink pair gets 2.2 GiB less KV memory* than the PCIe pair. The cause is not known; NCCL buffers for the NVLink transport are one candidate.
 
 == Serving at TP=1 and TP=2
@@ -324,7 +248,7 @@ TP=1 runs on GPU0 alone. Output throughput, prefill included:
 - At concurrency 1 both pairs serve about 1.5 times as much as TP=1, well short of 2, so *per GPU a single A100 does more work*.
 
 
-== Serving at TP=2: NVLink vs PCIe
+== NVLink vs PCIe at TP=2
 
 At concurrency 1 the two pairs *decode at the same speed*: within 0.7% at every length, 65.8 against 65.4 tok/s at 128K. NVLink cuts time to first token by 6–26%, and the whole request by 2–5%.
 
@@ -401,7 +325,7 @@ Short TP=2 training runs, 16 steps each, of one 1024-token sequence per step. Lo
 
 *NVLink is 0–4% faster.* Spread over a step, the traffic needs about 3.5 GB/s, a quarter of what the PCIe pair delivers. This is a small, unoptimized setup (eager mode, activation checkpointing, batch of one); larger batches would move more data per step, but they also compute longer.
 
-== Looking for a Workload That Needs NVLink
+== Other Workloads
 
 Qwen3.8-27B with shared prefixes gains at most a third from NVLink. Two more experiments look for a larger gap: prompts that share nothing, so that every request runs its full prefill, and smaller models at high concurrency. Each bar is NVLink's output throughput divided by PCIe's, at TP=2:
 
@@ -470,7 +394,7 @@ The distinct-prompt runs test this. The model says PCIe costs 89 µs per token m
 
 *So the link costs about what the roofline predicts.* The throughput ratio is 1.37, not 2, because compute ran far below its roof: the NVLink pair prefilled at about 4,700 tok/s, under 40% of its ceiling, so the same 89 µs is a smaller share of each token.
 
-= RTX A6000: One GPU per Socket
+= RTX A6000
 
 This is Machine 1 of #xref("gpu-server-topology"). Each GPU has a PCIe 3.0 x16 link, 15.75 GB/s per direction on paper, and a transfer between them crosses PCIe, CPU0, UPI, CPU1 and PCIe again.
 
@@ -605,11 +529,10 @@ Adding the KV each step reads, the model gives TP=2 over TP=1 for the steady dec
 - At 128K the KV reads, which TP halves, hold it near 1.65.
 - At 2K the model runs high: it leaves out costs that do not halve, and in the trace NCCL took 1.6 times the model's estimate, 13.1 ms per step against 7.9 at concurrency 8.
 
-= Takeaways
+= Summary
 
 - *At low concurrency, TP over PCIe costs little.* Decode all-reduces are small and take about 10 µs on any link. NVLink helps time to first token, not decode speed.
 - *NVLink pays off with larger batches and prefill-heavy traffic*: 8–33% more throughput for Qwen3.8-27B at concurrency 16, and up to 1.8 times for a 4B model at 128.
 - *A roofline with the link added explains most of this.* Decode is memory-bound and its all-reduces latency-bound, about 1 ms per step on any link. Prefill is compute-bound, and there PCIe's all-reduces take about as long as the compute.
 - *On the A6000 server, NCCL was 11–15% of a decode step*; full attention over long contexts cost more.
 - *On a two-GPU cross-socket pair, `NCCL_P2P_LEVEL=SYS` is worth setting* once P2P is known to work. On four GPUs, measure first.
-- *With a hybrid model like Qwen3.8-27B, read "GPU KV cache size" as how many max-length requests fit*; it changes with `max_model_len` even when the memory does not. Every running sequence holds GDN state, however short.

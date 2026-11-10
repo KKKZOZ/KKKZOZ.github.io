@@ -18,9 +18,9 @@ KTransformers (Chen, Xie, Zhang et al., Tsinghua / Approaching.AI, SOSP '25) is 
 
 On one A100 plus two Xeon 8452Y sockets, the result is *4.62–19.74×* faster prefill and *1.25–4.09×* faster decode than existing hybrid systems, plus up to *45%* more decode throughput from Expert Deferral at an average accuracy drop of at most 0.5%.
 
-= Background: Why Local MoE Inference Is a CPU Problem
+= Background
 
-== Two phases, two kinds of work
+== Prefill and Decode
 
 LLM inference has two phases. *Prefill* processes the whole prompt at once; *decode* generates one token per step. What matters for hardware is the *arithmetic intensity* (ARI): FLOPs done per byte of weights read. Prefill reuses every weight across many tokens, so it is compute-bound. Decode reads every weight for one token, so it is bandwidth- and latency-bound.
 
@@ -28,7 +28,7 @@ LLM inference has two phases. *Prefill* processes the whole prompt at once; *dec
 
 #hint[In an MoE layer, the ARI is set by *how many tokens are routed to each expert*, not by the prompt length. This number decides later whether the CPU should use AMX or AVX-512.]
 
-== Mixture-of-Experts: a huge model with a sparse step
+== Mixture-of-Experts
 
 In an MoE layer, the dense FFN is replaced by a pool of experts, and a learned gate picks the *top-k* experts for each token. DeepSeek and Qwen also have *shared experts* that run for every token.
 
@@ -38,7 +38,7 @@ DeepSeek-V3 has 671B parameters, but each token only touches a few experts per l
 
 #figure(diagram("memory-wall"), caption: [DeepSeek-V3 weights (1.34 TB in BF16, about 0.34 TB in Int4) against the memory of an A100 (40 GB) and an RTX 4080 (16 GB).]) <fig-memory-wall>
 
-== Offloading: move the weights, or move the compute?
+== Offloading
 
 There are two ways to use host memory:
 
@@ -51,11 +51,11 @@ Fiddler also places modules by ARI: attention (highest ARI) and popular experts 
 
 #hint[With computation offloading, the bottleneck moves to the *CPU side*: its memory access, its compute, and its coordination with the GPU.]
 
-= Where Existing Hybrid Systems Lose Time
+= Bottlenecks
 
 The starting point is Fiddler-style hybrid inference of DeepSeek-V3 on one A100 and two Xeon CPUs. It reaches *70.02 tokens/s* in prefill and *4.68 tokens/s* in decode, with GPU utilization *below 30%*. The GPU is mostly waiting, so the system is CPU-bound. The paper traces this to three causes.
 
-== ① CPU compute reaches only 7% of the AMX peak
+== ① CPU Compute
 
 Modern server CPUs have matrix units: Intel *AMX* and ARM *SME*. PyTorch already calls Intel's AMX kernel through oneDNN. On a microbenchmark of a DeepSeek-V3 MoE layer on one 36-core Xeon 8452Y, AMX beats AVX-512 at high ARI, but it *plateaus at 5.4 TFLOPS* (AVX-512 reaches 1.8 TFLOPS).
 
@@ -65,7 +65,7 @@ Modern server CPUs have matrix units: Intel *AMX* and ARM *SME*. PyTorch already
 
 The theoretical AMX peak is 73.7 TFLOPS, so PyTorch gets about 7% of it. The paper blames mainly the *memory layout*: the weights are not arranged the way AMX consumes them, so cache reuse is poor and memory bandwidth is wasted.
 
-== ② In decode, kernel launches eat GPU time
+== ② Kernel Launch
 
 Decode kernels run for microseconds, so launching them costs about as much as running them. Profiling the DeepSeek-V3 decode phase with Nsight Systems:
 
@@ -78,7 +78,7 @@ Decode kernels run for microseconds, so launching them costs about as much as ru
 
 The usual fix is a *CUDA Graph*: capture all kernels once, replay them with one launch. In hybrid inference this breaks, because every CPU expert call is a synchronization point that cuts the graph. `torch.compile` splits the graph at layer boundaries, and Llama.cpp turns CUDA Graphs off to avoid repeated captures. Running GPU shared experts and CPU routed experts *at the same time* adds another scheduling problem that a plain CUDA Graph does not solve.
 
-== ③ Two sockets are only 16% faster than one
+== ③ NUMA
 
 A dual-socket server is a NUMA machine: each socket has its own DRAM, and reading the other socket's memory goes over the socket link at about half the bandwidth (220 GB/s local vs. 125 GB/s remote on the testbed).
 
@@ -86,7 +86,7 @@ A dual-socket server is a NUMA machine: each socket has its own DRAM, and readin
 
 Fiddler and Llama.cpp treat memory as uniform, so weights land on either node. Decoding one DeepSeek-V3 MoE layer takes 6.9 ms on one socket and 5.8 ms on two. Doubling the cores barely helps when half of the reads go remote.
 
-== From bottlenecks to techniques
+== Roadmap
 
 Each bottleneck maps to one part of KTransformers:
 
@@ -94,7 +94,7 @@ Each bottleneck maps to one part of KTransformers:
 
 The CPU kernel work (§3.2 of the paper) makes each device fast; the scheduling work (§3.3) removes coordination overhead; Expert Deferral (§4) lets the CPU and GPU work at the same time; the injection framework (§5) makes all of it pluggable into HuggingFace models.
 
-= System Overview
+= Overview
 
 KTransformers is a drop-in extension of *HuggingFace Transformers*: the user-facing interface stays the same, and optimized modules are swapped in underneath.
 
@@ -108,9 +108,9 @@ KTransformers is a drop-in extension of *HuggingFace Transformers*: the user-fac
 
 The implementation is about 11,000 lines of C++ and 2,000 lines of Python.
 
-= Making the CPU Fast
+= CPU Kernel
 
-== An AMX tiling-aware memory layout
+== AMX Memory Layout
 
 Each AMX-enabled core has *8 tile registers*. A tile is a submatrix of *16 rows × 64 bytes*, and one instruction loads or stores a whole tile. AMX is fast enough that how tiles reach it from memory decides the performance.
 
@@ -122,7 +122,7 @@ With a normal row-major weight matrix, one tile takes 64 B from each of 16 rows,
 - Tiles are aligned to *64 B*, one cache line per tile row, which keeps hardware prefetching clean.
 - Weights use *symmetric group-wise quantization* in Int8 or Int4. Scale factors are stored separately so they do not break the alignment. Int4 tiles are packed into Int8-sized blocks and unpacked with SIMD instructions.
 
-== A cache-friendly AMX kernel
+== AMX Kernel
 
 On top of this layout, the kernel's loop nest follows the memory hierarchy, one level per tier:
 
@@ -146,7 +146,7 @@ On top of this layout, the kernel's loop nest follows the memory hierarchy, one 
 
 On a single socket this kernel reaches *21.3 TFLOPS*, *3.98×* the oneDNN-based PyTorch baseline (the top curve in @fig-cpu-bench).
 
-== AMX or AVX-512? It depends on the ARI
+== AMX vs AVX-512
 
 AMX always works on whole tiles. One input tile holds 16 token rows, so if only one or two tokens are routed to an expert, most of the tile is padding. This is exactly the decode case.
 
@@ -158,7 +158,7 @@ KTransformers therefore also has an *AVX-512 kernel that reads the same tiled la
 
 The hybrid kernel is *1.20×* faster than pure AMX in decode and *10.81×* faster than pure AVX-512 in prefill.
 
-== Fused MoE and dynamic scheduling
+== Fused MoE
 
 An MoE layer is many small matrix multiplications (Gate, Up and Down for each expert), and every one of them is a thread barrier if run separately. KTransformers fuses them:
 
@@ -170,9 +170,9 @@ An MoE layer is many small matrix multiplications (Gate, Up and Down for each ex
 
 In prefill, expert load is very uneven: popular experts get many more tokens. With static partitioning some threads finish early and wait. KTransformers cuts large tasks into small subtasks in a lightweight queue, and threads *pull* work dynamically. This gives up to *1.83×* in prefill.
 
-= CPU-GPU and CPU-CPU Coordination
+= Coordination
 
-== Asynchronous scheduling inside one CUDA Graph
+== CUDA Graph
 
 The decode step for one MoE layer goes like this. The GPU runs the gate and now knows the routed experts for each token. A CPU control thread pushes the routed-expert tasks into a *lock-free queue* and launches the GPU kernels for the shared experts. Background worker threads run the queued tasks. When the GPU finishes, the control thread waits for the CPU work, merges the two outputs, and moves on to the next layer.
 
@@ -188,7 +188,7 @@ A naive version needs two host-side barriers per layer: *submit* (GPU activation
 
 The whole decode step for one token is now *one* CUDA Graph. Kernel launch overhead drops from 21–73% to almost zero, and decode gets up to *1.23×* faster.
 
-== NUMA-aware tensor parallelism
+== NUMA-Aware Tensor Parallelism
 
 Cloud systems usually spread MoE across devices with *expert parallelism* (EP): each socket owns whole experts. With only a handful of tokens, the routed experts are rarely balanced across sockets, so one socket is busy while the other idles:
 
@@ -200,9 +200,9 @@ KTransformers uses *tensor parallelism* instead: every expert's weight matrices 
 
 #hint[Every expert is split evenly, so the work is balanced, nearly all weight reads are local, and there is only one reduce per expert. Compared with a NUMA-oblivious baseline, decode gets up to *1.63×* faster (prefill 1.22×).]
 
-= Expert Deferral: Overlapping CPU and GPU
+= Expert Deferral
 
-== Why the CPU and GPU still wait for each other
+== Layer Dependency
 
 After all the above, decode of DeepSeek-V3 still reaches only 5.87 tokens/s. The reason is the Transformer's strict layer order: the attention of layer $k+1$ needs the outputs of *all* routed experts of layer $k$. So the GPU idles while the CPU computes routed experts, and the CPU idles while the GPU computes attention. Shared experts do run on the GPU in parallel with routed experts, but they are only *18%* of the GPU time in DeepSeek-V3.
 
@@ -210,7 +210,7 @@ After all the above, decode of DeepSeek-V3 still reaches only 5.87 tokens/s. The
 
 The key observation is that *residual connections* make Transformers tolerant to late updates: each layer adds its output to a residual stream that every later layer reads. So a few experts can add their output one layer later, to layer $k+2$ instead of $k+1$, and the model still sees their contribution.
 
-== Immediate and deferred experts
+== Immediate and Deferred Experts
 
 At each layer, the routed experts chosen by the gate are split in two groups:
 
@@ -241,7 +241,7 @@ Unrolling two layers shows where the deferred output lands:
   Expert Deferral is applied only during decode. In prefill, the many tokens of a batch jointly select almost all experts, so the immediate and deferred groups both cover nearly every expert. That almost doubles the memory traffic and cancels the gain from overlap.
 ]
 
-== How many experts to defer?
+== Number of Deferred Experts
 
 The paper profiles one DeepSeek-V3 layer (BF16, top-8 routing). Without deferral, the CPU is busy 74% of the time, the GPU 28%, and the two overlap for only 5% of the time; synchronization and activation transfers add another 3% of idle time.
 
@@ -253,7 +253,7 @@ The paper profiles one DeepSeek-V3 layer (BF16, top-8 routing). Without deferral
 
 So DeepSeek-V3 (BF16) uses *5 immediate + 3 deferred* experts. The general rule: defer the *fewest* experts needed to saturate the CPU, and keep *at least 2 immediate experts* per layer for model stability.
 
-= Flexible Module Injection
+= Module Injection
 
 All these optimizations are only useful if they are easy to apply to new models. KTransformers exports its C++ kernels through *pybind11* and wraps them as ordinary PyTorch modules, so they can replace any existing module. A YAML file describes the replacements as *match* → *replace* rules:
 
@@ -310,13 +310,13 @@ Almost the whole model lives on the CPU side:
   [Routing], [top-8], [top-6], [top-8],
 )
 
-== Prefill: faster at every prompt length
+== Prefill
 
 #img(fig("fig11-prefill.jpg"), alt: "Prefill throughput of KTransformers, Fiddler and Llama.cpp across prompt lengths", caption: [Prefill throughput vs. prompt length.])
 
 Among the baselines, Llama.cpp wins on short prompts thanks to operator fusion, while Fiddler wins on long prompts thanks to oneDNN's AMX path. KTransformers beats both at every length, by *4.62–19.74×*, mostly because of the AMX kernel.
 
-== Decode: CUDA Graph first, then Expert Deferral
+== Decode
 
 #figure(diagram("decode-bars"), caption: [Decode throughput of Fiddler, Llama.cpp and KTransformers with deferral.]) <fig-decode-bars>
 
@@ -326,7 +326,7 @@ Among the baselines, Llama.cpp wins on short prompts thanks to operator fusion, 
 - *Quantized*: *1.77–1.93×* over Llama.cpp. Shorter kernels on both CPU and GPU make the synchronization savings matter even more.
 - *With Expert Deferral*: up to *45%* more decode throughput, for *1.66–2.56×* overall over Llama.cpp.
 
-== Breakdown: which optimization helps where
+== Breakdown
 
 Starting from Fiddler (BF16) and adding the optimizations one at a time:
 
@@ -348,7 +348,7 @@ Starting from Fiddler (BF16) and adding the optimizations one at a time:
 
 The pattern matches the bottleneck analysis: prefill gains come from compute and load balance, decode gains come from memory locality and launch overhead.
 
-== Does Expert Deferral hurt accuracy?
+== Accuracy
 
 Deferral changes the model's computation, so it needs an accuracy check. The paper reports the quantized models, which defer the most experts (DS-3: 3 in BF16 / 6 in Int4; DS-2: 4 / 4; QW-2: 2 / 4). Each configuration is written (immediate + deferred).
 
@@ -365,7 +365,7 @@ Deferral changes the model's computation, so it needs an accuracy check. The pap
 
 Every change stays within *2 points*, and the changes go in both directions. That looks like noise rather than systematic damage.
 
-== Deferral vs. simply skipping experts
+== Expert Skipping
 
 The obvious alternative is *Expert Skipping*: drop the lowest-scored experts entirely. When the deferred work fully overlaps with the GPU, deferral costs almost nothing, so the two give a similar speedup. The question is what each costs in accuracy. On DS-3 with LiveBench:
 
@@ -380,7 +380,7 @@ The obvious alternative is *Expert Skipping*: drop the lowest-scored experts ent
 
 At the default of 6 affected experts, deferral loses *0.5%* on average while skipping loses *13.3%*. Late is far better than never: the deferred experts' output still reaches the residual stream, one layer later.
 
-= Takeaways
+= Summary
 
 #table(
   columns: (1fr, 1fr, auto),

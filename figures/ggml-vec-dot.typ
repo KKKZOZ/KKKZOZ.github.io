@@ -247,6 +247,95 @@
 // One row: vec_dot
 // ============================================================================
 
+/// The order of one output: row r of W (drawn as a column, so dst lines up
+/// under it) walked against x block by block; block b of each zoomed in.
+#let fig-dot-order() = cetz.canvas(length: 1pt, {
+  import cetz.draw: *
+  let (nb, bsel) = (8, 5)                       // blocks drawn along K; block b
+  let (lx0, lx1) = (72, 260)                    // left panel: strips and x
+  let (wx0, wx1, wy0, wy1) = (310, 470, -20, -200)
+  let (rx, rw) = (322, 18)                      // column r
+  let bl = (wy0 - wy1) / nb
+  let (yb, bh) = (-222, 20)                     // x and dst bars
+  rect((0, 12), (1, 11), stroke: none)          // headroom
+
+  // the two zoomed blocks: scale cell, then codes j = 0 … 31
+  let (sw, cw) = (40, (lx1 - lx0 - 40) / 6)
+  let js = ("0", "1", "2", "…", "30", "31")
+  let strip(y, scale, f1, f2) = {
+    rect((lx0, y), (lx0 + sw, y - bh), fill: f2, stroke: .6pt + white)
+    content((lx0 + sw / 2, y - bh / 2), txt(scale, size: 8.5pt, fill: c.ink, weight: 600))
+    for (k, j) in js.enumerate() {
+      let x = lx0 + sw + k * cw
+      rect((x, y), (x + cw, y - bh), fill: f1, stroke: .6pt + white)
+      content((x + cw / 2, y - bh / 2), txt(j, size: 8pt))
+    }
+  }
+  let (ys1, ys2) = (-20, -64)
+  strip(ys1, "wd[b]", c.blue1, c.blue2)
+  strip(ys2, "xd[b]", c.teal1, c.teal2)
+  row-label(lx0 - 6, ys1 - bh / 2, "row r, block b", note: "wq[b][j]")
+  row-label(lx0 - 6, ys2 - bh / 2, "x, block b", note: "xq[b][j]")
+  content((lx0 + sw + 3 * cw, ys1 + 3), txt("j", size: 8pt), anchor: "south")
+  let ym = (ys1 - bh + ys2) / 2
+  content((lx0 + sw / 2, ym), txt("×", fill: c.ink, weight: 700))
+  for k in range(6) {
+    if k != 3 { content((lx0 + sw + (k + .5) * cw, ym), txt("×", fill: c.ink, weight: 700)) }
+  }
+
+  // W: each column is one row of W, K runs downward
+  rect((wx0, wy0), (wx1, wy1), fill: c.grey1, stroke: .7pt + c.line)
+  content((wx0, wy0 + 15), txt([W: 12288 rows, one per column], size: 8.5pt, fill: c.ink), anchor: "south-west")
+  content((rx + rw / 2, wy0 + 2), txt("r", size: 8.5pt, fill: c.ink, weight: 700), anchor: "south")
+  for k in range(nb) {
+    let y = wy0 - k * bl
+    rect((rx, y), (rx + rw, y - bl), fill: if k == bsel { c.orange2 } else { c.blue1 }, stroke: .6pt + white)
+  }
+  rect((rx, wy0), (rx + rw, wy1), stroke: 1.1pt + c.ink)
+  for (k, l) in ((0, "b = 0"), (bsel, "b"), (nb - 1, "127")) {
+    content((rx + rw + 4, wy0 - (k + .5) * bl), txt(l, size: 8pt, fill: if k == bsel { c.ink } else { c.muted }), anchor: "west")
+  }
+  arrow((rx + rw + 34, wy0 - 4), (rx + rw + 34, wy1 + 4), color: c.ink, w: .9pt)
+
+  // dst under W
+  rect((wx0, yb), (wx1, yb - bh), fill: c.grey1, stroke: .7pt + c.line)
+  rect((rx, yb), (rx + rw, yb - bh), fill: c.orange2, stroke: 1.1pt + c.ink)
+  arrow((rx + rw / 2, wy1 - 1), (rx + rw / 2, yb + 1), color: c.ink, w: .8pt)
+  content((rx + rw / 2, yb - bh - 3), txt("dst[r]", size: 8.5pt, fill: c.ink, weight: 600), anchor: "north")
+  content((wx1, yb - bh - 3), txt("dst: 12288 outputs", size: 8.5pt), anchor: "north-east")
+
+  // x, K runs to the right
+  let xw = (lx1 - lx0) / nb
+  for k in range(nb) {
+    let x = lx0 + k * xw
+    rect((x, yb), (x + xw, yb - bh), fill: if k == bsel { c.orange2 } else { c.teal1 }, stroke: .6pt + white)
+  }
+  rect((lx0, yb), (lx1, yb - bh), stroke: .7pt + c.line)
+  for (k, l) in ((0, "0"), (bsel, "b"), (nb - 1, "127")) {
+    content((lx0 + (k + .5) * xw, yb - bh / 2), txt(l, size: 8pt, fill: c.ink))
+  }
+  row-label(lx0 - 6, yb - bh / 2, "x", note: "as Q8_0")
+  arrow((lx0, yb - bh - 8), (lx1, yb - bh - 8), color: c.ink, w: .9pt)
+  content(((lx0 + lx1) / 2, yb - bh - 13), txt("4096 values = 128 blocks of 32", size: 8.5pt), anchor: "north")
+
+  // zoom leaders
+  let zoom = (paint: c.line, thickness: .5pt, dash: "dashed")
+  line((lx0 + bsel * xw, yb), (lx0, ys2 - bh), stroke: zoom)
+  line((lx0 + (bsel + 1) * xw, yb), (lx1, ys2 - bh), stroke: zoom)
+  line((rx, wy0 - bsel * bl), (lx1, ys1), stroke: zoom)
+  line((rx, wy0 - (bsel + 1) * bl), (lx1, ys1 - bh), stroke: zoom)
+
+  // what happens per block
+  let (yf, fx) = (yb - bh - 46, lx0 + 92)
+  content((lx0, yf), txt("each block b:", size: 9pt, fill: c.ink, weight: 700), anchor: "west")
+  content((fx, yf), txt([isum = Σ#sub[j] wq[b][j] · xq[b][j]], size: 9pt, fill: c.ink), anchor: "west")
+  content((fx, yf - 16), txt([sum += wd[b] · xd[b] · isum], size: 9pt, fill: c.ink), anchor: "west")
+  content((fx + 200, yf), txt("int8 × int8, exact", size: 8.5pt), anchor: "west")
+  content((fx + 200, yf - 16), txt("float, once per block", size: 8.5pt), anchor: "west")
+  content((lx0, yf - 34), txt("after b = 127:", size: 9pt, fill: c.ink, weight: 700), anchor: "west")
+  content((fx, yf - 34), txt("dst[r] = sum", size: 9pt, fill: c.ink), anchor: "west")
+})
+
 #let qs-hex = ("53", "26", "49", "11", "6C", "B1", "6D", "7D", "22", "C6", "FC", "F4", "E0", "9B", "A4", "45")
 #let q-lo = (-5, -2, 1, -7, 4, -7, 5, 5, -6, -2, 4, -4, -8, 3, -4, -3)
 #let q-hi = (-3, -6, -4, -7, -2, 3, -2, -1, -6, 4, 7, 7, 6, 1, 2, -4)
