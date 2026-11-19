@@ -2,8 +2,8 @@
 // Numbers are from vLLM's startup log for Qwen3.8-27B at TP=2 with FP8 KV.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, txt
 
 // ============================================================================
 // One pool for attention KV and GDN state

@@ -1,8 +1,8 @@
 // Figures for content/posts/languages/cpp-notes.typ, drawn with cetz.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, c
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, c
 
 #let txt(body, size: 9pt, fill: c.muted, weight: 400) = text(size: size, fill: fill, weight: weight, body)
 #let head(body, fill: c.ink) = text(size: 9pt, weight: 700, fill: fill, body)

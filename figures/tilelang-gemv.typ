@@ -13,9 +13,9 @@
 // read, teal for accumulators and outputs, grey for tiles already consumed.
 // Figures that colour work by owner use `thread-fill`.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, tag, txt
-#import "/templates/base.typ": palette
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": palette
 #import "/figures/tilelang.typ": thread-fill
 
 #let cell-stroke = .4pt + c.line

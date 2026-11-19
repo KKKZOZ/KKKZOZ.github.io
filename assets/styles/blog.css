@@ -1,0 +1,22 @@
+/* The blog's changes to the NASApunk theme's stylesheet, loaded after it
+   (`head-extra` in site.typ), so equal selectors here win. */
+
+/* giscus comments under the post (site.typ `comments`); the frame sizes
+   itself. */
+.comments { margin-top: 48px; border-top: .5px solid var(--rule); padding-top: 16px; }
+.comments .giscus-frame { margin-top: 16px; }
+
+/* Code and tables a size up from the theme's 14px. */
+:where(.prose) pre code { font-size: 15px; }
+:where(.prose) table { font-size: 15px; }
+
+/* The floating table of contents (theme toc-float.css, windows of 1240px and
+   up): 48px off the column, 220px wide, then growing with the right gutter
+   (minus the 48px gap and 12px to spare) so deeper headings wrap less, up to
+   320px. */
+@media (min-width: 1240px) {
+  .toc {
+    left: calc(100% + 48px);
+    width: clamp(220px, calc((100vw - var(--measure)) / 2 - 60px), 320px);
+  }
+}

@@ -4,8 +4,8 @@
 // Colours: blue = projections / parameters, orange = recurrent state,
 // teal = activations and gates, ink squares = elementwise × / +.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, seg, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, seg, tag, txt
 
 // ============================================================================
 // Shared pieces

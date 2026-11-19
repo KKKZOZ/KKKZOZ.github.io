@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
+#import "@tola-modules/nasapunk:0.0.0": img
 
 #tola-meta((
   title: "[DDIA 03] Chapter 3 Storage and Retrieval",

@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A personal technical blog built with Tola from Typst sources. Posts live in `content/posts/<category>/<slug>.typ`, their figures in `figures/<slug>.typ`, and shared components (`callout`, `hint`, `term`, `xref`, `cols`, ...) in `utils/ui.typ`.
+A personal technical blog built with Tola from Typst sources. Posts live in `content/posts/<category>/<slug>.typ`, their figures in `figures/<slug>.typ`, and shared components (`callout`, `hint`, `term`, `xref`, `cols`, ...) come from the NASApunk theme: `#import "@tola-modules/nasapunk:0.0.0": callout, img`. The theme is a Tola module fetched from Git and pinned in `tola.lock` (`mise run theme:update` upgrades it); its options are in `tola.toml`, and the blog's own additions (comments, analytics, extra CSS) in `site.typ` and `assets/`. To change the theme itself, work in the theme repo (https://github.com/KKKZOZ/tola-theme-nasapunk).
 
 `content/posts/ml-systems/gpu-server-topology.typ` and `content/posts/ml-systems/nvlink-vs-pcie-inference.typ` show the voice the blog aims for. Read one before writing; take the spirit, not a template.
 
@@ -18,7 +18,7 @@ A personal technical blog built with Tola from Typst sources. Posts live in `con
 
 **Leave the post in its own language.** About half the posts are in Chinese. Keep each in the language it is written in. Paper notes under `content/posts/papers/` get an English `summary`; other posts' summaries follow their body.
 
-**Fit in with what is there.** Before inventing a new pattern, look at how existing posts and `utils/ui.typ` handle it. Comments in code, figures and config are in English.
+**Fit in with what is there.** Before inventing a new pattern, look at how existing posts and the theme's components ([wiki](https://github.com/KKKZOZ/tola-theme-nasapunk/wiki/Components)) handle it. Comments in code, figures and config are in English.
 
 ## Seeing the result
 

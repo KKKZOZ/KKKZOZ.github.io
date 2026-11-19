@@ -2,8 +2,8 @@
 // drawn with cetz. Same conventions as /utils/figure.typ: 1pt per unit,
 // y grows upward, every figure under ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, seg, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, seg, tag, txt
 
 // One fill per program, for figures that colour work by owner.
 #let prog-fill = (c.teal2, c.orange2, c.blue2, c.grey2)

@@ -3,8 +3,8 @@
 // reused here): coordinates in points, y grows upward, every figure under
 // ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, curve-arrow, legend, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, curve-arrow, legend, tag, txt
 #import "/figures/numpy-notes.typ": cell, lab, mat, tones
 
 /// A small shape / caption line under or beside a matrix.

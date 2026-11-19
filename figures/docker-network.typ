@@ -2,8 +2,8 @@
 // Container names, networks and ports are the ones used in the post.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, c, curve-arrow, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, c, curve-arrow, tag, txt
 
 #let _box(a, b, body, fill: white, stroke: c.hair, ink: c.ink, size: 7pt, weight: 600, dash: none, name: none) = {
   // bind before the import: cetz.draw exports `fill` and `stroke` functions

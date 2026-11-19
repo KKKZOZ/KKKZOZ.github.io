@@ -3,8 +3,8 @@
 // used in the post's examples.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, curve-arrow, legend, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, curve-arrow, legend, tag, txt
 
 #let _tones = (
   blue: (c.blue1, c.blue, c.ink),

@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "@tola-modules/nasapunk:0.0.0": callout, img
 
 #tola-meta((
   title: "PowerInfer-2 Fast Large Language Model Inference on a Smartphone",

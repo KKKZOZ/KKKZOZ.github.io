@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, hint, xref
-#import "/utils/diagram.typ": diagram, divider, edge, flow, flows, n, node, note, timeline
+#import "@tola-modules/nasapunk:0.0.0": callout, hint, xref
+#import "@tola-modules/nasapunk:0.0.0": diagram, divider, edge, flow, flows, n, node, note, timeline
 #import "/figures/ml-compiler.typ" as fig
 
 #tola-meta((

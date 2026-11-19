@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/mitex.typ": mi, mitex
-#import "/utils/ui.typ": callout, hint, cols, xref
+#import "@tola-modules/nasapunk:0.0.0": mi, mitex
+#import "@tola-modules/nasapunk:0.0.0": callout, hint, cols, xref
 #import "/figures/ggml-vec-dot.typ" as fig
 
 #tola-meta((

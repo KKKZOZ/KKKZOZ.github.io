@@ -3,8 +3,8 @@
 // on f32[4, 128] inputs; names and indices are the ones in the logs.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, tag, txt
 
 // ============================================================================
 // TorchDynamo / AOTAutograd

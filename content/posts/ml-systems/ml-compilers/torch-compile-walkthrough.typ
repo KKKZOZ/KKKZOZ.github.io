@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": hint, xref
+#import "@tola-modules/nasapunk:0.0.0": hint, xref
 #import "/figures/torch-compile.typ" as fig
 
 #tola-meta((

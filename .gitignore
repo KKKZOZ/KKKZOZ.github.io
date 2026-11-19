@@ -1,13 +1,11 @@
 .vscode
 
-
-/public
-/.tola/
-.DS_Store
-/node_modules/
+/public/
+/.public-swap/
 /.public-publish/
-/.vendor-vendor/
+/.tola/
 /.tola-build.lock
+.DS_Store
 /tola-ssg/
 /zhihu/
 /materials/

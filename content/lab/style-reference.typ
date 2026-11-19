@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, gallery, hint, img, related, xref
+#import "@tola-modules/nasapunk:0.0.0": callout, gallery, hint, img, related, xref
 
 #tola-meta((
   title: "Style Reference",
@@ -55,7 +55,7 @@ text with `body`: #xref("torch-compile-walkthrough", body: [this walkthrough]).
 Tola checks these links at build time, and `xref` fails loudly if the post is missing.
 
 ```typst
-#import "/utils/ui.typ": xref, related
+#import "@tola-modules/nasapunk:0.0.0": xref, related
 #xref("torch-compile-walkthrough")
 #related("torch-compile-walkthrough", "/posts/ml-systems/ml-compilers/overview/")
 ```
@@ -97,7 +97,7 @@ than `<fig:x>`, which still links but as `#loc-3`.
 #img("/assets/images/telemetry.png", alt: "Telemetry curves", bleed: true, caption: [`bleed: true` extends past the text column on wide screens.])
 
 ```typst
-#import "/utils/ui.typ": img, gallery
+#import "@tola-modules/nasapunk:0.0.0": img, gallery
 #img("/assets/images/x.png", alt: "...", caption: [...], width: "60%") <fig-x>
 #gallery(columns: 3, "/assets/images/a.png", ("/assets/images/b.png", "Label"))
 #figure(cetz.canvas(...), caption: [...]) <fig-y>

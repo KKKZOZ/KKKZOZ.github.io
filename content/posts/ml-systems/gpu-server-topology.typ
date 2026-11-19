@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, hint, term
+#import "@tola-modules/nasapunk:0.0.0": callout, hint, term
 #import "/figures/gpu-server-topology.typ" as fig
 
 #tola-meta((

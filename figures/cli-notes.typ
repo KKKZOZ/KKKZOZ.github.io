@@ -1,7 +1,7 @@
 // Figures for content/posts/tools/cli-notes.typ, drawn with cetz through
 // /utils/diagram.typ.
 
-#import "/utils/diagram.typ": diagram, edge, node
+#import "@tola-modules/nasapunk:0.0.0": diagram, edge, node
 
 /// Which startup files Bash reads for each kind of shell.
 #let fig-bash-startup() = diagram(

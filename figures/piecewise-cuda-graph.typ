@@ -3,8 +3,8 @@
 // in the post; timings in the launch figure are illustrative, not measured.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, curve-arrow, legend, pill, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, curve-arrow, legend, pill, tag, txt
 
 // Op tones: CUDA-Graph-safe ops are blue, Attention (eager) is orange.
 #let _op(x0, x1, y, h, body, attn: false) = {

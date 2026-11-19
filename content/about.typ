@@ -1,10 +1,9 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/templates/layout.typ" as layout
-#import "/utils/ui.typ": img
+#import "@tola-modules/nasapunk:0.0.0": img, page-head
 
 #tola-meta((title: "About"))
 
-#layout.page-head("About")
+#page-head("About")
 
 #img("/assets/images/about/avatar.jpg", alt: "Avatar", width: "30%")
 

@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "@tola-modules/nasapunk:0.0.0": callout, img
 
 #tola-meta((
   title: "[100 Mistakes in Golang 08-09] Chapter 8 & 9",

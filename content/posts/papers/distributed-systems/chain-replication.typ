@@ -1,6 +1,6 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
-#import "/utils/mitex.typ": mitex
+#import "@tola-modules/nasapunk:0.0.0": img
+#import "@tola-modules/nasapunk:0.0.0": mitex
 
 #tola-meta((
   title: "Paper Note: Chain Replication",

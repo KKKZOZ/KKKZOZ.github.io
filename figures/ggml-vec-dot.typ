@@ -5,8 +5,8 @@
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 // Text is 8–10pt so the figures read at the size of the body text.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, pill
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, pill
 #import "/figures/ggml-vec-dot-trace.typ": trace
 
 // ============================================================================

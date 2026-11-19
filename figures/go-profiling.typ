@@ -3,8 +3,8 @@
 // gzip / flate example); the flat/cum tree uses the post's made-up numbers.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, tag, txt
 
 // ============================================================================
 // flat vs cum

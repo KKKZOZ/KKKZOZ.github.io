@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, cols, xref
+#import "@tola-modules/nasapunk:0.0.0": callout, cols, xref
 #import "/figures/cpp-notes.typ" as fig
 
 #tola-meta((

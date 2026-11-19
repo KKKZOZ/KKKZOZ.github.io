@@ -1,8 +1,8 @@
 // Figures for content/posts/ml-systems/ggml-with-cpp.typ, drawn with cetz.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, curve-arrow, legend
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, curve-arrow, legend
 
 // ============================================================================
 // Shared pieces

@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "@tola-modules/nasapunk:0.0.0": callout, img
 
 #tola-meta((
   title: "DistServe Disaggregating Prefill and Decoding for Goodput-optimized Large Language Model Serving",

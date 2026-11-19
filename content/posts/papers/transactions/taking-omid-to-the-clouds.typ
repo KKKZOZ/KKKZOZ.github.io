@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": img
+#import "@tola-modules/nasapunk:0.0.0": img
 
 #tola-meta((
   title: "Paper Note: Taking Omid to the Clouds: Fast, Scalable Transactions for Real-Time Cloud Analytics",

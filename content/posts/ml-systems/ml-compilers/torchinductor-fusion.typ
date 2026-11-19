@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, fold, hint, xref
+#import "@tola-modules/nasapunk:0.0.0": callout, fold, hint, xref
 #import "/figures/torchinductor-fusion.typ" as fig
 
 #tola-meta((

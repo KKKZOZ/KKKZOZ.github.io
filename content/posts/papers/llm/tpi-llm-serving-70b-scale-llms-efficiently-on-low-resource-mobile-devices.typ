@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "@tola-modules/nasapunk:0.0.0": callout, img
 
 #tola-meta((
   title: "TPI-LLM Serving 70B-scale LLMs Efficiently on Low-resource Mobile Devices",

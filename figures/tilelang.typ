@@ -3,8 +3,8 @@
 // points (1pt per unit, y grows upward) and every figure stays under ~560pt
 // wide, so it renders at true scale in the 760px column.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": box-swatch, c, legend, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": box-swatch, c, legend, tag, txt
 
 // One fill per GPU thread, for figures that colour work by owner.
 #let thread-fill = (c.teal2, c.orange2, c.blue2, c.grey2)

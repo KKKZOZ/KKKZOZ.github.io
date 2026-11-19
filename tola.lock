@@ -1,0 +1,26 @@
+[modules.cjk]
+tarball_sha256 = "070b620d8e30bd492784757bc7917dde0ecf7bd8873b8ea3db3990eb5589c5f7"
+tree_sha256 = "4c08865d519b13e6c55263d8d9a275469645e3a77956a481d2c3cb726a4442d8"
+
+[modules.cjk.tarball]
+url = "https://github.com/KKKZOZ/tola-theme-nasapunk/releases/download/sarasa-1.0.43/nasapunk-cjk.tar.gz"
+
+[modules.nasapunk]
+git = "https://github.com/KKKZOZ/tola-theme-nasapunk"
+subdir = "theme"
+commit = "85bb2d8d97de086957f24a5a7c78e5a5df065bdb"
+tree_sha256 = "68e6054afc84109abfcefd7c67e72ea8193d8051f054f377bd9be08112cfb4ac"
+
+[packages."@preview/cetz"]
+version = "0.5.2"
+tree_sha256 = "f507db956dcc874b0ddc341b17364d7071d5d2fcf479e6b5521e4a4da2c36f1e"
+
+[packages."@preview/mitex"]
+version = "0.2.7"
+tree_sha256 = "5478478087c254ffa655f94f9fdfd6bd27c06d42c8a21be2672c72dedb7967d9"
+
+[packages."@preview/oxifmt"]
+version = "1.0.0"
+tree_sha256 = "8a11ac68fbb773bd9a077674ef27a5105640245171e65729f31e2ac80f324c45"
+
+[icons]

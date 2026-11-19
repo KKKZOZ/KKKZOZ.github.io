@@ -3,8 +3,8 @@
 // points (1pt per unit, y grows upward) and every figure stays under ~560pt
 // wide, so it renders at true scale in the 760px column.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, pill, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, pill, tag, txt
 
 /// A rectangle from `a` to `b` holding a few centred lines of text.
 #let block(a, b, lines, bg: c.blue1, edge: c.blue) = {

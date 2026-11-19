@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, img
+#import "@tola-modules/nasapunk:0.0.0": callout, img
 
 #tola-meta((
   title: "HeteroLLM Accelerating Large Language Model Inference on Mobile SoCs with Heterogeneous AI Accelerators",

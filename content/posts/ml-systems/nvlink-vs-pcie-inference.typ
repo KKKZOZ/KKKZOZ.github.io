@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, hint, term, xref
+#import "@tola-modules/nasapunk:0.0.0": callout, hint, term, xref
 #import "/figures/nvlink-vs-pcie-inference.typ" as fig
 
 #tola-meta((

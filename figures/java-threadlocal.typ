@@ -3,8 +3,8 @@
 // entries hold the ThreadLocal weakly (as the key) and the value strongly.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, line-swatch, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, line-swatch, tag, txt
 
 #let _strong(a, b, color: c.line) = arrow(a, b, color: color, w: .8pt)
 #let _weak(a, b) = arrow(a, b, color: c.muted, dash: "dashed", w: .7pt)

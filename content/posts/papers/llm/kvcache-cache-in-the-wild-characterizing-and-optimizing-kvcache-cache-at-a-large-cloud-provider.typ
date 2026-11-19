@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout
+#import "@tola-modules/nasapunk:0.0.0": callout
 
 #tola-meta((
   title: "KVCache Cache in the Wild Characterizing and Optimizing KVCache Cache at a Large Cloud Provider",

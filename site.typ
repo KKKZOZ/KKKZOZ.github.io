@@ -1,45 +1,45 @@
-// The site program: every page Tola publishes is emitted here.
-//
-// Sources under content/ declare their metadata with `tola-meta` and hold
-// only their text; posts/ sources get the post layout, others the plain page
-// layout. lab/ holds test and reference pages: post layout, but they stay out
-// of the post list. Listing pages are built from the post records in
-// templates/pages.typ; the RSS feed and sitemap in templates/feeds.typ.
+// The site program: the NASApunk theme's `render-site`, given the settings
+// that are Typst values rather than TOML options (tola.toml).
 
-#import "@tola/site:0.0.0": site
-#import "@tola/source:0.0.0": all-sources
-#import "/templates/data.typ": draft-index, draft-urls, post-records, select-pages
-#import "/templates/feeds.typ": feeds
-#import "/templates/page.typ": page
-#import "/templates/pages.typ" as pages
-#import "/templates/post.typ": post
-#import "/templates/social.typ": social-card
+#import "@tola/address:0.0.0": asset-url
+#import "@tola-modules/nasapunk:0.0.0": render-site
 
-#set text(
-  lang: site.language.lang,
-  script: site.language.script,
-  region: site.language.region,
+/// giscus comments from the repo's Discussions; the values come from
+/// https://giscus.app. Discussion per page path, as the Hugo site used:
+/// posts that kept their path keep their comments.
+#let giscus = (
+  repo: "kkkzoz/kkkzoz.github.io",
+  repo-id: "MDEwOlJlcG9zaXRvcnkzOTU4ODgxODY=",
+  category: "Announcements",
+  category-id: "DIC_kwDOF5jGOs4Cr9zt",
+  mapping: "pathname",
 )
 
-#let selected = select-pages(all-sources())
-#let posts = post-records(selected)
-
-#draft-index.update(draft-urls(all-sources()))
-
-#for entry in selected {
-  if entry.source.id.starts-with("posts/") or entry.source.id.starts-with("lab/") {
-    post(entry, posts)
-  } else {
-    page(entry.output, entry.source.meta.title, include entry.source.file, posts: posts)
-  }
+/// The comments section under a post. assets/scripts/comments.js loads the
+/// giscus client with the page's current theme and keeps it in step with
+/// the day / night toggle. lab/ test pages take no comments.
+#let comments(post) = if not post.output.starts-with("lab/") {
+  html.section(class: "comments", aria-label: "Comments", {
+    html.div(class: "label accent", "Comments")
+    html.elem("div", attrs: (
+      class: "giscus-mount",
+      data-repo: giscus.repo,
+      data-repo-id: giscus.repo-id,
+      data-category: giscus.category,
+      data-category-id: giscus.category-id,
+      data-mapping: giscus.mapping,
+    ))
+    html.script("", src: asset-url("/assets/scripts/comments.js"), defer: true)
+  })
 }
 
-#pages.home(posts)
-#pages.archive(posts)
-#pages.tags(posts)
-#pages.series(posts)
-#pages.search()
-#pages.not-found()
-
-#feeds(selected, posts)
-#social-card()
+#render-site(
+  head-extra: {
+    // The blog's additions to the theme's stylesheet; loaded after it.
+    html.link(rel: "stylesheet", href: asset-url("/assets/styles/blog.css"))
+    // Insightflare analytics, loaded only on the live host so `tola dev`
+    // visits are not counted.
+    html.script("if(location.hostname===\"blog.kkkzoz.top\"){let s=document.createElement(\"script\");s.defer=true;s.src=\"https://insightflare.1206668472.workers.dev/script.js?siteId=a2308d7a-3c61-4541-987c-e675aa991a6f\";document.head.append(s)}")
+  },
+  post-footer-extra: comments,
+)

@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, fold, cols
+#import "@tola-modules/nasapunk:0.0.0": callout, fold, cols
 #import "/figures/ggml-with-cpp.typ" as fig
 
 #tola-meta((

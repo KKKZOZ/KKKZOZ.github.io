@@ -3,8 +3,8 @@
 // (1pt per unit, y grows upward) and every figure stays under ~560pt wide,
 // so it renders at true scale in the 760px column.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, seg, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, cells, curve-arrow, legend, line-swatch, pill, seg, tag, txt
 
 // ============================================================================
 // IR pipeline: one SiluAndMul through the layers

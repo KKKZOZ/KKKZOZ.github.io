@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, cols, fold, hint, term, xref
+#import "@tola-modules/nasapunk:0.0.0": callout, cols, fold, hint, term, xref
 #import "/figures/tilelang-gemv.typ" as fig
 #import "/figures/tilelang.typ": fig-alloc-scopes, fig-op-scopes
 

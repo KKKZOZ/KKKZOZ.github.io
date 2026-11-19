@@ -5,7 +5,8 @@
 // Import: #import "/figures/ktransformers.typ": diagram
 
 #import "@preview/cetz:0.5.2"
-#import "/utils/cetz.typ": svg-frame
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#let svg-frame = cetz.svg-frame
 
 #let c-teal = rgb("#DCEAE6")
 #let c-teal2 = rgb("#95BFB6")

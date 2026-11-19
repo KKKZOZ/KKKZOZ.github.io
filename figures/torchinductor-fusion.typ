@@ -6,8 +6,8 @@
 // are the ones in the Inductor logs.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, curve-arrow, legend, line-swatch, pill, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, curve-arrow, legend, line-swatch, pill, tag, txt
 
 // A box of fixed width with centred content, for text that has to wrap.
 #let cell(pos, body, w: 108, anchor: "north") = cetz.draw.content(

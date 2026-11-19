@@ -1,7 +1,7 @@
 // Figures for content/posts/tools/macos-setup.typ, drawn with cetz through
 // /utils/diagram.typ.
 
-#import "/utils/diagram.typ": diagram, edge, node
+#import "@tola-modules/nasapunk:0.0.0": diagram, edge, node
 
 /// What each Homebrew mirror variable serves during update and install.
 #let fig-brew-mirrors() = diagram(

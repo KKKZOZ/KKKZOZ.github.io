@@ -4,8 +4,8 @@
 // (dashed) for the RTX A6000 across sockets.
 // Same conventions as /utils/figure.typ: 1pt per unit, y grows upward, < ~560pt wide.
 
-#import "/utils/cetz.typ" as cetz
-#import "/utils/figure.typ": arrow, box-swatch, c, legend, pill, seg, tag, txt
+#import "@tola-modules/nasapunk:0.0.0": cetz
+#import "@tola-modules/nasapunk:0.0.0": arrow, box-swatch, c, legend, pill, seg, tag, txt
 
 #let grid-stroke = (paint: c.hair, thickness: .5pt, dash: "dotted")
 #let axis-stroke = .6pt + c.line

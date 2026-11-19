@@ -1,5 +1,5 @@
 #import "@tola/source:0.0.0": tola-meta
-#import "/utils/ui.typ": callout, gallery, hint, img
+#import "@tola-modules/nasapunk:0.0.0": callout, gallery, hint, img
 #import "/figures/ktransformers.typ": diagram
 
 #tola-meta((
