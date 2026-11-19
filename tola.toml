@@ -40,7 +40,7 @@ doc-prefix = "KKZ-TN"
 cjk-font = "Sarasa Gothic SC"
 # About half the posts are in Chinese: index the whole site as Chinese.
 search-language = "zh"
-math-check = false
+math-check = true
 social-links = [
   { label = "GitHub", url = "https://github.com/KKKZOZ" },
 ]

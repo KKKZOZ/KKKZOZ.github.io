@@ -13,6 +13,8 @@
   toc-depth: 3,
 ))
 
+On a server with several GPUs, how fast two GPUs exchange data depends on what lies between them: an NVLink bridge, a PCIe switch, one CPU, or both CPUs and the link that joins them. `nvidia-smi topo -m` sums this up as one code per GPU pair. On a four-GPU server it prints:
+
 ```text
 $ nvidia-smi topo -m
         GPU0    GPU1    GPU2    GPU3    CPU Affinity    NUMA Affinity   GPU NUMA ID
@@ -31,7 +33,7 @@ Legend:
   NV#  = Connection traversing a bonded set of # NVLinks
 ```
 
-Each code says what a transfer between two GPUs passes through on the way. To read them, you need a picture of the board.
+To read the codes, you need a picture of the board.
 
 = `nvidia-smi topo -m`
 

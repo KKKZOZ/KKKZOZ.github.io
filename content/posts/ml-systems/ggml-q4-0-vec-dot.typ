@@ -15,11 +15,13 @@
 
 #hint[ggml's tensors, contexts and memory allocation are covered in #xref("/posts/ml-systems/ggml-with-cpp/").]
 
+Decode handles one token per step, so *every weight matrix is multiplied by a vector*, and on a CPU these matrix-vector products take most of the time. This post follows one of them through ggml's CPU backend, the FFN gate projection of Qwen3-8B for one token:
+
 ```text
 dst[12288] = W_gate[12288 × 4096] · x[4096]      W_gate: Q4_0, x: F32
 ```
 
-This is the FFN gate projection of Qwen3-8B for one token: decode handles one token per step, so *every weight matrix is multiplied by a vector*. Each row of `W` holds `K` = 4096 weights, and there are `N` = 12288 rows, one per output.
+Each row of `W` holds `K` = 4096 weights, and there are `N` = 12288 rows, one per output.
 
 Setup:
 - Apple M4 Pro: 10 performance and 4 efficiency cores; NEON with `dotprod` and `i8mm`.

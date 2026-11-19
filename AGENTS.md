@@ -6,7 +6,7 @@ A personal technical blog built with Tola from Typst sources. Posts live in `con
 
 ## Principles
 
-**Respect the reader's attention.** The reader is technical and wants to understand something real. Get to it: start from something concrete, such as the output, the code or the question, and cut whatever doesn't help them understand.
+**Respect the reader's attention.** The reader is technical and wants to understand something real. Get to it: start from something concrete, such as the question, and cut whatever doesn't help them understand.
 
 **Earn every claim.** A statement is worth what backs it: a measurement, a derivation, a pointer into the source, a log line. Show enough that a careful reader could check it. Precision does the work that adjectives would otherwise try to do.
 

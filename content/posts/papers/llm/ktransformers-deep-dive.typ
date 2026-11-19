@@ -5,7 +5,7 @@
 #tola-meta((
   title: "KTransformers: CPU/GPU Hybrid Inference for MoE Models",
   date: "2026-10-24",
-  summary: "How KTransformers (SOSP '25) runs the 671B DeepSeek-V3 on one GPU plus a dual-socket Xeon: AMX-aware CPU kernels, a single CUDA Graph for the whole decode step, NUMA-aware tensor parallelism, and Expert Deferral, which overlaps CPU and GPU by letting some experts arrive one layer late.",
+  summary: "How KTransformers (SOSP '25) runs the 671B DeepSeek-V3 on one GPU and a dual-socket Xeon, and why the CPU side is the hard part.",
   tags: ("SOSP-25", "LLM-Inference"),
   weight: 10,
 ))
