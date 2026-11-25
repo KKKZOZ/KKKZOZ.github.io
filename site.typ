@@ -37,6 +37,8 @@
   head-extra: {
     // The blog's additions to the theme's stylesheet; loaded after it.
     html.link(rel: "stylesheet", href: asset-url("/assets/styles/blog.css"))
+    // Page floats when printing a post; after the theme's print.js.
+    html.script("", src: asset-url("/assets/scripts/print-floats.js"), defer: true)
     // Insightflare analytics, loaded only on the live host so `tola dev`
     // visits are not counted.
     html.script("if(location.hostname===\"blog.kkkzoz.top\"){let s=document.createElement(\"script\");s.defer=true;s.src=\"https://insightflare.1206668472.workers.dev/script.js?siteId=a2308d7a-3c61-4541-987c-e675aa991a6f\";document.head.append(s)}")

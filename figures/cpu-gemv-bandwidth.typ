@@ -419,6 +419,91 @@
   content((420, -12), text(10pt, fill: c-muted)[µs per layer], anchor: "east")
 }))
 
+// Per-layer µs vs. threads: (threads, compute floor, bandwidth floor, no prefetch, prefetch)
+#let u9-floors-q2 = (
+  (1, 1267, 1829, 2148, 2032),
+  (2, 633, 1520, 1816, 1496),
+  (4, 317, 895, 1256, 877),
+  (6, 211, 685, 962, 666),
+  (8, 158, 568, 860, 563),
+  (10, 127, 513, 701, 517),
+  (12, 106, 497, 598, 508),
+  (16, 79, 494, 529, 498),
+  (20, 63, 494, 501, 509),
+)
+#let u9-floors-q4 = (
+  (1, 2219, 3136, 3367, 3494),
+  (2, 1109, 2606, 3322, 2982),
+  (4, 555, 1534, 2274, 1613),
+  (6, 370, 1175, 1632, 1169),
+  (8, 277, 974, 1485, 971),
+  (10, 222, 880, 1221, 917),
+  (12, 185, 852, 1054, 867),
+  (16, 139, 846, 915, 862),
+  (20, 111, 847, 864, 865),
+)
+
+#let u9-floors-panel(rows, ymax, ticks, legend: false) = canvas({
+  import cz.draw: *
+  let sx = 11
+  let sy = 160 / ymax
+  let xmax = 21 * sx
+  rect((0, 0), (8.5 * sx, ymax * sy), fill: c-gray, stroke: none)
+  content((4.25 * sx, 160 - 9), text(9pt, fill: c-muted)[8 P-cores])
+  line((0, 0), (xmax, 0), stroke: .6pt + c-muted)
+  line((0, 0), (0, ymax * sy), stroke: .6pt + c-muted)
+  for t in ticks {
+    line((0, t * sy), (xmax, t * sy), stroke: (paint: c-rule, dash: "dotted", thickness: .4pt))
+    content((-6, t * sy), text(10pt)[#t], anchor: "east")
+  }
+  for r in rows { content((r.at(0) * sx, -11), text(10pt)[#r.at(0)]) }
+  content((10.5 * sx, -27), text(11pt, fill: c-muted)[threads])
+  let pts(i) = rows.map(r => (r.at(0) * sx, r.at(i) * sy))
+  let sq(x, y) = rect((x - 3.5, y - 3.5), (x + 3.5, y + 3.5), fill: c-orange, stroke: none)
+  line(..pts(1), stroke: (paint: c-orange-l, dash: "dashed", thickness: 1.2pt))
+  line(..pts(2), stroke: (paint: c-blue, dash: "dashed", thickness: 1.4pt))
+  line(..pts(3), stroke: 1pt + c-muted)
+  for p in pts(3) { circle(p, radius: 3.2, fill: white, stroke: 1.1pt + c-muted) }
+  line(..pts(4), stroke: 1.2pt + c-orange)
+  for p in pts(4) { sq(..p) }
+  // gap between no prefetch and the bandwidth floor at 8 threads
+  let r8 = rows.find(r => r.at(0) == 8)
+  content(
+    (8 * sx + 7, r8.at(3) * sy + 8),
+    text(10pt, weight: "bold", fill: c-red)[#calc.round(r8.at(3) / r8.at(2), digits: 1)×],
+    anchor: "west",
+  )
+  if legend {
+    let lx = 11 * sx
+    let ly = ymax * sy - 14
+    for (i, (label, kind)) in (
+      ([no prefetch], "nopf"),
+      ([prefetch], "pf"),
+      ([bandwidth floor], "bw"),
+      ([compute floor], "comp"),
+    ).enumerate() {
+      let y = ly - i * 15
+      if kind == "nopf" { circle((lx, y), radius: 3.2, fill: white, stroke: 1.1pt + c-muted) }
+      if kind == "pf" { sq(lx, y) }
+      if kind == "bw" { line((lx - 7, y), (lx + 7, y), stroke: (paint: c-blue, dash: "dashed", thickness: 1.4pt)) }
+      if kind == "comp" {
+        line((lx - 7, y), (lx + 7, y), stroke: (paint: c-orange-l, dash: "dashed", thickness: 1.2pt))
+      }
+      content((lx + 12, y), text(10pt, label), anchor: "west")
+    }
+  }
+})
+
+#let fig-u9-floors() = fig(85%, grid(
+  columns: 2,
+  column-gutter: 36pt,
+  row-gutter: 12pt,
+  align: center,
+  panel-title[Q2_K], panel-title[Q4_0],
+  u9-floors-panel(u9-floors-q2, 2600, (500, 1000, 1500, 2000)),
+  u9-floors-panel(u9-floors-q4, 4000, (1000, 2000, 3000), legend: true),
+))
+
 #let fig-u9-tail() = fig(80%, canvas({
   import cz.draw: *
   let cell(i, y, fill, stroke) = rect((i * 10, y), (i * 10 + 8, y + 14), fill: fill, stroke: stroke)

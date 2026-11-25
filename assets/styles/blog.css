@@ -20,3 +20,42 @@
     width: clamp(220px, calc((100vw - var(--measure)) / 2 - 60px), 320px);
   }
 }
+
+/* Print: A4, which assets/scripts/print-floats.js lays its pages out for
+   (the margins are the theme's). Type is set in pt for paper at full scale,
+   in place of the theme's zoom of .8 on the screen sizes. */
+@media print {
+  @page { size: A4; }
+  body { zoom: 1; }
+
+  .prose { font-size: 10pt; line-height: 1.5; }
+  :where(.prose) h2 { font-size: 17pt; }
+  :where(.prose) h3 { font-size: 14pt; }
+  :where(.prose) h4 { font-size: 12pt; }
+  :where(.prose) h5 { font-size: 10.5pt; }
+  :where(.prose) pre { line-height: 1.45; }
+  :where(.prose) pre code, .cols pre code { font-size: 8.5pt; }
+  :where(.prose) table { font-size: 8.5pt; }
+  :where(.prose) table > :first-child > tr:first-child > * { font-size: 10pt; }
+  :where(.prose) figcaption, .callout-head { font-size: 7.5pt; }
+  .hint-body { font-size: 10pt; line-height: 1.5; }
+  .post-title { font-size: 26pt; }
+  .post-summary { font-size: 10.5pt; }
+  .endnotes ol, .references ul, .endterms dl { font-size: 8.5pt; line-height: 1.5; }
+
+  /* Typst draws figures for 12pt text (theme base.typ); at 10/12 their text
+     is the size of the body's. A figure wider than the column still fits it
+     (max-width in the theme). */
+  :where(.prose) figure > :is(.cetz, .svg-frame) { zoom: .8333; }
+
+  /* Nothing wider than the column: Chrome would shrink every page to fit it,
+     and the pages would no longer break where print-floats.js measured. A
+     table's cells wrap anywhere; anything else too wide is cut at the edge. */
+  :where(.prose) table { display: table; }
+  :where(.prose) :is(th, td) { overflow-wrap: anywhere; }
+  .wrap { overflow-x: clip; }
+
+  /* An empty .figure-anchor sits between a heading and its figure; it goes
+     with the figure, so the heading does too. */
+  .figure-anchor { break-after: avoid; }
+}

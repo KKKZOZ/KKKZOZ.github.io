@@ -183,6 +183,18 @@ Two problems remain:
 - At 24 threads, latency spikes.
 - On 8 P-cores, ggml reads 38 GB/s; the probe reads 67. *ggml keeps too few loads in flight per core*, and the E-cores close the gap only by adding more loads.
 
+== Diagnosis: Bandwidth-Bound
+
+The two floors from the top of the post, at every thread count, against the measured latency without and with software prefetch (Fix 2 below):
+
+#figure(fig.fig-u9-floors(), caption: [Compute floor, bandwidth floor and measured latency on the Ultra 9, µs per layer. Red: measured without prefetch / bandwidth floor at 8 threads.]) <fig-u9-floors>
+
+- *The compute floor is far below the bandwidth floor at every thread count*: 1.4× below at one thread (Q2_K 1267 vs. 1829 µs), 3.6× at 8 (158 vs. 568). Unpacking is never the limit here, unlike on the M4 Pro.
+- *Without prefetch, the latency sits 1.4–1.5× above the bandwidth floor from 4 to 10 threads*, in both formats. The cores do not pull what the probe pulls at the same thread count. More threads hide the gap: 7–8% at 16, 1–2% at 20.
+- *With prefetch, the latency is within about 5% of the bandwidth floor from 4 threads on.* A few points fall up to 3% under it; the floor is a measurement too.
+
+So the Ultra 9 is bandwidth-bound, and the gap below 16 threads is loads in flight, not compute.
+
 == Fix 1: Leave One Core Free
 
 Each thread pinned to one core (0 … _n_ − 1), 600 calls per run:

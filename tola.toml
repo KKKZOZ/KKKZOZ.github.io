@@ -12,7 +12,7 @@ origin = "https://blog.kkkzoz.top"  # Public address; needed for feeds and sitem
 base-path = "/"
 title = "KKKZOZ's Blog"
 authors = [{ name = "kkkzoz" }]
-description = "Notes on research, systems and engineering."
+description = "Technical notes, mostly on LLM inference."
 language = "en"
 
 # tola help "[build]"

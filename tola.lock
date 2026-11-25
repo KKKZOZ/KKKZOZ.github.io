@@ -8,8 +8,8 @@ url = "https://github.com/KKKZOZ/tola-theme-nasapunk/releases/download/sarasa-1.
 [modules.nasapunk]
 git = "https://github.com/KKKZOZ/tola-theme-nasapunk"
 subdir = "theme"
-commit = "a63a12f4800e01c085d3e9fd484346e3001572d1"
-tree_sha256 = "398c3d5b7d424bb241779126700254fe42d11cb86323ae2e9468f6fd3ba61b70"
+commit = "8c691c46ddff8477fe9c743ce7b19b30384e99d4"
+tree_sha256 = "3dd4258d32486bf4a7d74be06c5b6d898380579501ecf21958a3711256bad97f"
 
 [packages."@preview/cetz"]
 version = "0.5.2"
